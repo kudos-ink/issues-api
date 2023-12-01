@@ -8,6 +8,10 @@
 
 This Dockerfile requires BuildKit and buildx. BuildKit is an improved backend to replace the legacy builder. BuildKit is the default builder for users on Docker Desktop, and Docker Engine as of version 23.0.
 
+Enable it by setting:
+
+```export DOCKER_BUILDKIT=1 ```
+
 ### Build
 
 To build the image, use:
