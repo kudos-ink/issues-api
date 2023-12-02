@@ -1,5 +1,6 @@
 use mobc_postgres::tokio_postgres;
 use thiserror::Error;
+use tokio::time::error::Elapsed;
 
 
 #[derive(Error, Debug)]
@@ -12,6 +13,8 @@ pub enum DBError {
     DBInit(tokio_postgres::Error),
     #[error("error reading file: {0}")]
     ReadFile(#[from] std::io::Error),
+    #[error("database operation timed out: {0}")]
+    DBTimeout(#[from] Elapsed),
 }
 
 impl warp::reject::Reject for DBError {}
