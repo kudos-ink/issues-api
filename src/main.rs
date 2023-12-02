@@ -12,11 +12,12 @@ async fn main() {
         database_url
     } = ApiConfig::new();
 
-    // let db_pool = PgPoolOptions::new()
-    //     .max_connections(1)
-    //     .connect(&database_url)
-    //     .await
-    //     .expect("Failed to create the database pool.");
+    let db_pool = PgPoolOptions::new()
+        .max_connections(1)
+        .connect(&database_url)
+        .await
+        .expect("Failed to create the database pool.");
+
     let routes = warp::any().map(|| warp::reply::html("Hello, world!"));
 
     let addr = format!("{}:{}", host, port).parse::<std::net::SocketAddr>().expect("Invalid server address");
