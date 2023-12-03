@@ -1,5 +1,6 @@
 mod types;
 
+use db::pool::{DBAccess, DBAccessor};
 use warp::Filter;
 
 use crate::types::ApiConfig;
@@ -8,8 +9,16 @@ mod db;
 mod handlers;
 mod health;
 
+#[cfg(test)]
+mod tests;
+
+
 #[tokio::main]
 async fn main() {
+    run().await;
+}
+
+async fn run() {
     let ApiConfig {
         http_server_host: host,
         http_server_port: port,
@@ -19,13 +28,13 @@ async fn main() {
 
     // init db
     let db_pool = db::pool::create_pool(&database_url).expect("database pool can be created");
-
+    let db = DBAccess::new(db_pool);
     // TODO: use migrations
-    db::pool::init_db(&db_pool, &database_init_file)
+    db.init_db( &database_init_file)
         .await
         .expect("database can be initialized");
 
-    let health_route = health::routes::routes(db_pool);
+    let health_route = health::routes::routes(db);
     let error_handler = handlers::error_handler;
 
     // string all the routes together

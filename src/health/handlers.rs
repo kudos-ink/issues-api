@@ -1,7 +1,8 @@
-use crate::db::{types::DBPool, utils::{execute_query_with_timeout, DB_QUERY_TIMEOUT}};
 use warp::{http::StatusCode,  Reply, Rejection};
 
-pub async fn health_handler(db_pool: DBPool) -> Result<impl Reply, Rejection> {
-    execute_query_with_timeout(&db_pool, "SELECT 1", &[], DB_QUERY_TIMEOUT).await?;
+use super::db::DBHealth;
+
+pub async fn health_handler(db_access: impl DBHealth ) -> Result<impl Reply, Rejection> {
+    db_access.health().await?;
     Ok(StatusCode::OK)
 }
