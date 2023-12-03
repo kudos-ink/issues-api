@@ -30,6 +30,7 @@ RUN adduser \
 USER appuser
 
 COPY --from=build /bin/kudos_api /bin/
+COPY db.sql db.sql
 
 EXPOSE ${SERVER_PORT}
 
