@@ -1,12 +1,7 @@
-use crate::db::{types::DBPool, errors::DBError::DBQuery, self};
-use warp::{http::StatusCode, reject,  Reply, Rejection};
+use crate::db::{types::DBPool, utils::{execute_query_with_timeout, DB_QUERY_TIMEOUT}};
+use warp::{http::StatusCode,  Reply, Rejection};
 
 pub async fn health_handler(db_pool: DBPool) -> Result<impl Reply, Rejection> {
-    let db = db::pool::get_db_con(&db_pool).await.map_err(reject::custom)?;
-
-    db.execute("SELECT 1", &[])
-        .await
-        .map_err(|err| reject::custom(DBQuery(err)))?;
-
+    execute_query_with_timeout(&db_pool, "SELECT 1", &[], DB_QUERY_TIMEOUT).await?;
     Ok(StatusCode::OK)
 }
