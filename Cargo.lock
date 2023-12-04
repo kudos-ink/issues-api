@@ -545,6 +545,7 @@ dependencies = [
  "mobc",
  "mobc-postgres",
  "serde",
+ "serde_derive",
  "serde_json",
  "thiserror",
  "tokio",

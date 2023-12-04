@@ -24,6 +24,7 @@ pub async fn error_handler(err: Rejection) -> std::result::Result<impl Reply, In
         code = StatusCode::BAD_REQUEST;
         message = "Invalid Body";
     } else if let Some(e) = err.find::<DBError>() {
+        eprintln!("{}", e);
         match e {
             DBError::DBQuery(_) => {
                 code = StatusCode::BAD_REQUEST;

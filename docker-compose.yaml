@@ -1,6 +1,8 @@
 version: '3.8'
 services:
   api:
+    networks:
+      - kudos
     build: .
     ports:
       - "8000:8000"
@@ -13,6 +15,8 @@ services:
       - db
 
   db:
+    networks:
+      - kudos
     image: postgres:latest
     ports:
       - "5432:5432"
@@ -25,3 +29,8 @@ services:
 
 volumes:
   pgdata:
+
+
+networks:
+  kudos:
+    driver: bridge
