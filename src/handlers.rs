@@ -42,7 +42,11 @@ pub async fn error_handler(err: Rejection) -> std::result::Result<impl Reply, In
             ContributionError::ContributionExists(_) => {
                 code = StatusCode::BAD_REQUEST;
                 message = "Contribution already exists";
-            }
+            },
+            ContributionError::ContributionNotFound(_) => {
+                code = StatusCode::NOT_FOUND;
+                message = "Contribution not found";
+            },
             _ => {
                 eprintln!("unhandled application error: {:?}", err);
                 code = StatusCode::INTERNAL_SERVER_ERROR;

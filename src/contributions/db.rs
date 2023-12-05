@@ -19,7 +19,7 @@ pub trait DBContribution: Send + Sync + Clone + 'static {
         &self,
         contribution: ContributionRequest,
     ) -> Result<Contribution, reject::Rejection>;
-    // async fn delete_contribution(&self, id: i64) -> Result<(), reject::Rejection>;
+    async fn delete_contribution(&self, id: i64) -> Result<(), reject::Rejection>;
 }
 
 #[async_trait]
@@ -30,7 +30,7 @@ impl DBContribution for DBAccess {
             "SELECT id FROM {} WHERE id = $1 ORDER BY created_at DESC",
             TABLE
         );
-        let q = con.query_one(query.as_str(), &[&id]).await;
+        let q = con.query_one(query.as_str(), &[&id]).await; //TODO: use this query_opt?
         match q {
             Ok(row) => Ok(Some(row_to_contribution(&row))),
             Err(_) => Ok(None),
@@ -57,6 +57,20 @@ impl DBContribution for DBAccess {
             .map_err(|err| reject::custom(DBError::DBQuery(err)))?;
 
         Ok(row_to_contribution(&row))
+    }
+
+    async fn delete_contribution(
+        &self,
+        id: i64
+    ) -> Result<(), reject::Rejection> {
+        let con = self.get_db_con().await?;
+        let query = format!("DELETE FROM {} WHERE id = $1", TABLE);
+        con
+            .query(query.as_str(), &[&id])
+            .await
+            .map_err(|err| reject::custom(DBError::DBQuery(err)))?;
+
+        Ok(())
     }
 }
 
