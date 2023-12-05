@@ -1,13 +1,21 @@
-use warp::{reply::{Reply, json}, reject::{Rejection}};
+use warp::{
+    reject::Rejection,
+    reply::{json, Reply},
+};
 
-use super::{db::DBContribution, models::{ContributionRequest, ContributionResponse}};
+use super::{
+    db::DBContribution,
+    models::{ContributionRequest, ContributionResponse}, errors::ContributionError,
+};
 
 pub async fn create_contribution_handler(
     body: ContributionRequest,
     db_access: impl DBContribution,
 ) -> Result<impl Reply, Rejection> {
-    Ok(json(&ContributionResponse::of(
-        db_access.create_contribution(body)
-            .await?,
-    )))
+    match db_access.get_contribution(body.id).await? {
+        Some(_) => Err(ContributionError::ContributionExists(body.id))?,
+        None => Ok(json(&ContributionResponse::of(
+            db_access.create_contribution(body).await?,
+        ))),
+    }
 }
