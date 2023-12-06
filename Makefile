@@ -6,3 +6,13 @@ HTTP_SERVER_PORT=8000
 .PHONY: run
 run:
 	DATABASE_URL="$(DATABASE_URL)" DATABASE_INIT_FILE="$(DATABASE_INIT_FILE)" HTTP_SERVER_HOST="$(HTTP_SERVER_HOST)" HTTP_SERVER_PORT=$(HTTP_SERVER_PORT) cargo run
+
+
+.PHONY: test
+test:
+	cargo test
+
+
+.PHONY: test-db
+test-db:
+	cargo test -- --ignored

@@ -47,11 +47,6 @@ pub async fn error_handler(err: Rejection) -> std::result::Result<impl Reply, In
                 code = StatusCode::NOT_FOUND;
                 message = "Contribution not found";
             },
-            _ => {
-                eprintln!("unhandled application error: {:?}", err);
-                code = StatusCode::INTERNAL_SERVER_ERROR;
-                message = "Internal Server Error";
-            }
         }
     }else if err.find::<warp::reject::MethodNotAllowed>().is_some() {
         code = StatusCode::METHOD_NOT_ALLOWED;
