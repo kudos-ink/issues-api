@@ -107,7 +107,7 @@ mod tests {
         assert_eq!(resp.status(), 200);
         let body = resp.into_body();
         assert!(!body.is_empty());
-        let expected_response= vec![ContributionResponse { id: 1 }];
+        let expected_response = vec![ContributionResponse { id: 1 }];
         let response: Vec<ContributionResponse> = serde_json::from_slice(&body).unwrap();
         assert_eq!(response, expected_response)
     }
@@ -120,5 +120,88 @@ mod tests {
         assert_eq!(resp.status(), 200);
         let body = resp.into_body();
         assert!(body.is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_create_contribution_mock_db() {
+        let id = 1;
+        let new_contribution = serde_json::to_vec(&ContributionRequest { id }).unwrap();
+        let r = routes(DBMockEmpty {});
+        let resp = request()
+            .body(new_contribution)
+            .path(&"/contribution")
+            .method("POST")
+            .reply(&r)
+            .await;
+        assert_eq!(resp.status(), 200);
+        let body = resp.into_body();
+        assert!(!body.is_empty());
+
+        let expected_response = ContributionResponse { id };
+        let response: ContributionResponse = serde_json::from_slice(&body).unwrap();
+        assert_eq!(response, expected_response)
+    }
+
+    #[tokio::test]
+    async fn test_create_contribution_already_exists_mock_db() {
+        let id = 1;
+        let new_contribution = serde_json::to_vec(&ContributionRequest { id }).unwrap();
+        let r = routes(DBMockValues {}).recover(error_handler);
+        let resp = request()
+            .body(new_contribution)
+            .path(&"/contribution")
+            .method("POST")
+            .reply(&r)
+            .await;
+        assert_eq!(resp.status(), 400);
+        let body = resp.into_body();
+        assert!(!body.is_empty());
+
+        let expected_response = ErrorResponse {
+            message: "Contribution already exists".to_string(),
+        };
+
+        let response: ErrorResponse = serde_json::from_slice(&body).unwrap();
+        assert_eq!(response, expected_response)
+    }
+
+    #[tokio::test]
+    async fn test_delete_contribution_mock_db() {
+        let id = 1;
+        let new_contribution = serde_json::to_vec(&ContributionRequest { id }).unwrap();
+        let r = routes(DBMockValues {});
+        let resp = request()
+            .body(new_contribution)
+            .path(&format!("/contribution/{id}"))
+            .method("DELETE")
+            .reply(&r)
+            .await;
+        assert_eq!(resp.status(), 200);
+        let body = resp.into_body();
+        assert!(body.is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_delete_contribution_does_not_exist_mock_db() {
+        let id = 1;
+        let new_contribution = serde_json::to_vec(&ContributionRequest { id }).unwrap();
+        let r = routes(DBMockEmpty {}).recover(error_handler);
+        let resp = request()
+            .body(new_contribution)
+            .path(&format!("/contribution/{id}"))
+            .method("DELETE")
+            .reply(&r)
+            .await;
+
+        assert_eq!(resp.status(), 404);
+        let body = resp.into_body();
+        assert!(!body.is_empty());
+
+        let expected_response = ErrorResponse {
+            message: "Contribution not found".to_string(),
+        };
+        let response: ErrorResponse = serde_json::from_slice(&body).unwrap();
+        assert_eq!(response, expected_response)
+
     }
 }

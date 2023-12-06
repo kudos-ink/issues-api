@@ -1,7 +1,7 @@
 use warp::{
+    http::StatusCode,
     reject::Rejection,
     reply::{json, Reply},
-    http::StatusCode
 };
 
 use super::{
@@ -35,23 +35,24 @@ pub async fn get_contribution_handler(
 pub async fn get_contributions_handler(
     db_access: impl DBContribution,
 ) -> Result<impl Reply, Rejection> {
-    let contributions = db_access.get_contributions()
-        .await?;
+    let contributions = db_access.get_contributions().await?;
     Ok(json::<Vec<_>>(
-        &contributions.into_iter().map(|t| ContributionResponse::of(t)).collect(),
+        &contributions
+            .into_iter()
+            .map(|t| ContributionResponse::of(t))
+            .collect(),
     ))
 }
-
 
 pub async fn delete_contribution_handler(
     id: i64,
     db_access: impl DBContribution,
 ) -> Result<impl Reply, Rejection> {
     match db_access.get_contribution(id).await? {
-        Some(_) => { 
+        Some(_) => {
             let _ = &db_access.delete_contribution(id).await?;
             Ok(StatusCode::OK)
-        },
+        }
         None => Err(ContributionError::ContributionNotFound(id))?,
     }
 }
