@@ -5,12 +5,12 @@ pub struct Contribution {
     pub id: i64,
 }
 
-#[derive(Deserialize)]
+#[derive(Serialize, Deserialize)]
 pub struct ContributionRequest {
     pub id: i64,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize, PartialEq, Debug)]
 pub struct ContributionResponse {
     pub id: i64,
 }

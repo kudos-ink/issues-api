@@ -1,13 +1,14 @@
 
 use std::convert::Infallible;
 use serde::Serialize;
+use serde_derive::Deserialize;
 use warp::{hyper::StatusCode, Rejection, Reply};
 
 use crate::{db::errors::DBError, contributions::errors::ContributionError};
 
-#[derive(Serialize)]
-struct ErrorResponse {
-    message: String,
+#[derive(Serialize, Deserialize, PartialEq, Debug)]
+pub struct ErrorResponse {
+    pub message: String,
 }
 
 pub async fn error_handler(err: Rejection) -> std::result::Result<impl Reply, Infallible> {
@@ -37,11 +38,10 @@ pub async fn error_handler(err: Rejection) -> std::result::Result<impl Reply, In
             }
         }
     } else if let Some(e) = err.find::<ContributionError>() {
-        eprintln!("{}", e);
         match e {
             ContributionError::ContributionExists(_) => {
                 code = StatusCode::BAD_REQUEST;
-                message = "Contribution already exists";
+                message = "Contribution already exists"; // TODO: get this msg from the error itself
             },
             ContributionError::ContributionNotFound(_) => {
                 code = StatusCode::NOT_FOUND;

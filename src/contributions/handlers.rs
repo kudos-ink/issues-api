@@ -1,6 +1,7 @@
 use warp::{
     reject::Rejection,
     reply::{json, Reply},
+    http::StatusCode
 };
 
 use super::{
@@ -25,7 +26,6 @@ pub async fn get_contribution_handler(
     id: i64,
     db_access: impl DBContribution,
 ) -> Result<impl Reply, Rejection> {
-    eprint!("{}", id);
     match db_access.get_contribution(id).await? {
         None => Err(ContributionError::ContributionNotFound(id))?,
         Some(contribution) => Ok(json(&ContributionResponse::of(contribution))),
@@ -48,9 +48,10 @@ pub async fn delete_contribution_handler(
     db_access: impl DBContribution,
 ) -> Result<impl Reply, Rejection> {
     match db_access.get_contribution(id).await? {
-        Some(_) => Ok(json(
-            &db_access.delete_contribution(id).await?, // TODO: return empty
-        )),
+        Some(_) => { 
+            let _ = &db_access.delete_contribution(id).await?;
+            Ok(StatusCode::OK)
+        },
         None => Err(ContributionError::ContributionNotFound(id))?,
     }
 }
