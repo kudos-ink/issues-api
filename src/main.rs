@@ -52,6 +52,6 @@ async fn init_db(database_url: String, database_init_file: String) -> DBAccess {
     // TODO: use migrations
     db.init_db(&database_init_file)
         .await
-        .expect("database can be initialized");
+        .expect("database cannot be initialized");
     db
 }

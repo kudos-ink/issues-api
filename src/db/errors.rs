@@ -2,7 +2,6 @@ use mobc_postgres::tokio_postgres;
 use thiserror::Error;
 use tokio::time::error::Elapsed;
 
-
 #[derive(Error, Debug)]
 pub enum DBError {
     #[error("error getting connection from DB pool: {0}")]

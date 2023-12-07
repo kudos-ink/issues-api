@@ -1,4 +1,4 @@
-use mobc::{Pool, async_trait};
+use mobc::{async_trait, Pool};
 use mobc_postgres::{tokio_postgres, PgConnectionManager};
 use std::fs;
 use std::str::FromStr;
@@ -53,5 +53,3 @@ impl DBAccessor for DBAccess {
         Ok(())
     }
 }
-
-

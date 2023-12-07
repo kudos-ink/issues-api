@@ -16,7 +16,7 @@ mod tests {
             Ok(())
         }
     }
-    
+
     #[tokio::test]
     async fn test_health_mock_db() {
         let r = routes(DBMock {});

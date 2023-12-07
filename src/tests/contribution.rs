@@ -93,7 +93,7 @@ mod tests {
         assert!(!body.is_empty());
 
         let expected_response = ErrorResponse {
-            message: "Contribution not found".to_string(),
+            message: format!("Contribution #{} not found", id),
         };
         let response: ErrorResponse = serde_json::from_slice(&body).unwrap();
 
@@ -118,7 +118,7 @@ mod tests {
         let r = routes(DBMockEmpty {});
         let resp = request().path(&format!("/contribution")).reply(&r).await;
         assert_eq!(resp.status(), 200);
-        
+
         let body = resp.into_body();
         let response: Vec<ContributionResponse> = serde_json::from_slice(&body).unwrap();
         let expected_response: Vec<ContributionResponse> = vec![];
@@ -161,7 +161,7 @@ mod tests {
         assert!(!body.is_empty());
 
         let expected_response = ErrorResponse {
-            message: "Contribution already exists".to_string(),
+            message: format!("Contribution #{} already exists", id),
         };
 
         let response: ErrorResponse = serde_json::from_slice(&body).unwrap();
@@ -199,7 +199,7 @@ mod tests {
         assert!(!body.is_empty());
 
         let expected_response = ErrorResponse {
-            message: "Contribution not found".to_string(),
+            message: format!("Contribution #{} not found", id),
         };
         let response: ErrorResponse = serde_json::from_slice(&body).unwrap();
         assert_eq!(response, expected_response)
@@ -259,7 +259,7 @@ mod tests {
         assert!(!body.is_empty());
 
         let expected_response = ErrorResponse {
-            message: "Contribution already exists".to_string(),
+            message: format!("Contribution #{} already exists", id),
         };
 
         let response: ErrorResponse = serde_json::from_slice(&body).unwrap();
