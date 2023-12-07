@@ -13,25 +13,31 @@ pub struct ErrorResponse {
 pub async fn error_handler(err: Rejection) -> std::result::Result<impl Reply, Infallible> {
     if let Some(e) = err.find::<ContributionError>() {
         Ok(e.clone().into_response())
+    } else if let Some(e) = err.find::<DBError>() {
+        let (code, message) = match e {
+            DBError::DBPoolConnection(_) => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Database connection error",
+            ),
+            DBError::DBQuery(_) => (StatusCode::BAD_REQUEST, "Database query failed"),
+            DBError::DBInit(_) => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Error initializing database",
+            ),
+            DBError::ReadFile(_) => (StatusCode::INTERNAL_SERVER_ERROR, "File read error"),
+            DBError::DBTimeout(_) => (StatusCode::REQUEST_TIMEOUT, "Database operation timed out"),
+        };
+
+        let json = warp::reply::json(&ErrorResponse {
+            message: message.to_string(),
+        });
+
+        Ok(warp::reply::with_status(json, code).into_response())
     } else {
         let code;
         let message;
 
-        if let Some(e) = err.find::<DBError>() {
-            // Handle DBError
-            eprintln!("{}", e);
-            match e {
-                DBError::DBQuery(_) => {
-                    code = StatusCode::BAD_REQUEST;
-                    message = "Could not Execute request";
-                }
-                _ => {
-                    eprintln!("unhandled application error: {:?}", err);
-                    code = StatusCode::INTERNAL_SERVER_ERROR;
-                    message = "Internal Server Error";
-                }
-            }
-        } else if err.is_not_found() {
+        if err.is_not_found() {
             // Handle not found errors
             code = StatusCode::NOT_FOUND;
             message = "Not Found";
