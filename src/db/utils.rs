@@ -3,7 +3,7 @@ use std::time::Duration;
 use mobc_postgres::tokio_postgres::{types::ToSql, Row};
 use tokio::time::timeout;
 
-use super::{errors::DBError, pool::DBAccessor};
+use super::{errors::DBError, pool::{DBAccessor, DBAccess, self}};
 
 pub const DB_QUERY_TIMEOUT: Duration = Duration::from_secs(5);
 // TODO: improve next functions
@@ -48,4 +48,14 @@ pub async fn execute_with_timeout(
         .await
         .map_err(DBError::DBTimeout)?
         .map_err(DBError::DBQuery)
+}
+
+
+pub async fn init_db(database_url: String, database_init_file: String) -> Result<DBAccess, DBError> {
+    let db_pool = pool::create_pool(&database_url).map_err(DBError::DBPoolConnection)?;
+    let db = DBAccess::new(db_pool);
+    // TODO: use migrations
+    db.init_db(&database_init_file)
+        .await?;
+    Ok(db)
 }

@@ -1,6 +1,6 @@
 mod types;
 
-use db::pool::{DBAccess, DBAccessor};
+use db::utils::init_db;
 use warp::Filter;
 
 use crate::types::ApiConfig;
@@ -27,7 +27,7 @@ async fn run() {
     } = ApiConfig::new();
 
     // init db
-    let db = init_db(database_url, database_init_file).await;
+    let db = init_db(database_url, database_init_file).await.unwrap(); //If there's an error the api should panic
 
     let health_route = health::routes::routes(db.clone());
     let contribution_route = contributions::routes::routes(db);
@@ -44,14 +44,4 @@ async fn run() {
         .expect("Invalid server address");
 
     warp::serve(routes).run(addr).await;
-}
-
-async fn init_db(database_url: String, database_init_file: String) -> DBAccess {
-    let db_pool = db::pool::create_pool(&database_url).expect("database pool can be created");
-    let db = DBAccess::new(db_pool);
-    // TODO: use migrations
-    db.init_db(&database_init_file)
-        .await
-        .expect("database cannot be initialized");
-    db
 }

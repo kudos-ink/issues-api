@@ -32,7 +32,7 @@ mod tests {
             "postgres://postgres:password@localhost:5432/database".to_string(),
             "db.sql".to_string(),
         )
-        .await;
+        .await.unwrap();
 
         let r = routes(db);
         let resp = request().path("/health").reply(&r).await;
