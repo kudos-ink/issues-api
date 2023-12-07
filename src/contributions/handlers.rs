@@ -39,7 +39,7 @@ pub async fn get_contributions_handler(
     Ok(json::<Vec<_>>(
         &contributions
             .into_iter()
-            .map(|t| ContributionResponse::of(t))
+            .map(ContributionResponse::of)
             .collect(),
     ))
 }

@@ -1,22 +1,54 @@
-use mobc_postgres::tokio_postgres::types::ToSql;
-use tokio::time::{timeout, Duration};
-use warp::reject;
-use super::{errors::DBError, pool::DBAccessor};
+use std::time::Duration;
+
+use mobc_postgres::tokio_postgres::{types::ToSql, Row};
+use tokio::time::timeout;
+
+use super::{pool::DBAccessor, errors::DBError};
 
 pub const DB_QUERY_TIMEOUT: Duration = Duration::from_secs(5);
+// TODO: improve next functions 
 
-pub async fn execute_query_with_timeout(
+pub async fn query_one_with_timeout(
     db_access: &impl DBAccessor,
     query: &str,
     params: &[&(dyn ToSql + Sync)],
     timeout_duration: Duration,
-) -> Result<(), reject::Rejection> {
-    let db_conn = db_access.get_db_con().await.map_err(reject::custom)?;
+) -> Result<Row, DBError> {
+    let db_conn = db_access.get_db_con().await?;
+
+    timeout(timeout_duration, db_conn.query_one(query, params))
+        .await
+        .map_err(DBError::DBTimeout)?
+        .map_err(DBError::DBQuery)
+}
+
+
+pub async fn query_with_timeout(
+    db_access: &impl DBAccessor,
+    query: &str,
+    params: &[&(dyn ToSql + Sync)],
+    timeout_duration: Duration,
+) -> Result<Vec<Row>, DBError> {
+    let db_conn = db_access.get_db_con().await?;
+
+    timeout(timeout_duration, db_conn.query(query, params))
+        .await
+        .map_err( DBError::DBTimeout)?
+        .map_err(DBError::DBQuery)
+}
+
+pub async fn execute_with_timeout(
+    db_access: &impl DBAccessor,
+    query: &str,
+    params: &[&(dyn ToSql + Sync)],
+    timeout_duration: Duration,
+) -> Result<u64, DBError> {
+    let db_conn = db_access.get_db_con().await?;
 
     timeout(timeout_duration, db_conn.execute(query, params))
         .await
-        .map_err(|err| reject::custom(DBError::DBTimeout(err)))?
-        .map_err(|err| reject::custom(DBError::DBQuery(err)))?;
+        .map_err( DBError::DBTimeout)?
+        .map_err( DBError::DBQuery)
 
-    Ok(())
 }
+
