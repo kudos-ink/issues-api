@@ -15,4 +15,4 @@ test:
 
 .PHONY: test-db
 test-db:
-	cargo test -- --ignored
+	cargo test -- --ignored --test-threads=1

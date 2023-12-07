@@ -7,6 +7,7 @@ mod tests {
             models::{Contribution, ContributionRequest, ContributionResponse},
         },
         handlers::{error_handler, ErrorResponse},
+        init_db,
     };
     use mobc::async_trait;
     use warp::{reject, test::request, Filter};
@@ -102,7 +103,7 @@ mod tests {
     #[tokio::test]
     async fn test_get_contributions_mock_db() {
         let r = routes(DBMockValues {});
-        let resp = request().path(&format!("/contributions")).reply(&r).await;
+        let resp = request().path(&format!("/contribution")).reply(&r).await;
 
         assert_eq!(resp.status(), 200);
         let body = resp.into_body();
@@ -115,11 +116,13 @@ mod tests {
     #[tokio::test]
     async fn test_get_contributions_empty_mock_db() {
         let r = routes(DBMockEmpty {});
-        let resp = request().path(&format!("/contributions")).reply(&r).await;
-
+        let resp = request().path(&format!("/contribution")).reply(&r).await;
         assert_eq!(resp.status(), 200);
+        
         let body = resp.into_body();
-        assert!(body.is_empty());
+        let response: Vec<ContributionResponse> = serde_json::from_slice(&body).unwrap();
+        let expected_response: Vec<ContributionResponse> = vec![];
+        assert_eq!(response, expected_response);
     }
 
     #[tokio::test]
@@ -168,10 +171,8 @@ mod tests {
     #[tokio::test]
     async fn test_delete_contribution_mock_db() {
         let id = 1;
-        let new_contribution = serde_json::to_vec(&ContributionRequest { id }).unwrap();
         let r = routes(DBMockValues {});
         let resp = request()
-            .body(new_contribution)
             .path(&format!("/contribution/{id}"))
             .method("DELETE")
             .reply(&r)
@@ -202,6 +203,233 @@ mod tests {
         };
         let response: ErrorResponse = serde_json::from_slice(&body).unwrap();
         assert_eq!(response, expected_response)
+    }
 
+    #[tokio::test]
+    #[ignore]
+    async fn test_create_contribution_db() {
+        let id = 1;
+        let new_contribution = serde_json::to_vec(&ContributionRequest { id }).unwrap();
+        let db = init_db(
+            "postgres://postgres:password@localhost:5432/database".to_string(),
+            "db_test.sql".to_string(),
+        )
+        .await;
+        let r = routes(db);
+        let resp = request()
+            .body(new_contribution)
+            .path(&"/contribution")
+            .method("POST")
+            .reply(&r)
+            .await;
+        assert_eq!(resp.status(), 200);
+        let body = resp.into_body();
+        assert!(!body.is_empty());
+
+        let expected_response = ContributionResponse { id };
+        let response: ContributionResponse = serde_json::from_slice(&body).unwrap();
+        assert_eq!(response, expected_response)
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn test_create_contribution_already_exists_db() {
+        let id = 1;
+        let new_contribution = serde_json::to_vec(&ContributionRequest { id }).unwrap();
+        let db = init_db(
+            "postgres://postgres:password@localhost:5432/database".to_string(),
+            "db_test.sql".to_string(),
+        )
+        .await;
+        let r = routes(db).recover(error_handler);
+        let _ = request()
+            .body(new_contribution.clone())
+            .path(&"/contribution")
+            .method("POST")
+            .reply(&r)
+            .await;
+        let resp = request()
+            .body(new_contribution)
+            .path(&"/contribution")
+            .method("POST")
+            .reply(&r)
+            .await;
+        assert_eq!(resp.status(), 400);
+        let body = resp.into_body();
+        assert!(!body.is_empty());
+
+        let expected_response = ErrorResponse {
+            message: "Contribution already exists".to_string(),
+        };
+
+        let response: ErrorResponse = serde_json::from_slice(&body).unwrap();
+        assert_eq!(response, expected_response)
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn test_get_contribution_not_found_db() {
+        let id = 1;
+        let db = init_db(
+            "postgres://postgres:password@localhost:5432/database".to_string(),
+            "db_test.sql".to_string(),
+        )
+        .await;
+        let r = routes(db).recover(error_handler);
+        let resp = request()
+            .path(&format!("/contribution/{id}"))
+            .reply(&r)
+            .await;
+
+        assert_eq!(resp.status(), 404);
+        let body = resp.into_body();
+        assert!(!body.is_empty());
+
+        let expected_response = ErrorResponse {
+            message: "Contribution not found".to_string(),
+        };
+        let response: ErrorResponse = serde_json::from_slice(&body).unwrap();
+
+        assert_eq!(response, expected_response)
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn test_get_contribution_db() {
+        let id = 1;
+        let new_contribution = serde_json::to_vec(&ContributionRequest { id }).unwrap();
+        let db = init_db(
+            "postgres://postgres:password@localhost:5432/database".to_string(),
+            "db_test.sql".to_string(),
+        )
+        .await;
+        let r = routes(db);
+        let _ = request()
+            .body(new_contribution)
+            .path(&"/contribution")
+            .method("POST")
+            .reply(&r)
+            .await;
+        let resp = request()
+            .path(&format!("/contribution/{id}"))
+            .reply(&r)
+            .await;
+        assert_eq!(resp.status(), 200);
+        let body = resp.into_body();
+        assert!(!body.is_empty());
+        let expected_response = ContributionResponse { id };
+        let response: ContributionResponse = serde_json::from_slice(&body).unwrap();
+        assert_eq!(response, expected_response)
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn test_get_contributions_empty_db() {
+        let db = init_db(
+            "postgres://postgres:password@localhost:5432/database".to_string(),
+            "db_test.sql".to_string(),
+        )
+        .await;
+        let r = routes(db).recover(error_handler);
+        let resp = request().path(&format!("/contribution")).reply(&r).await;
+
+        assert_eq!(resp.status(), 200);
+        let body = resp.into_body();
+        let response: Vec<ContributionResponse> = serde_json::from_slice(&body).unwrap();
+        let expected_response: Vec<ContributionResponse> = vec![];
+        assert_eq!(response, expected_response);
+    }
+    #[tokio::test]
+    #[ignore]
+    async fn test_get_contributions_db() {
+        let id = 1;
+        let new_contribution = serde_json::to_vec(&ContributionRequest { id }).unwrap();
+        let db = init_db(
+            "postgres://postgres:password@localhost:5432/database".to_string(),
+            "db_test.sql".to_string(),
+        )
+        .await;
+        let r = routes(db);
+        let _ = request()
+            .body(new_contribution)
+            .path(&"/contribution")
+            .method("POST")
+            .reply(&r)
+            .await;
+        let resp = request().path(&format!("/contribution")).reply(&r).await;
+        assert_eq!(resp.status(), 200);
+
+        let body = resp.into_body();
+        assert!(!body.is_empty());
+        let expected_response = vec![ContributionResponse { id: 1 }];
+        let response: Vec<ContributionResponse> = serde_json::from_slice(&body).unwrap();
+        assert_eq!(response, expected_response)
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn test_delete_contribution_db() {
+        let id = 1;
+        let new_contribution = serde_json::to_vec(&ContributionRequest { id }).unwrap();
+        let db = init_db(
+            "postgres://postgres:password@localhost:5432/database".to_string(),
+            "db_test.sql".to_string(),
+        )
+        .await;
+        let r = routes(db).recover(error_handler);
+        let resp = request()
+            .body(new_contribution)
+            .path(&"/contribution")
+            .method("POST")
+            .reply(&r)
+            .await;
+        assert_eq!(resp.status(), 200);
+
+        let resp = request()
+            .path(&format!("/contribution/{id}"))
+            .method("DELETE")
+            .reply(&r)
+            .await;
+        assert_eq!(resp.status(), 200);
+        let body = resp.into_body();
+        assert!(body.is_empty());
+
+        let resp = request()
+            .path(&format!("/contribution/{id}"))
+            .reply(&r)
+            .await;
+
+        assert_eq!(resp.status(), 404);
+        let body = resp.into_body();
+        assert!(!body.is_empty());
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn test_delete_contribution_does_not_exist_db() {
+        let id = 1;
+        let db = init_db(
+            "postgres://postgres:password@localhost:5432/database".to_string(),
+            "db_test.sql".to_string(),
+        )
+        .await;
+        let new_contribution = serde_json::to_vec(&ContributionRequest { id }).unwrap();
+        let r = routes(db).recover(error_handler);
+        let resp = request()
+            .body(new_contribution)
+            .path(&format!("/contribution/{id}"))
+            .method("DELETE")
+            .reply(&r)
+            .await;
+
+        assert_eq!(resp.status(), 404);
+        let body = resp.into_body();
+        assert!(!body.is_empty());
+
+        let expected_response = ErrorResponse {
+            message: "Contribution not found".to_string(),
+        };
+        let response: ErrorResponse = serde_json::from_slice(&body).unwrap();
+        assert_eq!(response, expected_response)
     }
 }
