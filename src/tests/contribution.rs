@@ -118,7 +118,7 @@ mod tests {
         let r = routes(DBMockEmpty {});
         let resp = request().path(&format!("/contribution")).reply(&r).await;
         assert_eq!(resp.status(), 200);
-        
+
         let body = resp.into_body();
         let response: Vec<ContributionResponse> = serde_json::from_slice(&body).unwrap();
         let expected_response: Vec<ContributionResponse> = vec![];

@@ -2,10 +2,13 @@ use std::fmt;
 
 use serde_derive::Deserialize;
 use thiserror::Error;
-use warp::{http::StatusCode, reject::Reject, reply::{Reply, Response}};
+use warp::{
+    http::StatusCode,
+    reject::Reject,
+    reply::{Reply, Response},
+};
 
 use crate::handlers::ErrorResponse;
-
 
 #[derive(Clone, Error, Debug, Deserialize, PartialEq)]
 pub enum ContributionError {
@@ -13,12 +16,15 @@ pub enum ContributionError {
     ContributionNotFound(i64),
 }
 
-
 impl fmt::Display for ContributionError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            ContributionError::ContributionExists(id) => write!(f, "Contribution #{} already exists", id),
-            ContributionError::ContributionNotFound(id) => write!(f, "Contribution #{} not found", id),
+            ContributionError::ContributionExists(id) => {
+                write!(f, "Contribution #{} already exists", id)
+            }
+            ContributionError::ContributionNotFound(id) => {
+                write!(f, "Contribution #{} not found", id)
+            }
         }
     }
 }
@@ -36,7 +42,7 @@ impl Reply for ContributionError {
         let json = warp::reply::json(&ErrorResponse {
             message: message.into(),
         });
-        
+
         warp::reply::with_status(json, code).into_response()
     }
 }

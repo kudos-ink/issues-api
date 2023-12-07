@@ -17,6 +17,8 @@ pub struct ContributionResponse {
 
 impl ContributionResponse {
     pub fn of(contribution: Contribution) -> ContributionResponse {
-        ContributionResponse { id: contribution.id }
+        ContributionResponse {
+            id: contribution.id,
+        }
     }
 }

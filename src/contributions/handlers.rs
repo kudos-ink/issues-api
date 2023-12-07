@@ -15,7 +15,9 @@ pub async fn create_contribution_handler(
     db_access: impl DBContribution,
 ) -> Result<impl Reply, Rejection> {
     match db_access.get_contribution(body.id).await? {
-        Some(_) => Err(warp::reject::custom(ContributionError::ContributionExists(body.id)))?,
+        Some(_) => Err(warp::reject::custom(ContributionError::ContributionExists(
+            body.id,
+        )))?,
         None => Ok(json(&ContributionResponse::of(
             db_access.create_contribution(body).await?,
         ))),
@@ -27,7 +29,9 @@ pub async fn get_contribution_handler(
     db_access: impl DBContribution,
 ) -> Result<impl Reply, Rejection> {
     match db_access.get_contribution(id).await? {
-        None => Err(warp::reject::custom(ContributionError::ContributionNotFound(id)))?,
+        None => Err(warp::reject::custom(
+            ContributionError::ContributionNotFound(id),
+        ))?,
         Some(contribution) => Ok(json(&ContributionResponse::of(contribution))),
     }
 }
@@ -53,6 +57,8 @@ pub async fn delete_contribution_handler(
             let _ = &db_access.delete_contribution(id).await?;
             Ok(StatusCode::OK)
         }
-        None => Err(warp::reject::custom(ContributionError::ContributionNotFound(id)))?,
+        None => Err(warp::reject::custom(
+            ContributionError::ContributionNotFound(id),
+        ))?,
     }
 }
