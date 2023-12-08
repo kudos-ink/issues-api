@@ -1,10 +1,11 @@
+
 use mobc::async_trait;
 use mobc_postgres::tokio_postgres::Row;
 use warp::reject;
 
 use crate::db::{
-    errors::DBError,
-    pool::{DBAccess, DBAccessor},
+    pool::DBAccess,
+    utils::{ execute_query_with_timeout, query_opt_timeout, query_one_timeout, query_with_timeout, DB_QUERY_TIMEOUT},
 };
 
 use super::models::{Contribution, ContributionRequest};
@@ -25,23 +26,19 @@ pub trait DBContribution: Send + Sync + Clone + 'static {
 #[async_trait]
 impl DBContribution for DBAccess {
     async fn get_contribution(&self, id: i64) -> Result<Option<Contribution>, reject::Rejection> {
-        let con = self.get_db_con().await?;
         let query = format!(
             "SELECT id FROM {} WHERE id = $1 ORDER BY created_at DESC",
             TABLE
         );
-        let q = con.query_one(query.as_str(), &[&id]).await; //TODO: use this query_opt?
-        match q {
-            Ok(row) => Ok(Some(row_to_contribution(&row))),
-            Err(_) => Ok(None),
-        }
+        match query_opt_timeout(self, query.as_str(), &[&id], DB_QUERY_TIMEOUT).await? {
+            Some(contribution) => Ok(Some(row_to_contribution(&contribution))),
+            None => Ok(None),
+}
     }
 
     async fn get_contributions(&self) -> Result<Vec<Contribution>, reject::Rejection> {
-        let con = self.get_db_con().await?;
         let query = format!("SELECT id FROM {} ORDER BY created_at DESC", TABLE);
-        let q = con.query(query.as_str(), &[]).await;
-        let rows = q.map_err(DBError::DBQuery)?;
+        let rows = query_with_timeout(self, query.as_str(), &[], DB_QUERY_TIMEOUT).await?;
         Ok(rows.iter().map(row_to_contribution).collect())
     }
 
@@ -49,24 +46,14 @@ impl DBContribution for DBAccess {
         &self,
         contribution: ContributionRequest,
     ) -> Result<Contribution, reject::Rejection> {
-        let con = self.get_db_con().await?;
         let query = format!("INSERT INTO {} (id) VALUES ($1) RETURNING *", TABLE);
-        let row = con
-            .query_one(query.as_str(), &[&contribution.id])
-            .await
-            .map_err(|err| reject::custom(DBError::DBQuery(err)))?;
-
+        let row = query_one_timeout(self, &query, &[&contribution.id] ,DB_QUERY_TIMEOUT).await?;
         Ok(row_to_contribution(&row))
     }
 
     async fn delete_contribution(&self, id: i64) -> Result<(), reject::Rejection> {
-        let con = self.get_db_con().await?;
         let query = format!("DELETE FROM {} WHERE id = $1", TABLE);
-        con.query(query.as_str(), &[&id])
-            .await
-            .map_err(|err| reject::custom(DBError::DBQuery(err)))?;
-
-        Ok(())
+        execute_query_with_timeout(self, &query, &[&id], DB_QUERY_TIMEOUT).await
     }
 }
 
