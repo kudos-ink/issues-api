@@ -41,11 +41,14 @@ pub async fn error_handler(err: Rejection) -> std::result::Result<impl Reply, In
             // Handle not found errors
             code = StatusCode::NOT_FOUND;
             message = "Not Found";
-        } else if let Some(_) = err.find::<warp::filters::body::BodyDeserializeError>() {
+        } else if err
+            .find::<warp::filters::body::BodyDeserializeError>()
+            .is_some()
+        {
             // Handle invalid body errors
             code = StatusCode::BAD_REQUEST;
             message = "Invalid Body";
-        } else if let Some(_) = err.find::<warp::reject::MethodNotAllowed>() {
+        } else if err.find::<warp::reject::MethodNotAllowed>().is_some() {
             // Handle method not allowed errors
             code = StatusCode::METHOD_NOT_ALLOWED;
             message = "Method Not Allowed";

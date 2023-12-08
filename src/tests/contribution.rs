@@ -214,7 +214,8 @@ mod tests {
             "postgres://postgres:password@localhost:5432/database".to_string(),
             "db_test.sql".to_string(),
         )
-        .await.unwrap();
+        .await
+        .unwrap();
         let r = routes(db);
         let resp = request()
             .body(new_contribution)
@@ -240,7 +241,8 @@ mod tests {
             "postgres://postgres:password@localhost:5432/database".to_string(),
             "db_test.sql".to_string(),
         )
-        .await.unwrap();
+        .await
+        .unwrap();
         let r = routes(db).recover(error_handler);
         let _ = request()
             .body(new_contribution.clone())
@@ -274,7 +276,8 @@ mod tests {
             "postgres://postgres:password@localhost:5432/database".to_string(),
             "db_test.sql".to_string(),
         )
-        .await.unwrap();
+        .await
+        .unwrap();
         let r = routes(db).recover(error_handler);
         let resp = request()
             .path(&format!("/contribution/{id}"))
@@ -286,7 +289,7 @@ mod tests {
         assert!(!body.is_empty());
 
         let expected_response = ErrorResponse {
-            message: "Contribution not found".to_string(),
+            message: "Contribution #1 not found".to_string(),
         };
         let response: ErrorResponse = serde_json::from_slice(&body).unwrap();
 
@@ -302,7 +305,8 @@ mod tests {
             "postgres://postgres:password@localhost:5432/database".to_string(),
             "db_test.sql".to_string(),
         )
-        .await.unwrap();
+        .await
+        .unwrap();
         let r = routes(db);
         let _ = request()
             .body(new_contribution)
@@ -329,7 +333,8 @@ mod tests {
             "postgres://postgres:password@localhost:5432/database".to_string(),
             "db_test.sql".to_string(),
         )
-        .await.unwrap();
+        .await
+        .unwrap();
         let r = routes(db).recover(error_handler);
         let resp = request().path(&format!("/contribution")).reply(&r).await;
 
@@ -348,7 +353,8 @@ mod tests {
             "postgres://postgres:password@localhost:5432/database".to_string(),
             "db_test.sql".to_string(),
         )
-        .await.unwrap();
+        .await
+        .unwrap();
         let r = routes(db);
         let _ = request()
             .body(new_contribution)
@@ -375,7 +381,8 @@ mod tests {
             "postgres://postgres:password@localhost:5432/database".to_string(),
             "db_test.sql".to_string(),
         )
-        .await.unwrap();
+        .await
+        .unwrap();
         let r = routes(db).recover(error_handler);
         let resp = request()
             .body(new_contribution)
@@ -412,7 +419,8 @@ mod tests {
             "postgres://postgres:password@localhost:5432/database".to_string(),
             "db_test.sql".to_string(),
         )
-        .await.unwrap();
+        .await
+        .unwrap();
         let new_contribution = serde_json::to_vec(&ContributionRequest { id }).unwrap();
         let r = routes(db).recover(error_handler);
         let resp = request()
@@ -427,7 +435,7 @@ mod tests {
         assert!(!body.is_empty());
 
         let expected_response = ErrorResponse {
-            message: "Contribution not found".to_string(),
+            message: "Contribution #1 not found".to_string(),
         };
         let response: ErrorResponse = serde_json::from_slice(&body).unwrap();
         assert_eq!(response, expected_response)

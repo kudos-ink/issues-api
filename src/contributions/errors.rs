@@ -39,9 +39,7 @@ impl Reply for ContributionError {
         };
         let message = self.to_string();
 
-        let json = warp::reply::json(&ErrorResponse {
-            message: message.into(),
-        });
+        let json = warp::reply::json(&ErrorResponse { message });
 
         warp::reply::with_status(json, code).into_response()
     }
