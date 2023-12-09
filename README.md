@@ -33,3 +33,20 @@ It builds the image if it's the first time, otherwise, it uses the latest built 
 ### Build and run
 
 ```docker-compose up --build```
+
+## Test
+
+### Unit tests
+
+Run the command:
+
+```make test```
+
+### DB tests
+
+These tests needs a real postgres DB running. You can start a new one using ```docker-compose up db``` and then running the tests:
+
+
+```make test-db```
+
+Note: the tests will delete some tables before running. Use a dummy DB!

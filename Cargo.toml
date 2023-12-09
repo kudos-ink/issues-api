@@ -15,3 +15,4 @@ mobc = "0.8.3"
 mobc-postgres = { version = "0.8.0", features = ["with-chrono-0_4"]}
 thiserror = "1.0.50"
 chrono = { version = "0.4.31", features= ["serde"] }
+serde_derive = "1.0.193"
