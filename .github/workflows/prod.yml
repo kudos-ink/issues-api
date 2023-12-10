@@ -11,7 +11,7 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
 
     - name: Cache dependencies
       uses: actions/cache@v3
@@ -23,9 +23,8 @@ jobs:
         restore-keys: ${{ runner.os }}-cargo-
 
     - name: Install Rust
-      uses: actions-rs/toolchain@v1
+      uses: dtolnay/rust-toolchain@stable
       with:
-        profile: minimal
         toolchain: stable
 
     - name: Build and test code
