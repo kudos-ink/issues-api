@@ -1,11 +1,13 @@
-
 use mobc::async_trait;
 use mobc_postgres::tokio_postgres::Row;
 use warp::reject;
 
 use crate::db::{
     pool::DBAccess,
-    utils::{ execute_query_with_timeout, query_opt_timeout, query_one_timeout, query_with_timeout, DB_QUERY_TIMEOUT},
+    utils::{
+        execute_query_with_timeout, query_one_timeout, query_opt_timeout, query_with_timeout,
+        DB_QUERY_TIMEOUT,
+    },
 };
 
 use super::models::{Contribution, ContributionRequest};
@@ -33,7 +35,7 @@ impl DBContribution for DBAccess {
         match query_opt_timeout(self, query.as_str(), &[&id], DB_QUERY_TIMEOUT).await? {
             Some(contribution) => Ok(Some(row_to_contribution(&contribution))),
             None => Ok(None),
-}
+        }
     }
 
     async fn get_contributions(&self) -> Result<Vec<Contribution>, reject::Rejection> {
@@ -47,7 +49,7 @@ impl DBContribution for DBAccess {
         contribution: ContributionRequest,
     ) -> Result<Contribution, reject::Rejection> {
         let query = format!("INSERT INTO {} (id) VALUES ($1) RETURNING *", TABLE);
-        let row = query_one_timeout(self, &query, &[&contribution.id] ,DB_QUERY_TIMEOUT).await?;
+        let row = query_one_timeout(self, &query, &[&contribution.id], DB_QUERY_TIMEOUT).await?;
         Ok(row_to_contribution(&row))
     }
 

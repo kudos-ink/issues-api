@@ -6,7 +6,6 @@ use crate::db::{
     utils::{execute_query_with_timeout, DB_QUERY_TIMEOUT},
 };
 
-
 #[async_trait]
 pub trait DBHealth: Send + Sync + Clone + 'static {
     async fn health(&self) -> Result<(), reject::Rejection>;

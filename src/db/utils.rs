@@ -8,7 +8,6 @@ use warp::reject;
 
 pub const DB_QUERY_TIMEOUT: Duration = Duration::from_secs(5);
 
-
 pub async fn query_with_timeout(
     db_access: &impl DBAccessor,
     query: &str,
@@ -22,7 +21,6 @@ pub async fn query_with_timeout(
         .map_err(|err| reject::custom(DBError::DBTimeout(err)))?
         .map_err(|err| reject::custom(DBError::DBQuery(err)))
 }
-
 
 pub async fn execute_query_with_timeout(
     db_access: &impl DBAccessor,
@@ -53,7 +51,6 @@ pub async fn query_opt_timeout(
         .map_err(|err| reject::custom(DBError::DBQuery(err)))
 }
 
-
 pub async fn query_one_timeout(
     db_access: &impl DBAccessor,
     query: &str,
@@ -67,7 +64,6 @@ pub async fn query_one_timeout(
         .map_err(|err| reject::custom(DBError::DBTimeout(err)))?
         .map_err(|err| reject::custom(DBError::DBQuery(err)))
 }
-
 
 pub async fn init_db(
     database_url: String,
