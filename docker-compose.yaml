@@ -1,9 +1,12 @@
 version: '3.8'
 services:
   api:
+    image: dontelmo/kudos_api
     networks:
       - kudos
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     ports:
       - "8000:8000"
     environment:
