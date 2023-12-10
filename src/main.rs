@@ -43,5 +43,7 @@ async fn run() {
         .parse::<std::net::SocketAddr>()
         .expect("Invalid server address");
 
+    println!("listening on {}", addr);
+
     warp::serve(routes).run(addr).await;
 }
