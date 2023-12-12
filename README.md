@@ -50,3 +50,9 @@ These tests needs a real postgres DB running. You can start a new one using ```d
 ```make test-db```
 
 Note: the tests will delete some tables before running. Use a dummy DB!
+
+# Deployment
+
+## Workflow
+
+This repository is connected to render.com and will trigger a new deployment to production when a new commit arrives in main branch.
