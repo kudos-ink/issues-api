@@ -1,7 +1,7 @@
-version: '3.8'
+version: "3.8"
 services:
   api:
-    image: dontelmo/kudos_api
+    # image: dontelmo/kudos_api/
     networks:
       - kudos
     build:
@@ -27,12 +27,11 @@ services:
       POSTGRES_DB: database
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
-    volumes:
-      - pgdata:/var/lib/postgresql/data
+#     volumes:
+#       - pgdata:/var/lib/postgresql/data
 
-volumes:
-  pgdata:
-
+# volumes:
+#   pgdata:
 
 networks:
   kudos:

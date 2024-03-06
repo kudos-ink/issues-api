@@ -3,7 +3,9 @@ use serde_derive::Deserialize;
 use std::convert::Infallible;
 use warp::{hyper::StatusCode, Rejection, Reply};
 
-use crate::{contributions::errors::ContributionError, db::errors::DBError};
+use crate::{
+    db::errors::DBError, organization::errors::OrganizationError, user::errors::UserError,
+};
 
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
 pub struct ErrorResponse {
@@ -11,7 +13,9 @@ pub struct ErrorResponse {
 }
 
 pub async fn error_handler(err: Rejection) -> std::result::Result<impl Reply, Infallible> {
-    if let Some(e) = err.find::<ContributionError>() {
+    if let Some(e) = err.find::<UserError>() {
+        Ok(e.clone().into_response())
+    } else if let Some(e) = err.find::<OrganizationError>() {
         Ok(e.clone().into_response())
     } else if let Some(e) = err.find::<DBError>() {
         let (code, message) = match e {

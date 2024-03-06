@@ -11,31 +11,31 @@ use warp::{
 use crate::handlers::ErrorResponse;
 
 #[derive(Clone, Error, Debug, Deserialize, PartialEq)]
-pub enum ContributionError {
-    ContributionExists(i64),
-    ContributionNotFound(i64),
+pub enum RepositoryError {
+    RepositoryExists(i32),
+    RepositoryNotFound(i32),
 }
 
-impl fmt::Display for ContributionError {
+impl fmt::Display for RepositoryError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            ContributionError::ContributionExists(id) => {
-                write!(f, "Contribution #{} already exists", id)
+            RepositoryError::RepositoryExists(id) => {
+                write!(f, "Repository #{} already exists", id)
             }
-            ContributionError::ContributionNotFound(id) => {
-                write!(f, "Contribution #{} not found", id)
+            RepositoryError::RepositoryNotFound(id) => {
+                write!(f, "Repository #{} not found", id)
             }
         }
     }
 }
 
-impl Reject for ContributionError {}
+impl Reject for RepositoryError {}
 
-impl Reply for ContributionError {
+impl Reply for RepositoryError {
     fn into_response(self) -> Response {
         let code = match self {
-            ContributionError::ContributionExists(_) => StatusCode::BAD_REQUEST,
-            ContributionError::ContributionNotFound(_) => StatusCode::NOT_FOUND,
+            RepositoryError::RepositoryExists(_) => StatusCode::BAD_REQUEST,
+            RepositoryError::RepositoryNotFound(_) => StatusCode::NOT_FOUND,
         };
         let message = self.to_string();
 
