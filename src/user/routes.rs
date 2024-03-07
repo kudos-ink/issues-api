@@ -3,6 +3,8 @@ use std::convert::Infallible;
 use warp::filters::BoxedFilter;
 use warp::{Filter, Reply};
 
+use crate::auth::with_auth;
+
 use super::db::DBUser;
 use super::handlers;
 
@@ -23,17 +25,18 @@ pub fn routes(db_access: impl DBUser) -> BoxedFilter<(impl Reply,)> {
 
     let get_user = user_id
         .and(warp::get())
-        // .and(warp::path::param())
         .and(with_db(db_access.clone()))
         .and_then(handlers::get_user_handler);
 
     let create_user = user
+        .and(with_auth())
         .and(warp::post())
         .and(warp::body::json())
         .and(with_db(db_access.clone()))
         .and_then(handlers::create_user_handler);
 
     let delete_user = user_id
+        .and(with_auth())
         .and(warp::delete())
         .and(with_db(db_access.clone()))
         .and_then(handlers::delete_user_handler);

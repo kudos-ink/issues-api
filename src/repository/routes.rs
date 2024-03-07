@@ -3,6 +3,7 @@ use std::convert::Infallible;
 use warp::filters::BoxedFilter;
 use warp::{Filter, Reply};
 
+use crate::auth::with_auth;
 use crate::organization::db::DBOrganization;
 
 use super::db::DBRepository;
@@ -30,12 +31,14 @@ pub fn routes(db_access: impl DBRepository + DBOrganization) -> BoxedFilter<(imp
         .and_then(handlers::get_repository_handler);
 
     let create_repository = repository
+        .and(with_auth())
         .and(warp::post())
         .and(warp::body::json())
         .and(with_db(db_access.clone()))
         .and_then(handlers::create_repository_handler);
 
     let delete_repository = repository_id
+        .and(with_auth())
         .and(warp::delete())
         .and(with_db(db_access.clone()))
         .and_then(handlers::delete_repository_handler);

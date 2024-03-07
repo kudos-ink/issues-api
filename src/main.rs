@@ -5,7 +5,9 @@ use warp::Filter;
 
 use crate::types::ApiConfig;
 
+mod auth;
 mod db;
+mod error;
 mod handlers;
 mod health;
 mod organization;

@@ -3,6 +3,8 @@ use std::convert::Infallible;
 use warp::filters::BoxedFilter;
 use warp::{Filter, Reply};
 
+use crate::auth::with_auth;
+
 use super::db::DBOrganization;
 use super::handlers;
 
@@ -28,12 +30,14 @@ pub fn routes(db_access: impl DBOrganization) -> BoxedFilter<(impl Reply,)> {
         .and_then(handlers::get_organization_handler);
 
     let create_organization = organization
+        .and(with_auth())
         .and(warp::post())
         .and(warp::body::json())
         .and(with_db(db_access.clone()))
         .and_then(handlers::create_organization_handler);
 
     let delete_organization = organization_id
+        .and(with_auth())
         .and(warp::delete())
         .and(with_db(db_access.clone()))
         .and_then(handlers::delete_organization_handler);
