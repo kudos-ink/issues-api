@@ -5,6 +5,9 @@ use warp::{Filter, Reply};
 
 use crate::auth::with_auth;
 use crate::organization::db::DBOrganization;
+use crate::tip::db::DBTip;
+use crate::tip::handlers::get_tips_by_repository_handler;
+use crate::types::RepositoryId;
 
 use super::db::DBRepository;
 use super::handlers;
@@ -15,9 +18,15 @@ fn with_db(
     warp::any().map(move || db_pool.clone())
 }
 
-pub fn routes(db_access: impl DBRepository + DBOrganization) -> BoxedFilter<(impl Reply,)> {
+fn with_db_tip(
+    db_pool: impl DBTip,
+) -> impl Filter<Extract = (impl DBTip,), Error = Infallible> + Clone {
+    warp::any().map(move || db_pool.clone())
+}
+
+pub fn routes(db_access: impl DBRepository + DBOrganization + DBTip + Clone) -> BoxedFilter<(impl Reply,)> {
     let repository = warp::path!("repositories"); // TODO: move this to the "organization" endpoint as a subendpoint
-    let repository_id = warp::path!("repositories" / i32);
+    let repository_id = warp::path!("repositories" / i32); //TODO: use RepositoryId type
 
     let get_repositories = repository
         .and(warp::get())
@@ -43,10 +52,16 @@ pub fn routes(db_access: impl DBRepository + DBOrganization) -> BoxedFilter<(imp
         .and(with_db(db_access.clone()))
         .and_then(handlers::delete_repository_handler);
 
+    let get_tips_by_repository = warp::path!("repositories" / RepositoryId / "tips")
+        .and(warp::get())
+        .and(with_db_tip(db_access.clone())) // Use the DBTip filter
+        .and_then(get_tips_by_repository_handler);
+
     let route = get_repositories
         .or(get_repository)
         .or(create_repository)
-        .or(delete_repository);
+        .or(delete_repository)
+        .or(get_tips_by_repository);
 
     route.boxed()
 }

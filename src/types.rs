@@ -1,5 +1,41 @@
 use dotenv::dotenv;
-use std::env;
+use postgres_types::{FromSql, ToSql};
+use serde_derive::{Deserialize, Serialize};
+use std::{env, str::FromStr};
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, FromSql, ToSql)]
+pub struct IssueId(i32);
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, FromSql, ToSql)]
+pub struct RepositoryId(i32);
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, FromSql, ToSql)]
+pub struct TipId(i32);
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, FromSql, ToSql)]
+pub struct UserId(i32);
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct ParseIdError;
+
+macro_rules! impl_from_str_for_id {
+    ($t:ty) => {
+        impl FromStr for $t {
+            type Err = ParseIdError;
+            fn from_str(s: &str) -> Result<Self, Self::Err> {
+                s.parse::<i32>()
+                    .map(|id| Self(id))
+                    .map_err(|_| ParseIdError)
+            }
+        }
+    };
+}
+
+impl_from_str_for_id!(IssueId);
+impl_from_str_for_id!(RepositoryId);
+impl_from_str_for_id!(TipId);
+impl_from_str_for_id!(UserId);
+
 
 /// Configuration used by this API.
 #[derive(Debug, Clone)]
