@@ -10,6 +10,7 @@ mod db;
 mod error;
 mod handlers;
 mod health;
+mod issue;
 mod organization;
 mod repository;
 mod user;
@@ -37,6 +38,7 @@ async fn run() {
     let users_route = user::routes::routes(db.clone());
     let organizations_route = organization::routes::routes(db.clone());
     let repositories_route = repository::routes::routes(db);
+    //TODO: add issue route
     let error_handler = handlers::error_handler;
 
     // string all the routes together

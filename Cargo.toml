@@ -17,3 +17,4 @@ thiserror = "1.0.50"
 chrono = { version = "0.4.31", features= ["serde"] }
 serde_derive = "1.0.193"
 base64 = "0.22.0"
+url = "2.5.0"
