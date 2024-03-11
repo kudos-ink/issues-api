@@ -1,9 +1,14 @@
 mod types;
 
+use std::{
+    env::{self, VarError},
+    process::exit,
+};
+
 use db::utils::init_db;
 use warp::Filter;
 
-use crate::types::ApiConfig;
+use crate::{db::pool::DBAccessor, types::ApiConfig};
 
 mod auth;
 mod db;
@@ -29,12 +34,18 @@ async fn run() {
         http_server_host: host,
         http_server_port: port,
         database_url,
-        database_init_file,
     } = ApiConfig::new();
 
     // init db
-    let db = init_db(database_url, database_init_file).await.unwrap(); //If there's an error the api should panic
-
+    let db = init_db(database_url).await.unwrap(); //If there's an error the api should panic
+                                                   // migration and exit
+    if let Ok(db_file) = env::var("DATABASE_INIT_FILE") {
+        // If present, run the migration and exit
+        match db.init_db(&db_file).await {
+            Ok(_) => exit(0),
+            Err(_) => exit(1),
+        }
+    }
     let health_route = health::routes::routes(db.clone());
     let users_route = user::routes::routes(db.clone());
     let organizations_route = organization::routes::routes(db.clone());

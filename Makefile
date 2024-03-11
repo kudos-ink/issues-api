@@ -10,6 +10,15 @@ run:
 	USERNAME="$(USERNAME)" PASSWORD="$(PASSWORD)" DATABASE_URL="$(DATABASE_URL)" DATABASE_INIT_FILE="$(DATABASE_INIT_FILE)" HTTP_SERVER_HOST="$(HTTP_SERVER_HOST)" HTTP_SERVER_PORT=$(HTTP_SERVER_PORT) cargo run
 
 
+.PHONY: db-up
+run:
+	docker compose up db
+
+.PHONY: db-migrate
+db-migrate:
+	DATABASE_URL="$(DATABASE_URL)" DATABASE_INIT_FILE="$(DATABASE_INIT_FILE)" cargo run
+
+
 .PHONY: test
 test:
 	cargo test
