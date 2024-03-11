@@ -6,6 +6,12 @@ use std::{env, str::FromStr};
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, FromSql, ToSql)]
 pub struct IssueId(i32);
 
+// TODO: remove the pub and use the IssueId en issues'endpoint
+impl Into<i32> for IssueId {
+    fn into(self) -> i32 {
+        self.0
+    }
+}
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, FromSql, ToSql)]
 pub struct RepositoryId(i32);
 
@@ -36,7 +42,6 @@ impl_from_str_for_id!(RepositoryId);
 impl_from_str_for_id!(TipId);
 impl_from_str_for_id!(UserId);
 
-
 /// Configuration used by this API.
 #[derive(Debug, Clone)]
 pub struct ApiConfig {
@@ -46,8 +51,6 @@ pub struct ApiConfig {
     pub http_server_port: u16,
     /// Database URL.
     pub database_url: String,
-    /// Database init file.
-    pub database_init_file: String,
 }
 
 impl ApiConfig {
@@ -61,8 +64,6 @@ impl ApiConfig {
                 .parse()
                 .expect("Invalid HTTP_SERVER_PORT"),
             database_url: env::var("DATABASE_URL").expect("DATABASE_URL must be set"),
-            database_init_file: env::var("DATABASE_INIT_FILE")
-                .expect("DATABASE_INIT_FILE must be set"),
         }
     }
 }
