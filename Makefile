@@ -11,8 +11,12 @@ run:
 
 
 .PHONY: db-up
-run:
+db-up:
 	docker compose up db
+
+.PHONY: db-down
+db-down:
+	docker compose up down
 
 .PHONY: db-migrate
 db-migrate:
