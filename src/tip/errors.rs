@@ -8,10 +8,14 @@ use warp::{
     reply::{Reply, Response},
 };
 
-use crate::{handlers::ErrorResponse, types::TipId};
+use crate::{
+    handlers::ErrorResponse,
+    types::{IssueId, TipId},
+};
 
 #[derive(Clone, Error, Debug, Deserialize)]
 pub enum TipError {
+    IssueNotFound(IssueId),
     TipExists(TipId),
     InvalidUpdateRequest(TipId),
     NotFound,
@@ -22,12 +26,15 @@ impl fmt::Display for TipError {
         match self {
             TipError::TipExists(id) => {
                 write!(f, "Tip #{:?} already exists", id)
-            },
+            }
             TipError::NotFound => {
                 write!(f, "Tip not found")
-            },
+            }
             TipError::InvalidUpdateRequest(id) => {
                 write!(f, "Invalid body for Tip #{:?} update", id)
+            }
+            TipError::IssueNotFound(id) => {
+                write!(f, "Issue #{:?} not found", id)
             }
         }
     }
@@ -41,6 +48,7 @@ impl Reply for TipError {
             TipError::TipExists(_) => StatusCode::BAD_REQUEST,
             TipError::InvalidUpdateRequest(_) => StatusCode::BAD_REQUEST,
             TipError::NotFound => StatusCode::NOT_FOUND,
+            TipError::IssueNotFound(_) => StatusCode::NOT_FOUND,
         };
         let message = self.to_string();
         let json = warp::reply::json(&ErrorResponse { message });

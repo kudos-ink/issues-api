@@ -1,3 +1,8 @@
+use std::{
+    env::{self, VarError},
+    io::Error,
+};
+
 use super::{
     errors::DBError,
     pool::{self, DBAccess, DBAccessor},
@@ -65,13 +70,8 @@ pub async fn query_one_timeout(
         .map_err(|err| reject::custom(DBError::DBQuery(err)))
 }
 
-pub async fn init_db(
-    database_url: String,
-    database_init_file: String,
-) -> Result<DBAccess, DBError> {
+pub async fn init_db(database_url: String) -> Result<DBAccess, DBError> {
     let db_pool = pool::create_pool(&database_url).map_err(DBError::DBPoolConnection)?;
     let db = DBAccess::new(db_pool);
-    // TODO: use migrations
-    db.init_db(&database_init_file).await?;
     Ok(db)
 }

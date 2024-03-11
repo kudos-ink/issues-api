@@ -24,7 +24,9 @@ fn with_db_tip(
     warp::any().map(move || db_pool.clone())
 }
 
-pub fn routes(db_access: impl DBRepository + DBOrganization + DBTip + Clone) -> BoxedFilter<(impl Reply,)> {
+pub fn routes(
+    db_access: impl DBRepository + DBOrganization + DBTip + Clone,
+) -> BoxedFilter<(impl Reply,)> {
     let repository = warp::path!("repositories"); // TODO: move this to the "organization" endpoint as a subendpoint
     let repository_id = warp::path!("repositories" / i32); //TODO: use RepositoryId type
 

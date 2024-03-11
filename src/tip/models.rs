@@ -36,7 +36,7 @@ pub struct Tip {
 #[derive(Serialize, Deserialize)]
 pub struct CreateTipRequest {
     pub tip_type: TipType,
-    pub amount: u128,
+    pub amount: u128, // TODO: check BIG INT in psql or use varchar
     pub issue_id: IssueId,
     pub contributor_id: UserId,
     pub curator_id: UserId,
@@ -79,7 +79,7 @@ impl TipResponse {
             contributor_id: tip.contributor_id,
             curator_id: tip.curator_id,
             created_at: tip.created_at,
-            updated_at: tip.updated_at
+            updated_at: tip.updated_at,
         }
     }
 }
@@ -134,7 +134,7 @@ impl UpdateTipRequest {
                 }
                 Ok(())
             }
-            _ => Ok(())
+            _ => Ok(()),
         }
     }
 }
