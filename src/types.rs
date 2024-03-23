@@ -12,8 +12,24 @@ impl Into<i32> for IssueId {
         self.0
     }
 }
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, FromSql, ToSql)]
+pub struct OrganizationId(i32);
+
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, FromSql, ToSql)]
 pub struct RepositoryId(i32);
+
+impl RepositoryId {
+    pub fn new(id: i32) -> Self {
+        RepositoryId(id)
+    }
+}
+
+impl Into<i32> for RepositoryId {
+    fn into(self) -> i32 {
+        self.0
+    }
+}
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, FromSql, ToSql)]
 pub struct TipId(i32);

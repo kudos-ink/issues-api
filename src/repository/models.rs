@@ -8,7 +8,7 @@ pub struct Repository {
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct RepositoryRequest {
+pub struct RepositoryCreateRequest {
     pub name: String,
     pub organization_id: i32,
 }

@@ -9,8 +9,7 @@ use crate::{organization::db::DBOrganization, repository::db::DBRepository};
 use super::{
     db::DBIssue,
     errors::IssueError,
-    models::{IssueCreateRequest, IssueGetRequest, IssueResponse},
-    utils::parse_github_issue_url,
+    models::{IssueCreateRequest, IssueResponse},
 };
 
 pub async fn create_issue_handler(
@@ -20,14 +19,13 @@ pub async fn create_issue_handler(
     match db_access.get_issue_by_url(&body.url).await? {
         Some(u) => Err(warp::reject::custom(IssueError::IssueExists(u.id)))?,
         None => {
-            let info = parse_github_issue_url(&body.url)?;
+            // let info = parse_github_issue_url(&body.url)?;
             // TODO: get or create both
             // db_access.create_organization(info.organization);
             // db_access.create_repository(info.repository);
-            // Ok(json(&IssueResponse::of(
-            //     db_access.create_issue(body).await?,
-            // )))
-            Ok(StatusCode::OK) //TODO: added to avoid errors in IDE
+            Ok(json(&IssueResponse::of(
+                db_access.create_issue(body).await?,
+            )))
         }
     }
 }

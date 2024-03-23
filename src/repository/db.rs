@@ -10,7 +10,7 @@ use crate::db::{
     },
 };
 
-use super::models::{Repository, RepositoryRequest};
+use super::models::{Repository, RepositoryCreateRequest};
 
 const TABLE: &str = "repositories";
 
@@ -24,7 +24,7 @@ pub trait DBRepository: Send + Sync + Clone + 'static {
     async fn get_repositories(&self) -> Result<Vec<Repository>, reject::Rejection>;
     async fn create_repository(
         &self,
-        repository: RepositoryRequest,
+        repository: RepositoryCreateRequest,
     ) -> Result<Repository, reject::Rejection>;
     async fn delete_repository(&self, id: i32) -> Result<(), reject::Rejection>;
 }
@@ -57,7 +57,7 @@ impl DBRepository for DBAccess {
 
     async fn create_repository(
         &self,
-        repository: RepositoryRequest,
+        repository: RepositoryCreateRequest,
     ) -> Result<Repository, reject::Rejection> {
         let query = format!(
             "INSERT INTO {} (name, organization_id) VALUES ($1, $2) RETURNING *",

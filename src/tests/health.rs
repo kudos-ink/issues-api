@@ -1,9 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use crate::{
-        health::{db::DBHealth, routes::routes},
-        init_db,
-    };
+    use crate::{health::{db::DBHealth, routes::routes}, types::ApiConfig, utils::setup_db};
     use mobc::async_trait;
     use warp::{reject, test::request};
 
@@ -26,15 +23,12 @@ mod tests {
     }
 
     #[tokio::test]
-    #[ignore]
     async fn test_health_db() {
-        let db = init_db(
-            "postgres://postgres:password@localhost:5432/database".to_string(),
-            "db.sql".to_string(),
-        )
-        .await
-        .unwrap();
-
+        let ApiConfig {
+            database_url,
+            ..
+        } = ApiConfig::new();
+        let db = setup_db(&database_url).await;
         let r = routes(db);
         let resp = request().path("/health").reply(&r).await;
         assert_eq!(resp.status(), 200);

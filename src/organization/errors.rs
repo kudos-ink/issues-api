@@ -34,7 +34,7 @@ impl Reject for OrganizationError {}
 impl Reply for OrganizationError {
     fn into_response(self) -> Response {
         let code = match self {
-            OrganizationError::OrganizationExists(_) => StatusCode::BAD_REQUEST,
+            OrganizationError::OrganizationExists(_) => StatusCode::CONFLICT,
             OrganizationError::OrganizationNotFound(_) => StatusCode::NOT_FOUND,
         };
         let message = self.to_string();

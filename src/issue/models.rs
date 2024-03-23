@@ -1,5 +1,7 @@
 use serde_derive::{Deserialize, Serialize};
 
+use crate::types::RepositoryId;
+
 #[derive(Deserialize)]
 pub struct Issue {
     pub id: i32,
@@ -9,6 +11,8 @@ pub struct Issue {
 #[derive(Serialize, Deserialize)]
 pub struct IssueCreateRequest {
     pub url: String,
+    pub repository_id: RepositoryId,
+    pub issue_number: i32,
 }
 #[derive(Serialize, Deserialize)]
 pub struct IssueGetRequest {
@@ -35,10 +39,4 @@ pub struct IssueInfo {
     pub organization: String,
     pub repository: String,
     pub issue_id: u32,
-}
-
-pub struct IssueCreate {
-    pub repository_id: u32,
-    pub id: u32,
-    pub url: String,
 }

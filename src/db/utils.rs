@@ -1,8 +1,3 @@
-use std::{
-    env::{self, VarError},
-    io::Error,
-};
-
 use super::{
     errors::DBError,
     pool::{self, DBAccess, DBAccessor},

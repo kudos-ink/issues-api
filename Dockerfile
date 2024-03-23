@@ -27,7 +27,7 @@ RUN adduser \
     --no-create-home \
     --uid "${UID}" \
     appuser
-USER appuser
+PSEUDO appuser
 
 COPY --from=build /bin/kudos_api /bin/
 COPY db.sql db.sql

@@ -7,11 +7,11 @@ use warp::{
 use super::{
     db::DBOrganization,
     errors::OrganizationError,
-    models::{OrganizationRequest, OrganizationResponse},
+    models::{OrganizationCreateRequest, OrganizationQuery, OrganizationResponse},
 };
 
 pub async fn create_organization_handler(
-    body: OrganizationRequest,
+    body: OrganizationCreateRequest,
     db_access: impl DBOrganization,
 ) -> Result<impl Reply, Rejection> {
     match db_access.get_organization_by_name(&body.name).await? {
@@ -37,9 +37,10 @@ pub async fn get_organization_handler(
 }
 
 pub async fn get_organizations_handler(
+    query: OrganizationQuery,
     db_access: impl DBOrganization,
 ) -> Result<impl Reply, Rejection> {
-    let organizations = db_access.get_organizations().await?;
+    let organizations = db_access.get_organizations(query.name).await?;
     Ok(json::<Vec<_>>(
         &organizations
             .into_iter()
