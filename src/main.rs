@@ -1,14 +1,4 @@
-mod types;
-
-use std::{
-    env::{self, VarError},
-    process::exit,
-};
-
-use db::utils::init_db;
-use warp::Filter;
-
-use crate::{db::pool::DBAccessor, types::ApiConfig};
+use crate::types::ApiConfig;
 
 mod auth;
 mod db;
@@ -19,7 +9,9 @@ mod issue;
 mod organization;
 mod repository;
 mod tip;
+mod types;
 mod user;
+mod utils;
 
 #[cfg(test)]
 mod tests;
@@ -36,32 +28,8 @@ async fn run() {
         database_url,
     } = ApiConfig::new();
 
-    // init db
-    let db = init_db(database_url).await.unwrap(); //If there's an error the api should panic
-                                                   // migration and exit
-    if let Ok(db_file) = env::var("DATABASE_INIT_FILE") {
-        // If present, run the migration and exit
-        match db.init_db(&db_file).await {
-            Ok(_) => exit(0),
-            Err(_) => exit(1),
-        }
-    }
-    let health_route = health::routes::routes(db.clone());
-    let users_route = user::routes::routes(db.clone());
-    let organizations_route = organization::routes::routes(db.clone());
-    let repositories_route = repository::routes::routes(db.clone());
-    let tips_route = tip::routes::routes(db);
-    //TODO: add issue route
-    let error_handler = handlers::error_handler;
-
-    // string all the routes together
-    let routes = health_route
-        .or(users_route)
-        .or(organizations_route)
-        .or(repositories_route)
-        .or(tips_route)
-        .with(warp::cors().allow_any_origin())
-        .recover(error_handler);
+    let db = utils::setup_db(&database_url).await;
+    let app_filters = utils::setup_filters(db);
 
     let addr = format!("{}:{}", host, port)
         .parse::<std::net::SocketAddr>()
@@ -69,5 +37,5 @@ async fn run() {
 
     println!("listening on {}", addr);
 
-    warp::serve(routes).run(addr).await;
+    warp::serve(app_filters).run(addr).await;
 }

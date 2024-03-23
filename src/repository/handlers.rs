@@ -9,11 +9,11 @@ use crate::organization::{db::DBOrganization, errors::OrganizationError};
 use super::{
     db::DBRepository,
     errors::RepositoryError,
-    models::{RepositoryRequest, RepositoryResponse},
+    models::{RepositoryCreateRequest, RepositoryResponse},
 };
 
 pub async fn create_repository_handler(
-    body: RepositoryRequest,
+    body: RepositoryCreateRequest,
     db_access: impl DBRepository + DBOrganization,
 ) -> Result<impl Reply, Rejection> {
     match db_access.get_organization(body.organization_id).await? {

@@ -20,7 +20,7 @@ async fn authorize(headers: HeaderMap<HeaderValue>) -> Result<(), Rejection> {
             let credentials: Vec<&str> = credentials_str.split(':').collect();
 
             if credentials.len() == 2 {
-                let expected_username = env::var("USERNAME")
+                let expected_username = env::var("PSEUDO")
                     .map_err(|_| reject::custom(AuthenticationError::WrongCredentialsError))?;
                 let expected_password = env::var("PASSWORD")
                     .map_err(|_| reject::custom(AuthenticationError::WrongCredentialsError))?;

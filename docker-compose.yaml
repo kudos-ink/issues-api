@@ -22,13 +22,26 @@ services:
       - kudos
     image: postgres:latest
     ports:
-      - "5432:5432"
+      - "${DB_PORT:-5432}:5432"
     environment:
-      POSTGRES_DB: database
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
+      POSTGRES_DB: ${POSTGRES_DB:-database}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
 #     volumes:
 #       - pgdata:/var/lib/postgresql/data
+
+  db-test:
+    networks:
+      - kudos
+    image: postgres:latest
+    ports:
+      - "${TEST_DB_PORT:-5433}:5432"
+    environment:
+      POSTGRES_DB: ${POSTGRES_TEST_DB:-database_test}
+      POSTGRES_USER: ${POSTGRES_TEST_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_TEST_PASSWORD:-password}
+    volumes:
+      - ./db.sql:/db.sql
 
 # volumes:
 #   pgdata:

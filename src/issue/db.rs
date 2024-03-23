@@ -1,5 +1,6 @@
 use mobc::async_trait;
 use mobc_postgres::tokio_postgres::Row;
+use postgres_types::ToSql;
 use warp::reject;
 
 use crate::db::{
@@ -10,8 +11,7 @@ use crate::db::{
     },
 };
 
-use super::models::{Issue, IssueCreate};
-use super::utils::parse_github_issue_url;
+use super::models::{Issue, IssueCreateRequest};
 
 const TABLE: &str = "issues";
 
@@ -20,7 +20,7 @@ pub trait DBIssue: Send + Sync + Clone + 'static {
     async fn get_issue(&self, id: i32) -> Result<Option<Issue>, reject::Rejection>;
     async fn get_issue_by_url(&self, url: &str) -> Result<Option<Issue>, reject::Rejection>;
     async fn get_issues(&self) -> Result<Vec<Issue>, reject::Rejection>;
-    async fn create_issue(&self, issue: IssueCreate) -> Result<Issue, reject::Rejection>;
+    async fn create_issue(&self, issue: IssueCreateRequest) -> Result<Issue, reject::Rejection>;
     async fn delete_issue(&self, id: i32) -> Result<(), reject::Rejection>;
 }
 
@@ -37,7 +37,7 @@ impl DBIssue for DBAccess {
     async fn get_issue_by_url(&self, url: &str) -> Result<Option<Issue>, reject::Rejection> {
         let query = format!("SELECT * FROM {} WHERE url = $1", TABLE);
         match query_opt_timeout(self, query.as_str(), &[&url], DB_QUERY_TIMEOUT).await? {
-            Some(user) => Ok(Some(row_to_issue(&user))),
+            Some(issue) => Ok(Some(row_to_issue(&issue))),
             None => Ok(None),
         }
     }
@@ -48,15 +48,20 @@ impl DBIssue for DBAccess {
         Ok(rows.iter().map(row_to_issue).collect())
     }
 
-    async fn create_issue(&self, issue: IssueCreate) -> Result<Issue, reject::Rejection> {
+    async fn create_issue(&self, issue: IssueCreateRequest) -> Result<Issue, reject::Rejection> {
         let query = format!(
             "INSERT INTO {} (issue_number, repository_id, url) VALUES ($1, $2, $3) RETURNING *",
             TABLE
         );
+        let repository_id: i32 = issue.repository_id.into();
         let row = query_one_timeout(
             self,
             &query,
-            &[&issue.id, &issue.repository_id, &issue.url],
+            &[
+                &issue.issue_number,
+                &repository_id,
+                &issue.url
+            ],
             DB_QUERY_TIMEOUT,
         )
         .await?;

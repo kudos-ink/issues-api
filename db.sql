@@ -33,6 +33,7 @@ CREATE TABLE IF NOT EXISTS issues (
     id SERIAL PRIMARY KEY,
     issue_number INT,
     repository_id INT REFERENCES repositories(id),
+    "url" VARCHAR(48),
     tip_id INT REFERENCES tips(id),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT (now() AT TIME ZONE 'utc')
 );

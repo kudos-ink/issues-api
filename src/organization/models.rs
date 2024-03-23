@@ -1,13 +1,18 @@
 use serde_derive::{Deserialize, Serialize};
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 pub struct Organization {
     pub id: i32,
     pub name: String,
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct OrganizationRequest {
+pub struct OrganizationQuery {
+	pub name: Option<String>,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct OrganizationCreateRequest {
     pub name: String,
 }
 

@@ -7,6 +7,7 @@ use crate::auth::with_auth;
 
 use super::db::DBOrganization;
 use super::handlers;
+use super::models::OrganizationQuery;
 
 fn with_db(
     db_pool: impl DBOrganization,
@@ -20,12 +21,12 @@ pub fn routes(db_access: impl DBOrganization) -> BoxedFilter<(impl Reply,)> {
 
     let get_organizations = organization
         .and(warp::get())
+        .and(warp::query::<OrganizationQuery>())
         .and(with_db(db_access.clone()))
         .and_then(handlers::get_organizations_handler);
 
     let get_organization = organization_id
         .and(warp::get())
-        // .and(warp::path::param())
         .and(with_db(db_access.clone()))
         .and_then(handlers::get_organization_handler);
 
