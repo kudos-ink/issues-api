@@ -1,9 +1,17 @@
 mod types;
 
+use std::process;
+
 use db::utils::init_db;
 use warp::Filter;
 
-use crate::types::ApiConfig;
+use crate::{
+    db::{
+        errors::DBError,
+        pool::{DBAccess, DBAccessor},
+    },
+    types::ApiConfig,
+};
 
 mod auth;
 mod db;
@@ -32,7 +40,19 @@ async fn run() {
     } = ApiConfig::new();
 
     // init db
-    let db = init_db(database_url, database_init_file).await.unwrap(); //If there's an error the api should panic
+    let db_pool = db::pool::create_pool(&database_url)
+        .map_err(DBError::DBPoolConnection)
+        .expect("Cannot create DB connection");
+    let db = DBAccess::new(db_pool);
+
+    // create db and exit
+    if database_init_file != "" {
+        db.init_db(&database_init_file)
+            .await
+            .expect("Cannot create DB scheme");
+        print!("DB schem created");
+        process::exit(0);
+    }
 
     let health_route = health::routes::routes(db.clone());
     let users_route = user::routes::routes(db.clone());

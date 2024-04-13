@@ -25,8 +25,7 @@ impl ApiConfig {
                 .parse()
                 .expect("Invalid HTTP_SERVER_PORT"),
             database_url: env::var("DATABASE_URL").expect("DATABASE_URL must be set"),
-            database_init_file: env::var("DATABASE_INIT_FILE")
-                .expect("DATABASE_INIT_FILE must be set"),
+            database_init_file: env::var("DATABASE_INIT_FILE").unwrap_or_else(|_| "".to_owned()),
         }
     }
 }
