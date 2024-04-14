@@ -14,6 +14,7 @@ use crate::handlers::ErrorResponse;
 pub enum UserError {
     UserExists(i32),
     UserNotFound(i32),
+    UserNotFoundByName(String),
 }
 
 impl fmt::Display for UserError {
@@ -24,6 +25,9 @@ impl fmt::Display for UserError {
             }
             UserError::UserNotFound(id) => {
                 write!(f, "User #{} not found", id)
+            }
+            UserError::UserNotFoundByName(name) => {
+                write!(f, "User {} not found", name)
             }
         }
     }
@@ -36,6 +40,7 @@ impl Reply for UserError {
         let code = match self {
             UserError::UserExists(_) => StatusCode::BAD_REQUEST,
             UserError::UserNotFound(_) => StatusCode::NOT_FOUND,
+            UserError::UserNotFoundByName(_) => StatusCode::NOT_FOUND,
         };
         let message = self.to_string();
 

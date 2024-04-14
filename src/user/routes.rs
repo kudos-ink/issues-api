@@ -8,7 +8,7 @@ use crate::auth::with_auth;
 
 use super::db::DBUser;
 use super::handlers;
-use super::models::GetUserQuery;
+use super::models::{GetUserQuery, GetUsersFilters};
 
 fn with_db(
     db_pool: impl DBUser,
@@ -19,10 +19,13 @@ fn with_db(
 pub fn routes(db_access: impl DBUser) -> BoxedFilter<(impl Reply,)> {
     let user = warp::path!("users");
     let user_id = warp::path!("users" / i32);
+    let user_name = warp::path!("users" / String);
 
     let get_users = user
         .and(warp::get())
         .and(with_db(db_access.clone()))
+        .and(warp::query::<GetUserQuery>())
+        .and(warp::query::<GetUsersFilters>())
         .and_then(handlers::get_users_handler);
 
     let get_user = user_id
@@ -31,20 +34,30 @@ pub fn routes(db_access: impl DBUser) -> BoxedFilter<(impl Reply,)> {
         .and(warp::query::<GetUserQuery>())
         .and_then(handlers::get_user_handler);
 
+    let get_user_by_name = user_name
+        .and(warp::get())
+        .and(with_db(db_access.clone()))
+        .and(warp::query::<GetUserQuery>())
+        .and_then(handlers::get_user_by_name_handler);
+    // TODO: add maintainers
     let create_user = user
         .and(with_auth())
         .and(warp::post())
         .and(warp::body::json())
         .and(with_db(db_access.clone()))
         .and_then(handlers::create_user_handler);
-
+    // TODO: add PATCH maintainers
     let delete_user = user_id
         .and(with_auth())
         .and(warp::delete())
         .and(with_db(db_access.clone()))
         .and_then(handlers::delete_user_handler);
 
-    let route = get_users.or(create_user).or(get_user).or(delete_user);
+    let route = get_users
+        .or(create_user)
+        .or(get_user)
+        .or(delete_user)
+        .or(get_user_by_name);
 
     route.boxed()
 }

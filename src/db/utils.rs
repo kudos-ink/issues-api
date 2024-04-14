@@ -15,7 +15,13 @@ pub async fn query_with_timeout(
     timeout_duration: Duration,
 ) -> Result<Vec<Row>, reject::Rejection> {
     let db_conn = db_access.get_db_con().await.map_err(reject::custom)?;
-
+    println!("{}", query);
+    println!("{:#?}", params);
+    let r = db_conn.query(query, params).await;
+    if r.is_err() {
+        let a = r.err().unwrap();
+        println!("{}", a);
+    }
     timeout(timeout_duration, db_conn.query(query, params))
         .await
         .map_err(|err| reject::custom(DBError::DBTimeout(err)))?
