@@ -1,5 +1,6 @@
 use std::convert::Infallible;
 
+use serde::{Deserialize, Serialize};
 use warp::filters::BoxedFilter;
 use warp::{Filter, Reply};
 
@@ -7,6 +8,7 @@ use crate::auth::with_auth;
 
 use super::db::DBUser;
 use super::handlers;
+use super::models::GetUserQuery;
 
 fn with_db(
     db_pool: impl DBUser,
@@ -26,6 +28,7 @@ pub fn routes(db_access: impl DBUser) -> BoxedFilter<(impl Reply,)> {
     let get_user = user_id
         .and(warp::get())
         .and(with_db(db_access.clone()))
+        .and(warp::query::<GetUserQuery>())
         .and_then(handlers::get_user_handler);
 
     let create_user = user
@@ -41,7 +44,7 @@ pub fn routes(db_access: impl DBUser) -> BoxedFilter<(impl Reply,)> {
         .and(with_db(db_access.clone()))
         .and_then(handlers::delete_user_handler);
 
-    let route = get_users.or(get_user).or(create_user).or(delete_user);
+    let route = get_users.or(create_user).or(get_user).or(delete_user);
 
     route.boxed()
 }

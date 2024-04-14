@@ -2,8 +2,8 @@ DATABASE_URL=postgres://postgres:password@localhost:5432/database
 DATABASE_INIT_FILE=db.sql
 HTTP_SERVER_HOST=0.0.0.0
 HTTP_SERVER_PORT=8000
-USERNAME=
-PASSWORD=
+USERNAME=test
+PASSWORD=test
 DOCKER_DB_CONTAINER_NAME:=db
 DOCKER_COMPOSE:=docker-compose
 DOCKER_COMPOSE_FILE:=docker-compose.yaml
@@ -30,9 +30,9 @@ db-up:
 db-down:
 	$(DOCKER_COMPOSE) -f $(DOCKER_COMPOSE_FILE) down $(DOCKER_DB_CONTAINER_NAME)
 
-.PHONY: db-init
-db-init:
-	USERNAME="$(USERNAME)" PASSWORD="$(PASSWORD)" DATABASE_URL="$(DATABASE_URL)" DATABASE_INIT_FILE="$(DATABASE_INIT_FILE)" cargo run
+.PHONY: db-migrate
+db-migrate:
+	DATABASE_URL="$(DATABASE_URL)" diesel migration run
 
 # Clean up the Docker volume
 .PHONY: db-clean

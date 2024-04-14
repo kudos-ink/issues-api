@@ -45,15 +45,6 @@ async fn run() {
         .expect("Cannot create DB connection");
     let db = DBAccess::new(db_pool);
 
-    // create db and exit
-    if database_init_file != "" {
-        db.init_db(&database_init_file)
-            .await
-            .expect("Cannot create DB scheme");
-        print!("DB schem created");
-        process::exit(0);
-    }
-
     let health_route = health::routes::routes(db.clone());
     let users_route = user::routes::routes(db.clone());
     let organizations_route = organization::routes::routes(db.clone());
