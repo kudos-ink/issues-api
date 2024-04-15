@@ -9,7 +9,7 @@ use crate::{organization::db::DBOrganization, repository::db::DBRepository};
 use super::{
     db::DBIssue,
     errors::IssueError,
-    models::{IssueCreateRequest, IssueGetRequest, IssueResponse},
+    models::{IssueCreateRequest, IssueResponse},
     utils::parse_github_issue_url,
 };
 
@@ -20,7 +20,7 @@ pub async fn create_issue_handler(
     match db_access.get_issue_by_url(&body.url).await? {
         Some(u) => Err(warp::reject::custom(IssueError::IssueExists(u.id)))?,
         None => {
-            let info = parse_github_issue_url(&body.url)?;
+            _ = parse_github_issue_url(&body.url)?;
             // TODO: get or create both
             // db_access.create_organization(info.organization);
             // db_access.create_repository(info.repository);

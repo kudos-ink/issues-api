@@ -1,8 +1,5 @@
 mod types;
 
-use std::process;
-
-use db::utils::init_db;
 use warp::Filter;
 
 use crate::{
@@ -18,6 +15,7 @@ mod db;
 mod error;
 mod handlers;
 mod health;
+mod http;
 mod issue;
 mod organization;
 mod repository;

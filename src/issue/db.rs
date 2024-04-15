@@ -11,7 +11,6 @@ use crate::db::{
 };
 
 use super::models::{Issue, IssueCreate};
-use super::utils::parse_github_issue_url;
 
 const TABLE: &str = "issues";
 

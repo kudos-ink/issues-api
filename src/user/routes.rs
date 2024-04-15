@@ -1,14 +1,14 @@
 use std::convert::Infallible;
 
-use serde::{Deserialize, Serialize};
 use warp::filters::BoxedFilter;
 use warp::{Filter, Reply};
 
 use crate::auth::with_auth;
+use crate::http::{GetPagination, GetSort};
 
 use super::db::DBUser;
 use super::handlers;
-use super::models::{GetUserQuery, GetUsersFilters};
+use super::models::GetUserQuery;
 
 fn with_db(
     db_pool: impl DBUser,
@@ -25,7 +25,8 @@ pub fn routes(db_access: impl DBUser) -> BoxedFilter<(impl Reply,)> {
         .and(warp::get())
         .and(with_db(db_access.clone()))
         .and(warp::query::<GetUserQuery>())
-        .and(warp::query::<GetUsersFilters>())
+        .and(warp::query::<GetPagination>())
+        .and(warp::query::<GetSort>())
         .and_then(handlers::get_users_handler);
 
     let get_user = user_id

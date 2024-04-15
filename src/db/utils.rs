@@ -1,7 +1,4 @@
-use super::{
-    errors::DBError,
-    pool::{self, DBAccess, DBAccessor},
-};
+use super::{errors::DBError, pool::DBAccessor};
 use mobc_postgres::tokio_postgres::{types::ToSql, Row};
 use tokio::time::{timeout, Duration};
 use warp::reject;
@@ -69,15 +66,4 @@ pub async fn query_one_timeout(
         .await
         .map_err(|err| reject::custom(DBError::DBTimeout(err)))?
         .map_err(|err| reject::custom(DBError::DBQuery(err)))
-}
-
-pub async fn init_db(
-    database_url: String,
-    database_init_file: String,
-) -> Result<DBAccess, DBError> {
-    let db_pool = pool::create_pool(&database_url).map_err(DBError::DBPoolConnection)?;
-    let db = DBAccess::new(db_pool);
-    // TODO: use migrations
-    db.init_db(&database_init_file).await?;
-    Ok(db)
 }

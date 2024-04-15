@@ -4,10 +4,12 @@ use warp::{
     reply::{json, Reply},
 };
 
+use crate::http::{GetPagination, GetSort};
+
 use super::{
     db::DBUser,
     errors::UserError,
-    models::{GetUserQuery, GetUsersFilters, NewUser, UserResponse, UsersFilters, UsersRelations},
+    models::{GetUserQuery, NewUser, UserResponse, UserSort, UsersRelations},
 };
 
 pub async fn create_user_handler(
@@ -62,7 +64,8 @@ pub async fn get_user_by_name_handler(
 pub async fn get_users_handler(
     db_access: impl DBUser,
     query: GetUserQuery,
-    filters: GetUsersFilters,
+    filters: GetPagination,
+    sort: GetSort,
 ) -> Result<impl Reply, Rejection> {
     let relations = UsersRelations {
         wishes: query.wishes.unwrap_or_default(),
@@ -71,23 +74,20 @@ pub async fn get_users_handler(
         issues: query.issues.unwrap_or_default(),
     };
     // TODO: validate filters (sort)
-    let default_filters = filters.apply_defaults();
-    // TODO: create generic Pagination
-    // TODO: Improve asc/desc
-    let asc = {
-        if default_filters.ascending.unwrap() {
-            "ASC"
-        } else {
-            "DESC"
-        }
+    let pagination = filters.validate()?;
+
+    let valid_fields = vec!["id", "username"]; //TODO improve with enum
+    let sort = sort.validate(valid_fields)?;
+
+    let user_sort = if sort.sort_by.is_some() {
+        UserSort::new(&sort.sort_by.unwrap(), sort.descending.unwrap())
+    } else {
+        UserSort::default()
     };
-    let filters = UsersFilters {
-        limit: default_filters.limit.unwrap(),
-        offset: default_filters.offset.unwrap(),
-        sort: default_filters.sort.unwrap().to_string().into(),
-        ascending: asc.to_string(),
-    };
-    let users = db_access.get_users(relations, filters).await?;
+
+    let users = db_access
+        .get_users(relations, pagination, user_sort)
+        .await?;
     Ok(json::<Vec<_>>(
         &users.into_iter().map(UserResponse::of).collect(),
     ))

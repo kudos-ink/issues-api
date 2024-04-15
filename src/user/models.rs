@@ -1,5 +1,4 @@
-use std::default;
-
+use mobc_postgres::tokio_postgres::Error;
 use serde_derive::{Deserialize, Serialize};
 
 #[derive(Deserialize)]
@@ -28,45 +27,12 @@ impl UserResponse {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Clone)]
-pub enum UserSort {
-    #[default]
-    ById,
-    ByUsername,
-    ByCreatedAt,
-}
-
-impl UserSort {
-    pub fn to_string(&self) -> &str {
-        match self {
-            UserSort::ById => "id",
-            UserSort::ByUsername => "username",
-            UserSort::ByCreatedAt => "created_at",
-        }
-    }
-}
-impl Default for GetUsersFilters {
-    fn default() -> Self {
-        GetUsersFilters {
-            limit: Some(1000),
-            offset: Some(0),
-            sort: Some("users.id".to_string()),
-            ascending: Some(true),
-        }
-    }
-}
 #[derive(Default)]
 pub struct UsersRelations {
     pub wishes: bool,
     pub tips: bool,
     pub maintainers: bool,
     pub issues: bool,
-}
-pub struct UsersFilters {
-    pub limit: i64,
-    pub offset: i64,
-    pub sort: String,
-    pub ascending: String,
 }
 // query args
 
@@ -76,38 +42,49 @@ pub struct GetUserQuery {
     pub tips: Option<bool>,
     pub maintainers: Option<bool>,
     pub issues: Option<bool>,
+    // TODO: add filters
+    // pub is_maintainer: Option<bool>,
+    // pub has_tips: Option<bool>,
+    // pub has_issues: Option<bool>,
+    // pub has_wishes: Option<bool>,
+    // pub has_wishes: Option<bool>,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
-pub struct GetUsersFilters {
-    pub limit: Option<i64>,
-    pub offset: Option<i64>,
-    pub sort: Option<String>,
-    pub ascending: Option<bool>,
+#[derive(Serialize, Deserialize)]
+pub struct UserSort {
+    pub field: String,
+    pub order: String,
+    // TODO: add filters
+    // pub is_maintainer: Option<bool>,
+    // pub has_tips: Option<bool>,
+    // pub has_issues: Option<bool>,
+    // pub has_wishes: Option<bool>,
+    // pub has_wishes: Option<bool>,
 }
+impl UserSort {
+    pub fn new(sort_by: &str, descending: bool) -> Self {
+        //TODO: validation may happen here, analyze
 
-impl GetUsersFilters {
-    // A method to create an instance of GetUsersFilters with default values
-    pub fn new() -> Self {
-        GetUsersFilters::default()
+        Self {
+            field: sort_by.to_string(),
+            order: {
+                if descending {
+                    "DESC".to_string()
+                } else {
+                    "ASC".to_string()
+                }
+            },
+        }
     }
+}
 
-    // A method to set default values for individual fields if they are None
-    pub fn apply_defaults(&self) -> Self {
-        let mut filters = self.clone();
-        let default = Self::default();
-        if self.limit.is_none() {
-            filters.limit = default.limit;
+impl Default for UserSort {
+    fn default() -> Self {
+        UserSort {
+            field: "users.id".to_string(),
+            order: "ASC".to_string(),
+            // sort: Some("users.id".to_string()),
+            // ascending: Some(true),
         }
-        if self.offset.is_none() {
-            filters.offset = default.offset;
-        }
-        if self.sort.is_none() {
-            filters.sort = default.sort;
-        }
-        if self.ascending.is_none() {
-            filters.ascending = default.ascending;
-        }
-        filters
     }
 }

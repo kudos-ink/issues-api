@@ -2,15 +2,18 @@ use mobc::async_trait;
 use mobc_postgres::tokio_postgres::Row;
 use warp::reject;
 
-use crate::db::{
-    pool::DBAccess,
-    utils::{
-        execute_query_with_timeout, query_one_timeout, query_opt_timeout, query_with_timeout,
-        DB_QUERY_TIMEOUT,
+use crate::{
+    db::{
+        pool::DBAccess,
+        utils::{
+            execute_query_with_timeout, query_one_timeout, query_opt_timeout, query_with_timeout,
+            DB_QUERY_TIMEOUT,
+        },
     },
+    http::GetPagination,
 };
 
-use super::models::{GetUsersFilters, NewUser, User, UsersFilters, UsersRelations};
+use super::models::{NewUser, User, UserSort, UsersRelations};
 
 const TABLE: &str = "users";
 
@@ -29,7 +32,8 @@ pub trait DBUser: Send + Sync + Clone + 'static {
     async fn get_users(
         &self,
         relations: UsersRelations,
-        filters: UsersFilters,
+        pagination: GetPagination,
+        sort: UserSort,
     ) -> Result<Vec<User>, reject::Rejection>;
     async fn create_user(&self, user: NewUser) -> Result<User, reject::Rejection>;
     async fn delete_user(&self, id: i32) -> Result<(), reject::Rejection>;
@@ -94,7 +98,8 @@ impl DBUser for DBAccess {
     async fn get_users(
         &self,
         relations: UsersRelations,
-        filters: UsersFilters,
+        pagination: GetPagination,
+        sort: UserSort,
     ) -> Result<Vec<User>, reject::Rejection> {
         let mut query = format!("SELECT * FROM {} ", TABLE);
         if relations.maintainers {
@@ -111,18 +116,14 @@ impl DBUser for DBAccess {
             query += "LEFT JOIN comments on comments.user_id = users.id ";
             query += "LEFT JOIN wishes on wishes.id = comments.wish_id ";
         }
-        // TODO: fix: ASC
-        query += "ORDER BY $1 ASC ";
-        query += "LIMIT $2 OFFSET $3";
+
+        query += &format!("ORDER BY {} {} ", sort.field, sort.order); // cannot use $1 or $2 here
+
+        query += "LIMIT $1 OFFSET $2";
         let rows = query_with_timeout(
             self,
             query.as_str(),
-            &[
-                &filters.sort,
-                // &filters.ascending,
-                &filters.limit,
-                &filters.offset,
-            ],
+            &[&pagination.limit, &pagination.offset],
             DB_QUERY_TIMEOUT,
         )
         .await?;
