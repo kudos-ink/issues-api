@@ -1,5 +1,14 @@
-use mobc_postgres::tokio_postgres::Error;
+use std::fmt::{self};
+
 use serde_derive::{Deserialize, Serialize};
+use thiserror::Error;
+use warp::{
+    http::StatusCode,
+    reject::Reject,
+    reply::{Reply, Response},
+};
+
+use crate::handlers::ErrorResponse;
 
 #[derive(Deserialize)]
 pub struct User {
@@ -54,19 +63,15 @@ pub struct GetUserQuery {
 pub struct UserSort {
     pub field: String,
     pub order: String,
-    // TODO: add filters
-    // pub is_maintainer: Option<bool>,
-    // pub has_tips: Option<bool>,
-    // pub has_issues: Option<bool>,
-    // pub has_wishes: Option<bool>,
-    // pub has_wishes: Option<bool>,
 }
 impl UserSort {
-    pub fn new(sort_by: &str, descending: bool) -> Self {
-        //TODO: validation may happen here, analyze
+    pub fn new(field: &str, descending: bool) -> Result<Self, UserSortError> {
+        if field != "id" && field != "username" {
+            return Err(UserSortError::InvalidSortBy(field.to_owned()));
+        }
 
-        Self {
-            field: sort_by.to_string(),
+        Ok(Self {
+            field: format!("users.{field}"),
             order: {
                 if descending {
                     "DESC".to_string()
@@ -74,7 +79,7 @@ impl UserSort {
                     "ASC".to_string()
                 }
             },
-        }
+        })
     }
 }
 
@@ -83,8 +88,37 @@ impl Default for UserSort {
         UserSort {
             field: "users.id".to_string(),
             order: "ASC".to_string(),
-            // sort: Some("users.id".to_string()),
-            // ascending: Some(true),
         }
+    }
+}
+
+#[derive(Clone, Error, Debug, Deserialize, PartialEq)]
+pub enum UserSortError {
+    InvalidSortBy(String),
+}
+
+impl fmt::Display for UserSortError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            UserSortError::InvalidSortBy(field) => {
+                write!(f, "Sort by {} is invalid", field)
+            }
+        }
+    }
+}
+
+impl Reject for UserSortError {}
+
+impl Reply for UserSortError {
+    fn into_response(self) -> Response {
+        let status_code = match self {
+            UserSortError::InvalidSortBy(_) => StatusCode::BAD_REQUEST,
+        };
+        let code = status_code;
+        let message = self.to_string();
+
+        let json = warp::reply::json(&ErrorResponse { message });
+
+        warp::reply::with_status(json, code).into_response()
     }
 }

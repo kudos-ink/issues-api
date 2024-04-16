@@ -75,15 +75,12 @@ pub async fn get_users_handler(
     };
     // TODO: validate filters (sort)
     let pagination = filters.validate()?;
-
-    let valid_fields = vec!["id", "username"]; //TODO improve with enum
-    let sort = sort.validate(valid_fields)?;
-
-    let user_sort = if sort.sort_by.is_some() {
-        UserSort::new(&sort.sort_by.unwrap(), sort.descending.unwrap())
-    } else {
-        UserSort::default()
+    let sort = sort.validate()?;
+    let user_sort = match (sort.sort_by, sort.descending) {
+        (Some(sort_by), Some(descending)) => UserSort::new(&sort_by, descending)?,
+        _ => UserSort::default(),
     };
+    println!("here");
 
     let users = db_access
         .get_users(relations, pagination, user_sort)

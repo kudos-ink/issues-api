@@ -34,7 +34,6 @@ async fn run() {
         http_server_host: host,
         http_server_port: port,
         database_url,
-        database_init_file,
     } = ApiConfig::new();
 
     // init db

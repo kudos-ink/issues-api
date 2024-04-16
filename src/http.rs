@@ -19,11 +19,6 @@ pub struct GetPagination {
 }
 
 impl GetPagination {
-    // A method to create an instance of GetPagination with default values
-    pub fn new() -> Self {
-        GetPagination::default()
-    }
-
     // A method to set default values for individual fields if they are None
     pub fn validate(&self) -> Result<Self, PaginationError> {
         let mut filters = self.clone();
@@ -109,27 +104,30 @@ pub struct GetSort {
 
 #[derive(Clone, Error, Debug, Deserialize, PartialEq)]
 pub enum SortError {
-    InvalidSortBy(String),
+    InvalidSortBy,
 }
 
 impl GetSort {
-    pub fn validate(&self, valid_fields: Vec<&str>) -> Result<Self, SortError> {
+    pub fn validate(&self) -> Result<Self, SortError> {
         match (self.sort_by.clone(), self.descending) {
             (None, None) => Ok(self.clone()),
             (None, Some(_)) => Ok(Self {
                 sort_by: None,
                 descending: None,
             }),
-            (Some(_), None) => Ok(Self {
-                sort_by: None,
-                descending: Some(false),
-            }),
-            (Some(sort_by), Some(_)) => {
+            (Some(sort_by), some_or_none) => {
                 //TODO: improve with trim, remove unexpected chars, etc.
-                if valid_fields.iter().any(|&s| s == sort_by) {
-                    Ok(self.clone())
+                if sort_by.contains(",") {
+                    Err(SortError::InvalidSortBy)
                 } else {
-                    Err(SortError::InvalidSortBy(sort_by))
+                    Ok(Self {
+                        sort_by: Some(sort_by),
+                        descending: if some_or_none.is_none() {
+                            Some(false)
+                        } else {
+                            some_or_none
+                        },
+                    })
                 }
             }
         }
@@ -139,8 +137,8 @@ impl GetSort {
 impl fmt::Display for SortError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            SortError::InvalidSortBy(field) => {
-                write!(f, "Sort by {} is invalid", field)
+            SortError::InvalidSortBy => {
+                write!(f, "Sort by is invalid")
             }
         }
     }
@@ -151,7 +149,7 @@ impl Reject for SortError {}
 impl Reply for SortError {
     fn into_response(self) -> Response {
         let code = match self {
-            SortError::InvalidSortBy(_) => StatusCode::BAD_REQUEST,
+            SortError::InvalidSortBy => StatusCode::BAD_REQUEST,
         };
         let message = self.to_string();
 
