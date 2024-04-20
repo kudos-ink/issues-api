@@ -1,7 +1,3 @@
-use mobc::async_trait;
-use mobc_postgres::tokio_postgres::Row;
-use warp::reject;
-
 use crate::{
     db::{
         pool::DBAccess,
@@ -12,8 +8,11 @@ use crate::{
     },
     http::GetPagination,
 };
+use mobc::async_trait;
+use mobc_postgres::tokio_postgres::Row;
+use warp::reject;
 
-use super::models::{NewUser, User, UserSort, UsersRelations};
+use super::models::{NewUser, PatchUser, User, UserSort, UsersRelations};
 
 const TABLE: &str = "users";
 
@@ -36,6 +35,11 @@ pub trait DBUser: Send + Sync + Clone + 'static {
         sort: UserSort,
     ) -> Result<Vec<User>, reject::Rejection>;
     async fn create_user(&self, user: NewUser) -> Result<User, reject::Rejection>;
+    async fn update_user_maintainers(
+        &self,
+        id: i32,
+        user: PatchUser,
+    ) -> Result<User, reject::Rejection>;
     async fn delete_user(&self, id: i32) -> Result<(), reject::Rejection>;
 }
 
@@ -117,7 +121,7 @@ impl DBUser for DBAccess {
             query += "LEFT JOIN wishes on wishes.id = comments.wish_id ";
         }
 
-        query += &format!("ORDER BY {} {} ", sort.field, sort.order); // cannot use $1 or $2 here
+        query += &format!("ORDER BY {} {}", sort.field, sort.order); // cannot use $1 or $2
 
         query += "LIMIT $1 OFFSET $2";
         let rows = query_with_timeout(
@@ -133,6 +137,30 @@ impl DBUser for DBAccess {
     async fn create_user(&self, user: NewUser) -> Result<User, reject::Rejection> {
         let query = format!("INSERT INTO {} (username) VALUES ($1) RETURNING *", TABLE);
         let row = query_one_timeout(self, &query, &[&user.username], DB_QUERY_TIMEOUT).await?;
+        let new_user = row_to_user(&row);
+
+        if let Some(repositories) = user.repositories {
+            for repo_id in repositories {
+                let query =
+                    format!("INSERT INTO maintainers (user_id, repository_id) VALUES ($1, $2)");
+                query_one_timeout(self, &query, &[&new_user.id, &repo_id], DB_QUERY_TIMEOUT)
+                    .await?;
+            }
+        }
+        Ok(new_user)
+    }
+    async fn update_user_maintainers(
+        &self,
+        id: i32,
+        user: PatchUser,
+    ) -> Result<User, reject::Rejection> {
+        let query = format!("DELETE maintainers WHERE user_ID = $1");
+        let row = query_one_timeout(self, &query, &[&id], DB_QUERY_TIMEOUT).await?;
+        for repo_id in user.repositories {
+            let query = format!("INSERT INTO maintainers (user_id, repository_id) VALUES ($1, $2)");
+            query_one_timeout(self, &query, &[&id, &repo_id], DB_QUERY_TIMEOUT).await?;
+        }
+        // TODO: make a db tx
         Ok(row_to_user(&row))
     }
 

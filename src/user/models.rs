@@ -14,11 +14,17 @@ use crate::handlers::ErrorResponse;
 pub struct User {
     pub id: i32,
     pub username: String,
+    // pub maintainers: Option<Vec<String>>,
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct NewUser {
     pub username: String,
+    pub repositories: Option<Vec<i32>>,
+}
+#[derive(Serialize, Deserialize)]
+pub struct PatchUser {
+    pub repositories: Vec<i32>,
 }
 
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
@@ -86,7 +92,7 @@ impl UserSort {
 impl Default for UserSort {
     fn default() -> Self {
         UserSort {
-            field: "users.id".to_string(),
+            field: "id".to_string(),
             order: "ASC".to_string(),
         }
     }

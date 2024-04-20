@@ -19,3 +19,4 @@ serde_derive = "1.0.193"
 base64 = "0.22.0"
 url = "2.5.0"
 diesel = { version = "2.1.5", features = ["postgres"] }
+regex = "1.10.4"

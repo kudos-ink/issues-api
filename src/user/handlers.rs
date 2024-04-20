@@ -4,24 +4,52 @@ use warp::{
     reply::{json, Reply},
 };
 
-use crate::http::{GetPagination, GetSort};
+use crate::{
+    http::{GetPagination, GetSort},
+    repository::{db::DBRepository, errors::RepositoryError},
+};
 
 use super::{
     db::DBUser,
     errors::UserError,
-    models::{GetUserQuery, NewUser, UserResponse, UserSort, UsersRelations},
+    models::{GetUserQuery, NewUser, PatchUser, UserResponse, UserSort, UsersRelations},
 };
 
 pub async fn create_user_handler(
     body: NewUser,
-    db_access: impl DBUser,
+    db_access: impl DBUser + DBRepository,
 ) -> Result<impl Reply, Rejection> {
     match db_access
         .get_user_by_username(&body.username, UsersRelations::default())
         .await?
     {
         Some(u) => Err(warp::reject::custom(UserError::UserExists(u.id)))?,
-        None => Ok(json(&UserResponse::of(db_access.create_user(body).await?))),
+        None => {
+            if let Some(repositories) = body.repositories.clone() {
+                for repo_id in repositories {
+                    let result = db_access.get_repository(repo_id).await?;
+                    if result.is_none() {
+                        // TODO: improve
+                        return Err(warp::reject::custom(RepositoryError::RepositoryNotFound(
+                            repo_id,
+                        )));
+                    }
+                }
+            }
+            Ok(json(&UserResponse::of(db_access.create_user(body).await?)))
+        }
+    }
+}
+pub async fn patch_user_handler(
+    id: i32,
+    body: PatchUser,
+    db_access: impl DBUser,
+) -> Result<impl Reply, Rejection> {
+    match db_access.get_user(id, UsersRelations::default()).await? {
+        Some(u) => Err(warp::reject::custom(UserError::UserExists(u.id)))?,
+        None => Ok(json(&UserResponse::of(
+            db_access.update_user_maintainers(id, body).await?,
+        ))),
     }
 }
 
@@ -73,14 +101,12 @@ pub async fn get_users_handler(
         maintainers: query.maintainers.unwrap_or_default(),
         issues: query.issues.unwrap_or_default(),
     };
-    // TODO: validate filters (sort)
     let pagination = filters.validate()?;
     let sort = sort.validate()?;
     let user_sort = match (sort.sort_by, sort.descending) {
         (Some(sort_by), Some(descending)) => UserSort::new(&sort_by, descending)?,
         _ => UserSort::default(),
     };
-    println!("here");
 
     let users = db_access
         .get_users(relations, pagination, user_sort)

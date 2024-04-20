@@ -1,14 +1,14 @@
 use std::fmt;
 
+use super::db::utils::detect_sql_injection;
+use crate::handlers::ErrorResponse;
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use warp::{
     http::StatusCode,
     reject::Reject,
     reply::{Reply, Response},
 };
-
-use crate::handlers::ErrorResponse;
-use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct GetPagination {
@@ -117,7 +117,7 @@ impl GetSort {
             }),
             (Some(sort_by), some_or_none) => {
                 //TODO: improve with trim, remove unexpected chars, etc.
-                if sort_by.contains(",") {
+                if detect_sql_injection(&sort_by) {
                     Err(SortError::InvalidSortBy)
                 } else {
                     Ok(Self {
