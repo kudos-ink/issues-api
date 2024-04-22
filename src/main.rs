@@ -1,16 +1,23 @@
 mod types;
 
-use db::utils::init_db;
 use warp::Filter;
 
-use crate::types::ApiConfig;
+use crate::{
+    db::{
+        errors::DBError,
+        pool::{DBAccess, DBAccessor},
+    },
+    types::ApiConfig,
+};
 
 mod auth;
+mod auth_error;
 mod db;
-mod error;
-mod handlers;
+mod error_handler;
 mod health;
+mod issue;
 mod organization;
+mod pagination;
 mod repository;
 mod user;
 
@@ -27,17 +34,20 @@ async fn run() {
         http_server_host: host,
         http_server_port: port,
         database_url,
-        database_init_file,
     } = ApiConfig::new();
 
     // init db
-    let db = init_db(database_url, database_init_file).await.unwrap(); //If there's an error the api should panic
+    let db_pool = db::pool::create_pool(&database_url)
+        .map_err(DBError::DBPoolConnection)
+        .expect("Cannot create DB connection");
+    let db = DBAccess::new(db_pool);
 
     let health_route = health::routes::routes(db.clone());
     let users_route = user::routes::routes(db.clone());
     let organizations_route = organization::routes::routes(db.clone());
     let repositories_route = repository::routes::routes(db);
-    let error_handler = handlers::error_handler;
+    //TODO: add issue route
+    let error_handler = error_handler::error_handler;
 
     // string all the routes together
     let routes = health_route

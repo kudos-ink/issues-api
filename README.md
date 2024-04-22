@@ -10,17 +10,17 @@ This Dockerfile requires BuildKit and buildx. BuildKit is an improved backend to
 
 Enable it by setting:
 
-```export DOCKER_BUILDKIT=1 ```
+`export DOCKER_BUILDKIT=1 `
 
 ### Build
 
 To build the image, use:
 
-```docker build . -t kudos-api```
+`docker build . -t kudos-api`
 
 ### Run
 
-```docker run -e DATABASE_URL=... -e HTTP_SERVER_HOST=... -e HTTP_SERVER_PORT=... kudos-api```
+`docker run -e DATABASE_URL=... -e HTTP_SERVER_HOST=... -e HTTP_SERVER_PORT=... kudos-api`
 
 ### Docker-compose
 
@@ -28,11 +28,11 @@ To build the image, use:
 
 It builds the image if it's the first time, otherwise, it uses the latest built image.
 
-```docker-compose up```
+`docker-compose up`
 
 ### Build and run
 
-```docker-compose up --build```
+`docker-compose up --build`
 
 ## Test
 
@@ -40,14 +40,13 @@ It builds the image if it's the first time, otherwise, it uses the latest built 
 
 Run the command:
 
-```make test```
+`make test`
 
 ### DB tests
 
-These tests needs a real postgres DB running. You can start a new one using ```docker-compose up db``` and then running the tests:
+These tests needs a real postgres DB running. You can start a new one using `docker-compose up db` and then running the tests:
 
-
-```make test-db```
+`make test-db`
 
 Note: the tests will delete some tables before running. Use a dummy DB!
 

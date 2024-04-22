@@ -8,22 +8,34 @@ use warp::{
     reply::{Reply, Response},
 };
 
-use crate::handlers::ErrorResponse;
+use crate::error_handler::ErrorResponse;
 
 #[derive(Clone, Error, Debug, Deserialize, PartialEq)]
 pub enum UserError {
-    UserExists(i32),
-    UserNotFound(i32),
+    AlreadyExists(i32),
+    NotFound(i32),
+    NotFoundByName(String),
+    CannotBeCreated(String),
+    CannotBeUpdated(i32, String),
 }
 
 impl fmt::Display for UserError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            UserError::UserExists(id) => {
-                write!(f, "User #{} already exists", id)
+            UserError::AlreadyExists(id) => {
+                write!(f, "User #{id} already exists")
             }
-            UserError::UserNotFound(id) => {
-                write!(f, "User #{} not found", id)
+            UserError::NotFound(id) => {
+                write!(f, "User #{id} not found")
+            }
+            UserError::NotFoundByName(name) => {
+                write!(f, "User {name} not found")
+            }
+            UserError::CannotBeCreated(error) => {
+                write!(f, "User cannot be created: {error}")
+            }
+            UserError::CannotBeUpdated(id, error) => {
+                write!(f, "User #{id} cannot be updated: {error}")
             }
         }
     }
@@ -34,8 +46,11 @@ impl Reject for UserError {}
 impl Reply for UserError {
     fn into_response(self) -> Response {
         let code = match self {
-            UserError::UserExists(_) => StatusCode::BAD_REQUEST,
-            UserError::UserNotFound(_) => StatusCode::NOT_FOUND,
+            UserError::AlreadyExists(_) => StatusCode::BAD_REQUEST,
+            UserError::NotFound(_) => StatusCode::NOT_FOUND,
+            UserError::NotFoundByName(_) => StatusCode::NOT_FOUND,
+            UserError::CannotBeCreated(_) => StatusCode::UNPROCESSABLE_ENTITY,
+            UserError::CannotBeUpdated(_, _) => StatusCode::UNPROCESSABLE_ENTITY,
         };
         let message = self.to_string();
 
