@@ -3,27 +3,27 @@ use std::fmt;
 use thiserror::Error;
 use warp::{http::StatusCode, reject::Reject, reply::Response, Reply};
 
-use crate::handlers::ErrorResponse;
+use crate::error_handler::ErrorResponse;
 
 #[derive(Clone, Error, Debug, Deserialize, PartialEq)]
 pub enum AuthenticationError {
-    WrongCredentialsError,
-    BasicTokenError,
-    NoAuthHeaderError,
-    InvalidAuthHeaderError,
+    WrongCredentials,
+    BasicToken,
+    NoAuthHeader,
+    InvalidAuthHeader,
 }
 
 impl fmt::Display for AuthenticationError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            AuthenticationError::WrongCredentialsError => {
+            AuthenticationError::WrongCredentials => {
                 write!(f, "Wrong credentials")
             }
-            AuthenticationError::BasicTokenError => {
+            AuthenticationError::BasicToken => {
                 write!(f, "Basic Token Error")
             }
-            AuthenticationError::NoAuthHeaderError => write!(f, "No Authorization Header"),
-            AuthenticationError::InvalidAuthHeaderError => {
+            AuthenticationError::NoAuthHeader => write!(f, "No Authorization Header"),
+            AuthenticationError::InvalidAuthHeader => {
                 write!(f, "Invalid Authorization Header")
             }
         }

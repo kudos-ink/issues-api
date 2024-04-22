@@ -4,7 +4,7 @@ use warp::filters::BoxedFilter;
 use warp::{Filter, Reply};
 
 use crate::auth::with_auth;
-use crate::http::{GetPagination, GetSort};
+use crate::pagination::{GetPagination, GetSort};
 use crate::repository::db::DBRepository;
 
 use super::db::DBUser;
@@ -21,7 +21,7 @@ pub fn routes(db_access: impl DBUser + DBRepository) -> BoxedFilter<(impl Reply,
     let user = warp::path!("users");
     let user_id = warp::path!("users" / i32);
     let user_name = warp::path!("users" / "username" / String);
-    let user_maintainer = warp::path!("users" / "maintainers" / i32);
+    let user_maintainer = warp::path!("users" / i32 / "maintainers");
 
     let get_users = user
         .and(warp::get())

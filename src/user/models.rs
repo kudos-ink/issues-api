@@ -8,13 +8,16 @@ use warp::{
     reply::{Reply, Response},
 };
 
-use crate::handlers::ErrorResponse;
+use crate::{
+    db::utils::{defaul_sort_direction, sort_direction},
+    error_handler::ErrorResponse,
+};
 
 #[derive(Deserialize)]
 pub struct User {
     pub id: i32,
     pub username: String,
-    // pub maintainers: Option<Vec<String>>,
+    // TODO: add optional fields
 }
 
 #[derive(Serialize, Deserialize)]
@@ -62,7 +65,6 @@ pub struct GetUserQuery {
     // pub has_tips: Option<bool>,
     // pub has_issues: Option<bool>,
     // pub has_wishes: Option<bool>,
-    // pub has_wishes: Option<bool>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -78,13 +80,7 @@ impl UserSort {
 
         Ok(Self {
             field: format!("users.{field}"),
-            order: {
-                if descending {
-                    "DESC".to_string()
-                } else {
-                    "ASC".to_string()
-                }
-            },
+            order: sort_direction(descending),
         })
     }
 }
@@ -93,7 +89,7 @@ impl Default for UserSort {
     fn default() -> Self {
         UserSort {
             field: "id".to_string(),
-            order: "ASC".to_string(),
+            order: defaul_sort_direction(),
         }
     }
 }

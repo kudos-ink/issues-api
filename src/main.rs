@@ -11,13 +11,13 @@ use crate::{
 };
 
 mod auth;
+mod auth_error;
 mod db;
-mod error;
-mod handlers;
+mod error_handler;
 mod health;
-mod http;
 mod issue;
 mod organization;
+mod pagination;
 mod repository;
 mod user;
 
@@ -47,7 +47,7 @@ async fn run() {
     let organizations_route = organization::routes::routes(db.clone());
     let repositories_route = repository::routes::routes(db);
     //TODO: add issue route
-    let error_handler = handlers::error_handler;
+    let error_handler = error_handler::error_handler;
 
     // string all the routes together
     let routes = health_route

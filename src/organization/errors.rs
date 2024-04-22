@@ -8,7 +8,7 @@ use warp::{
     reply::{Reply, Response},
 };
 
-use crate::handlers::ErrorResponse;
+use crate::error_handler::ErrorResponse;
 
 #[derive(Clone, Error, Debug, Deserialize, PartialEq)]
 pub enum OrganizationError {

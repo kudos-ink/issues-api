@@ -1,12 +1,12 @@
 use warp::{
     http::StatusCode,
     reject::Rejection,
-    reply::{json, Reply},
+    reply::{json, with_status, Reply},
 };
 
 use crate::{
-    http::{GetPagination, GetSort},
-    repository::{db::DBRepository, errors::RepositoryError},
+    pagination::{GetPagination, GetSort},
+    repository::db::DBRepository,
 };
 
 use super::{
@@ -23,33 +23,45 @@ pub async fn create_user_handler(
         .get_user_by_username(&body.username, UsersRelations::default())
         .await?
     {
-        Some(u) => Err(warp::reject::custom(UserError::UserExists(u.id)))?,
+        Some(u) => Err(warp::reject::custom(UserError::AlreadyExists(u.id)))?,
         None => {
             if let Some(repositories) = body.repositories.clone() {
                 for repo_id in repositories {
-                    let result = db_access.get_repository(repo_id).await?;
-                    if result.is_none() {
-                        // TODO: improve
-                        return Err(warp::reject::custom(RepositoryError::RepositoryNotFound(
-                            repo_id,
-                        )));
+                    if db_access.get_repository(repo_id).await?.is_none() {
+                        return Err(warp::reject::custom(UserError::CannotBeCreated(format!(
+                            "repository {repo_id} does not exist"
+                        ))));
                     }
                 }
             }
-            Ok(json(&UserResponse::of(db_access.create_user(body).await?)))
+            let new_user = db_access.create_user(body).await?;
+            Ok(with_status(
+                json(&UserResponse::of(new_user)),
+                StatusCode::CREATED,
+            ))
         }
     }
 }
 pub async fn patch_user_handler(
     id: i32,
     body: PatchUser,
-    db_access: impl DBUser,
+    db_access: impl DBUser + DBRepository,
 ) -> Result<impl Reply, Rejection> {
     match db_access.get_user(id, UsersRelations::default()).await? {
-        Some(u) => Err(warp::reject::custom(UserError::UserExists(u.id)))?,
-        None => Ok(json(&UserResponse::of(
-            db_access.update_user_maintainers(id, body).await?,
-        ))),
+        None => Err(warp::reject::custom(UserError::NotFound(id)))?,
+        Some(_) => {
+            for repo_id in &body.repositories {
+                if db_access.get_repository(*repo_id).await?.is_none() {
+                    return Err(warp::reject::custom(UserError::CannotBeUpdated(
+                        id,
+                        format!("repository {repo_id} does not exist"),
+                    )));
+                }
+            }
+
+            db_access.update_user_maintainers(id, body).await?;
+            Ok(StatusCode::NO_CONTENT)
+        }
     }
 }
 
@@ -66,7 +78,7 @@ pub async fn get_user_handler(
     };
 
     match db_access.get_user(id, relations).await? {
-        None => Err(warp::reject::custom(UserError::UserNotFound(id)))?,
+        None => Err(warp::reject::custom(UserError::NotFound(id)))?,
         Some(user) => Ok(json(&UserResponse::of(user))),
     }
 }
@@ -84,7 +96,7 @@ pub async fn get_user_by_name_handler(
     };
 
     match db_access.get_user_by_username(&name, relations).await? {
-        None => Err(warp::reject::custom(UserError::UserNotFoundByName(name)))?,
+        None => Err(warp::reject::custom(UserError::NotFoundByName(name)))?,
         Some(user) => Ok(json(&UserResponse::of(user))),
     }
 }
@@ -120,8 +132,8 @@ pub async fn delete_user_handler(id: i32, db_access: impl DBUser) -> Result<impl
     match db_access.get_user(id, UsersRelations::default()).await? {
         Some(_) => {
             let _ = &db_access.delete_user(id).await?;
-            Ok(StatusCode::OK)
+            Ok(StatusCode::NO_CONTENT)
         }
-        None => Err(warp::reject::custom(UserError::UserNotFound(id)))?,
+        None => Err(warp::reject::custom(UserError::NotFound(id)))?,
     }
 }

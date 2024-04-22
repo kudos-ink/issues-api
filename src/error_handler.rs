@@ -4,9 +4,10 @@ use std::convert::Infallible;
 use warp::{hyper::StatusCode, Rejection, Reply};
 
 use crate::{
+    auth_error::AuthenticationError,
     db::errors::DBError,
-    error::AuthenticationError,
     organization::errors::OrganizationError,
+    pagination::PaginationError,
     repository::errors::RepositoryError,
     user::{errors::UserError, models::UserSortError},
 };
@@ -25,6 +26,8 @@ pub async fn error_handler(err: Rejection) -> std::result::Result<impl Reply, In
     } else if let Some(e) = err.find::<RepositoryError>() {
         Ok(e.clone().into_response())
     } else if let Some(e) = err.find::<UserSortError>() {
+        Ok(e.clone().into_response())
+    } else if let Some(e) = err.find::<PaginationError>() {
         Ok(e.clone().into_response())
     } else if let Some(e) = err.find::<AuthenticationError>() {
         Ok(e.clone().into_response())

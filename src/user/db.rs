@@ -6,7 +6,7 @@ use crate::{
             DB_QUERY_TIMEOUT,
         },
     },
-    http::GetPagination,
+    pagination::GetPagination,
 };
 use mobc::async_trait;
 use mobc_postgres::tokio_postgres::Row;
@@ -142,7 +142,7 @@ impl DBUser for DBAccess {
         if let Some(repositories) = user.repositories {
             for repo_id in repositories {
                 let query =
-                    format!("INSERT INTO maintainers (user_id, repository_id) VALUES ($1, $2)");
+                    "INSERT INTO maintainers (user_id, repository_id) VALUES ($1, $2)".to_string();
                 query_one_timeout(self, &query, &[&new_user.id, &repo_id], DB_QUERY_TIMEOUT)
                     .await?;
             }
@@ -154,10 +154,11 @@ impl DBUser for DBAccess {
         id: i32,
         user: PatchUser,
     ) -> Result<User, reject::Rejection> {
-        let query = format!("DELETE maintainers WHERE user_ID = $1");
+        let query = "DELETE maintainers WHERE user_ID = $1".to_string();
         let row = query_one_timeout(self, &query, &[&id], DB_QUERY_TIMEOUT).await?;
         for repo_id in user.repositories {
-            let query = format!("INSERT INTO maintainers (user_id, repository_id) VALUES ($1, $2)");
+            let query =
+                "INSERT INTO maintainers (user_id, repository_id) VALUES ($1, $2)".to_string();
             query_one_timeout(self, &query, &[&id, &repo_id], DB_QUERY_TIMEOUT).await?;
         }
         // TODO: make a db tx

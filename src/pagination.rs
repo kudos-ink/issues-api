@@ -1,7 +1,7 @@
 use std::fmt;
 
 use super::db::utils::detect_sql_injection;
-use crate::handlers::ErrorResponse;
+use crate::error_handler::ErrorResponse;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use warp::{
@@ -116,7 +116,6 @@ impl GetSort {
                 descending: None,
             }),
             (Some(sort_by), some_or_none) => {
-                //TODO: improve with trim, remove unexpected chars, etc.
                 if detect_sql_injection(&sort_by) {
                     Err(SortError::InvalidSortBy)
                 } else {
