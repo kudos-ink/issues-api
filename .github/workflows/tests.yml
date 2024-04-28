@@ -34,6 +34,14 @@ jobs:
       #   run: |
       #     cargo clippy --all-targets --all-features
 
+      - name: Build code
+        run: |
+          cargo build --verbose
+
       - name: Test code
         run: |
           cargo test --verbose
+
+      - name: Build docker image
+        run: |
+          docker build -t ${{ vars.DOCKER_REGISTRY }}:${{ github.sha }} -f Dockerfile .
