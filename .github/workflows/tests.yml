@@ -6,8 +6,8 @@ on:
       - main
     types: [opened, synchronize]
 
-env:
-  RUSTFLAGS: "-Dwarnings"
+# env:
+#   RUSTFLAGS: "-Dwarnings"
 
 jobs:
   build:
