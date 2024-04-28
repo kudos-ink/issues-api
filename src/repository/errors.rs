@@ -12,18 +12,22 @@ use crate::error_handler::ErrorResponse;
 
 #[derive(Clone, Error, Debug, Deserialize, PartialEq)]
 pub enum RepositoryError {
-    RepositoryExists(i32),
-    RepositoryNotFound(i32),
+    AlreadyExists(i32),
+    NotFound(i32),
+    NotFoundByName(String),
 }
 
 impl fmt::Display for RepositoryError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            RepositoryError::RepositoryExists(id) => {
-                write!(f, "Repository #{} already exists", id)
+            RepositoryError::AlreadyExists(id) => {
+                write!(f, "Repository #{id} already exists")
             }
-            RepositoryError::RepositoryNotFound(id) => {
-                write!(f, "Repository #{} not found", id)
+            RepositoryError::NotFound(id) => {
+                write!(f, "Repository #{id} not found")
+            }
+            RepositoryError::NotFoundByName(name) => {
+                write!(f, "Repository {name} not found")
             }
         }
     }
@@ -34,8 +38,9 @@ impl Reject for RepositoryError {}
 impl Reply for RepositoryError {
     fn into_response(self) -> Response {
         let code = match self {
-            RepositoryError::RepositoryExists(_) => StatusCode::BAD_REQUEST,
-            RepositoryError::RepositoryNotFound(_) => StatusCode::NOT_FOUND,
+            RepositoryError::AlreadyExists(_) => StatusCode::BAD_REQUEST,
+            RepositoryError::NotFound(_) => StatusCode::NOT_FOUND,
+            RepositoryError::NotFoundByName(_) => StatusCode::NOT_FOUND,
         };
         let message = self.to_string();
 

@@ -8,6 +8,9 @@ use crate::organization::db::DBOrganization;
 
 use super::db::DBRepository;
 use super::handlers;
+use super::models::GetRepositoryQuery;
+use crate::pagination::GetPagination;
+use crate::pagination::GetSort;
 
 fn with_db(
     db_pool: impl DBRepository + DBOrganization,
@@ -18,16 +21,26 @@ fn with_db(
 pub fn routes(db_access: impl DBRepository + DBOrganization) -> BoxedFilter<(impl Reply,)> {
     let repository = warp::path!("repositories"); // TODO: move this to the "organization" endpoint as a subendpoint
     let repository_id = warp::path!("repositories" / i32);
+    let repository_name = warp::path!("repositories" / "name" / String);
 
     let get_repositories = repository
         .and(warp::get())
         .and(with_db(db_access.clone()))
+        .and(warp::query::<GetRepositoryQuery>())
+        .and(warp::query::<GetPagination>())
+        .and(warp::query::<GetSort>())
         .and_then(handlers::get_repositories_handler);
+
+    let get_repository_by_name = repository_name
+        .and(warp::get())
+        .and(with_db(db_access.clone()))
+        .and(warp::query::<GetRepositoryQuery>())
+        .and_then(handlers::get_repository_handler_name);
 
     let get_repository = repository_id
         .and(warp::get())
-        // .and(warp::path::param())
         .and(with_db(db_access.clone()))
+        .and(warp::query::<GetRepositoryQuery>())
         .and_then(handlers::get_repository_handler);
 
     let create_repository = repository
@@ -46,7 +59,8 @@ pub fn routes(db_access: impl DBRepository + DBOrganization) -> BoxedFilter<(imp
     let route = get_repositories
         .or(get_repository)
         .or(create_repository)
-        .or(delete_repository);
+        .or(delete_repository)
+        .or(get_repository_by_name);
 
     route.boxed()
 }

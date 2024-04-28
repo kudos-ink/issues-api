@@ -7,8 +7,8 @@ use crate::{
     auth_error::AuthenticationError,
     db::errors::DBError,
     organization::errors::OrganizationError,
-    pagination::PaginationError,
-    repository::errors::RepositoryError,
+    pagination::{PaginationError, SortError},
+    repository::{errors::RepositoryError, models::RepositorySortError},
     user::{errors::UserError, models::UserSortError},
 };
 
@@ -26,6 +26,10 @@ pub async fn error_handler(err: Rejection) -> std::result::Result<impl Reply, In
     } else if let Some(e) = err.find::<RepositoryError>() {
         Ok(e.clone().into_response())
     } else if let Some(e) = err.find::<UserSortError>() {
+        Ok(e.clone().into_response())
+    } else if let Some(e) = err.find::<SortError>() {
+        Ok(e.clone().into_response())
+    } else if let Some(e) = err.find::<RepositorySortError>() {
         Ok(e.clone().into_response())
     } else if let Some(e) = err.find::<PaginationError>() {
         Ok(e.clone().into_response())
