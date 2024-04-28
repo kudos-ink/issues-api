@@ -1,9 +1,8 @@
-DATABASE_URL=postgres://postgres:password@localhost:5432/database
-DATABASE_INIT_FILE=db.sql
-HTTP_SERVER_HOST=0.0.0.0
-HTTP_SERVER_PORT=8000
-USERNAME=test
-PASSWORD=test
+DATABASE_URL?=postgres://postgres:password@localhost:5432/database
+HOST?=0.0.0.0
+PORT?=8000
+USERNAME?=test
+PASSWORD?=test
 DOCKER_DB_CONTAINER_NAME:=db
 DOCKER_COMPOSE:=docker-compose
 DOCKER_COMPOSE_FILE:=docker-compose.yaml
@@ -12,7 +11,7 @@ DOCKER_COMPOSE_FILE:=docker-compose.yaml
 
 .PHONY: run
 run:
-	USERNAME="$(USERNAME)" PASSWORD="$(PASSWORD)" DATABASE_URL="$(DATABASE_URL)" HTTP_SERVER_HOST="$(HTTP_SERVER_HOST)" HTTP_SERVER_PORT=$(HTTP_SERVER_PORT) cargo run
+	USERNAME="$(USERNAME)" PASSWORD="$(PASSWORD)" DATABASE_URL="$(DATABASE_URL)" HOST="$(HOST)" PORT=$(PORT) cargo run
 
 .PHONY: test
 test:
