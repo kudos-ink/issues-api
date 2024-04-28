@@ -9,7 +9,7 @@ use warp::{
 };
 
 use crate::{
-    db::utils::{defaul_sort_direction, sort_direction},
+    db::utils::{default_sort_direction, sort_direction},
     error_handler::ErrorResponse,
 };
 
@@ -89,7 +89,7 @@ impl Default for UserSort {
     fn default() -> Self {
         UserSort {
             field: "id".to_string(),
-            order: defaul_sort_direction(),
+            order: default_sort_direction(),
         }
     }
 }

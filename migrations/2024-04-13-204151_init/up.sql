@@ -8,15 +8,13 @@ CREATE TABLE IF NOT EXISTS languages (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) UNIQUE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT (now() AT TIME ZONE 'utc') NOT NULL,
-    updated_at TIMESTAMP NULL
-);
--- used in the issues
-CREATE TABLE IF NOT EXISTS labels (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(255) UNIQUE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT (now() AT TIME ZONE 'utc') NOT NULL,
-    updated_at TIMESTAMP NULL
-);
+    updated_at TIMESTAMP NULL -- used in the issues
+    CREATE TABLE IF NOT EXISTS labels (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) UNIQUE,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT (now() AT TIME ZONE 'utc') NOT NULL,
+        updated_at TIMESTAMP NULL
+    );
 -- used in the repositories
 CREATE TABLE IF NOT EXISTS topics (
     id SERIAL PRIMARY KEY,
@@ -65,9 +63,9 @@ CREATE TABLE IF NOT EXISTS organizations (
 -- basic github repository
 CREATE TABLE IF NOT EXISTS repositories (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(255),
-    url VARCHAR(255),
-    icon VARCHAR(255),
+    name VARCHAR(255) NOT NULL,
+    url VARCHAR(255) NOT NULL,
+    icon VARCHAR(255) NOT NULL,
     e_tag VARCHAR(40) NOT NULL,
     organization_id INT REFERENCES organizations(id),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT (now() AT TIME ZONE 'utc') NOT NULL,

@@ -6,7 +6,7 @@ use warp::{
 
 use crate::{
     pagination::{GetPagination, GetSort},
-    repository::db::DBRepository,
+    repository::{db::DBRepository, models::RepositoriesRelations},
 };
 
 use super::{
@@ -27,7 +27,11 @@ pub async fn create_user_handler(
         None => {
             if let Some(repositories) = body.repositories.clone() {
                 for repo_id in repositories {
-                    if db_access.get_repository(repo_id).await?.is_none() {
+                    if db_access
+                        .get_repository(repo_id, RepositoriesRelations::default())
+                        .await?
+                        .is_none()
+                    {
                         return Err(warp::reject::custom(UserError::CannotBeCreated(format!(
                             "repository {repo_id} does not exist"
                         ))));
@@ -51,7 +55,11 @@ pub async fn patch_user_handler(
         None => Err(warp::reject::custom(UserError::NotFound(id)))?,
         Some(_) => {
             for repo_id in &body.repositories {
-                if db_access.get_repository(*repo_id).await?.is_none() {
+                if db_access
+                    .get_repository(*repo_id, RepositoriesRelations::default())
+                    .await?
+                    .is_none()
+                {
                     return Err(warp::reject::custom(UserError::CannotBeUpdated(
                         id,
                         format!("repository {repo_id} does not exist"),

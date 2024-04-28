@@ -87,6 +87,6 @@ pub fn sort_direction(descending: bool) -> String {
     }
 }
 
-pub fn defaul_sort_direction() -> String {
+pub fn default_sort_direction() -> String {
     ASC.to_string()
 }
