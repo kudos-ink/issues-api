@@ -1,0 +1,39 @@
+name: PR to Main Workflow
+
+on:
+  pull_request:
+    branches:
+      - main
+    types: [opened]
+
+env:
+  RUSTFLAGS: "-Dwarnings"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+
+      # - name: Run Clippy
+      #   run: |
+      #     cargo clippy --all-targets --all-features
+
+      - name: Test code
+        run: |
+          cargo test --verbose
