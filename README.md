@@ -20,7 +20,7 @@ To build the image, use:
 
 ### Run
 
-`docker run -e DATABASE_URL=... -e HTTP_SERVER_HOST=... -e HTTP_SERVER_PORT=... kudos-api`
+`docker run -e DATABASE_URL=... -e HOST=... -e PORT=... kudos-api`
 
 ### Docker-compose
 
