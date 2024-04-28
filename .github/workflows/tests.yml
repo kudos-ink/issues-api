@@ -1,4 +1,4 @@
-name: PR to Main Workflow
+name: Lint and test
 
 on:
   pull_request:
