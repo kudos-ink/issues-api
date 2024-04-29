@@ -1,0 +1,12 @@
+name: Stage cron
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+
+jobs:
+  stage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wake up service
+        run: |
+          curl --fail ${{ vars.ISSUES_API_STAGE_URL }}/health
