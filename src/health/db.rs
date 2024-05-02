@@ -1,20 +1,22 @@
-use mobc::async_trait;
-use warp::reject;
+use diesel::sql_query;
+use diesel::RunQueryDsl;
 
 use crate::db::{
-    pool::DBAccess,
-    utils::{execute_query_with_timeout, DB_QUERY_TIMEOUT},
+    errors::DBError,
+    pool::{DBAccess, DBAccessor},
 };
 
-#[async_trait]
 pub trait DBHealth: Send + Sync + Clone + 'static {
-    async fn health(&self) -> Result<(), reject::Rejection>;
+    fn health(&self) -> Result<(), DBError>;
 }
 
-#[async_trait]
 impl DBHealth for DBAccess {
-    async fn health(&self) -> Result<(), reject::Rejection> {
-        execute_query_with_timeout(self, "SELECT 1", &[], DB_QUERY_TIMEOUT).await?;
+    fn health(&self) -> Result<(), DBError> {
+        let conn = &mut self.get_db_conn();
+        sql_query("SELECT 1")
+            .execute(conn)
+            .map_err(DBError::DBQuery)?;
+
         Ok(())
     }
 }
