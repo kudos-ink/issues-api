@@ -9,8 +9,6 @@ pub enum DBError {
     DBPoolConnection(PoolError),
     #[error("error executing DB query: {0}")]
     DBQuery(#[from] DieselError),
-    #[error("error initializing the database: {0}")]
-    DBInit(DieselError),
     #[error("error reading file: {0}")]
     ReadFile(#[from] std::io::Error),
     #[error("database operation timed out: {0}")]

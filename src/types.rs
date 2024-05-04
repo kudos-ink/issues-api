@@ -1,4 +1,5 @@
 use dotenv::dotenv;
+use serde::Deserialize;
 use std::env;
 
 /// Configuration used by this API.
@@ -24,4 +25,20 @@ impl ApiConfig {
             database_url: env::var("DATABASE_URL").expect("DATABASE_URL must be set"),
         }
     }
+}
+
+#[derive(Deserialize, Debug)]
+pub struct PaginationParams {
+    #[serde(default = "default_limit")]
+    pub limit: i64,
+    #[serde(default = "default_offset")]
+    pub offset: i64,
+}
+
+fn default_limit() -> i64 {
+    100 // Default limit
+}
+
+fn default_offset() -> i64 {
+    0 // Default offset
 }

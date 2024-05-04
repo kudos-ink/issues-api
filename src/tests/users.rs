@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use crate::{
-        error_handler::{self, ErrorResponse},
+        errors::{self, ErrorResponse},
         pagination::GetPagination,
         repository::{
             db::DBRepository,
@@ -122,7 +122,7 @@ mod tests {
     #[tokio::test]
     async fn test_get_user_by_id_not_found() {
         let id = 2;
-        let r = routes(UsersDBMock {}).recover(error_handler::error_handler);
+        let r = routes(UsersDBMock {}).recover(errors::error_handler);
         let resp = request().path(&format!("/users/{id}")).reply(&r).await;
         assert_eq!(resp.status(), 404);
         let body = resp.into_body();
@@ -140,7 +140,7 @@ mod tests {
     #[tokio::test]
     async fn test_get_user_by_id_exists() {
         let id = 1;
-        let r = routes(UsersDBMock {}).recover(error_handler::error_handler);
+        let r = routes(UsersDBMock {}).recover(errors::error_handler);
         let resp = request().path(&format!("/users/{id}")).reply(&r).await;
         assert_eq!(resp.status(), 200);
         let body = resp.into_body();
@@ -156,7 +156,7 @@ mod tests {
     #[tokio::test]
     async fn test_get_user_by_name_not_found() {
         let name = "not_found";
-        let r = routes(UsersDBMock {}).recover(error_handler::error_handler);
+        let r = routes(UsersDBMock {}).recover(errors::error_handler);
         let resp = request()
             .path(&format!("/users/username/{name}"))
             .reply(&r)
@@ -176,7 +176,7 @@ mod tests {
     #[tokio::test]
     async fn test_get_user_by_name_exists() {
         let name = "username";
-        let r = routes(UsersDBMock {}).recover(error_handler::error_handler);
+        let r = routes(UsersDBMock {}).recover(errors::error_handler);
         let resp = request()
             .path(&format!("/users/username/{name}"))
             .reply(&r)
@@ -192,7 +192,7 @@ mod tests {
     }
     #[tokio::test]
     async fn test_get_users() {
-        let r = routes(UsersDBMock {}).recover(error_handler::error_handler);
+        let r = routes(UsersDBMock {}).recover(errors::error_handler);
         let resp = request().path(&format!("/users")).reply(&r).await;
         assert_eq!(resp.status(), 200);
         let body = resp.into_body();
@@ -201,7 +201,7 @@ mod tests {
     }
     #[tokio::test]
     async fn test_get_users_valid_query_params() {
-        let r = routes(UsersDBMock {}).recover(error_handler::error_handler);
+        let r = routes(UsersDBMock {}).recover(errors::error_handler);
         let resp = request().path(&format!("/users?wishes=false&tips=false&maintainers=false&issues=false&limit=1&offset=10&sort_by=id&descending=false")).reply(&r).await;
         assert_eq!(resp.status(), 200);
         let body = resp.into_body();
@@ -210,7 +210,7 @@ mod tests {
     }
     #[tokio::test]
     async fn test_get_users_invalid_query_params() {
-        let r = routes(UsersDBMock {}).recover(error_handler::error_handler);
+        let r = routes(UsersDBMock {}).recover(errors::error_handler);
         let resp = request()
             .path(&format!("/users?wishes=fal1se"))
             .reply(&r)
@@ -256,7 +256,7 @@ mod tests {
             repositories: None,
         })
         .unwrap();
-        let r = routes(UsersDBMock {}).recover(error_handler::error_handler);
+        let r = routes(UsersDBMock {}).recover(errors::error_handler);
         let resp = request()
             .body(new_user)
             .path(&"/users")
@@ -279,7 +279,7 @@ mod tests {
             repositories: vec![1],
         })
         .unwrap();
-        let r = routes(UsersDBMock {}).recover(error_handler::error_handler);
+        let r = routes(UsersDBMock {}).recover(errors::error_handler);
         let resp = request()
             .body(new_user)
             .path(&"/users/1/maintainers")
@@ -307,7 +307,7 @@ mod tests {
             repositories: None,
         })
         .unwrap();
-        let r = routes(UsersDBMock {}).recover(error_handler::error_handler);
+        let r = routes(UsersDBMock {}).recover(errors::error_handler);
         let resp = request()
             .body(new_user)
             .path(&"/users")
@@ -331,7 +331,7 @@ mod tests {
     #[tokio::test]
     async fn test_delete_user() {
         let id = 1;
-        let r = routes(UsersDBMock {}).recover(error_handler::error_handler);
+        let r = routes(UsersDBMock {}).recover(errors::error_handler);
         let resp = request()
             .path(&format!("/users/{id}"))
             .method("DELETE")
@@ -347,7 +347,7 @@ mod tests {
     async fn test_delete_user_does_not_exist_mock_db() {
         let id = 4;
 
-        let r = routes(UsersDBMock {}).recover(error_handler::error_handler);
+        let r = routes(UsersDBMock {}).recover(errors::error_handler);
         let resp = request()
             .path(&format!("/users/4"))
             .method("DELETE")

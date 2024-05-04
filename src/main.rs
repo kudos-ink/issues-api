@@ -2,15 +2,12 @@ mod types;
 
 use crate::types::ApiConfig;
 
+mod api;
 mod auth;
-mod auth_error;
 mod db;
-mod error_handler;
-mod health;
+mod errors;
 // mod languages;
 // mod issue;
-// mod organization;
-// mod pagination;
 // mod repository;
 // mod user;
 pub mod schema;

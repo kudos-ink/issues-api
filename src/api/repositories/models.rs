@@ -1,5 +1,7 @@
 use std::fmt;
 
+use chrono::{DateTime, Utc};
+use diesel::{AsChangeset, Identifiable, Insertable, Queryable, Selectable};
 use serde_derive::{Deserialize, Serialize};
 use warp::{
     http::StatusCode,
@@ -7,22 +9,37 @@ use warp::{
     reply::{Reply, Response},
 };
 
+use crate::languages::models::Language;
+use crate::schema::repositories;
+use diesel::prelude::*;
+
 use crate::{
     db::utils::{default_sort_direction, sort_direction},
     error_handler::ErrorResponse,
 };
 use thiserror::Error;
 
-#[derive(Deserialize)]
+#[derive(Queryable, Selectable, Identifiable, Associations, Debug, PartialEq)]
+#[diesel(belongs_to(Language))]
+#[diesel(table_name = repositories)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct Repository {
     pub id: i32,
     pub name: String,
-    pub organization_id: i32,
-    pub icon: String,
-    pub url: String,
-    pub e_tag: String,
+    pub language_id: i32,
+    // pub url: String,
+    // pub icon: Option<String>,
+    // pub e_tag: String,
+    // pub organization_id: Option<i32>,
+    // pub created_at: DateTime<Utc>,
+    // pub updated_at: Option<DateTime<Utc>>,
 }
-#[derive(Serialize, Deserialize)]
+
+#[derive(Deserialize)]
+pub struct RepositoryQueryParams {
+    pub language: Option<String>,
+}
+
 pub struct NewRepository {
     pub name: String,
     pub icon: String,
@@ -35,10 +52,12 @@ pub struct NewRepository {
 pub struct RepositoryResponse {
     pub id: i32,
     pub name: String,
-    pub organization_id: i32,
-    pub icon: String,
-    pub url: String,
-    pub e_tag: String,
+    // pub url: String,
+    // pub icon: Option<String>,
+    // pub e_tag: String,
+    // pub organization_id: Option<i32>,
+    // pub created_at: DateTime<Utc>,
+    // pub updated_at: Option<DateTime<Utc>>,
 }
 
 impl RepositoryResponse {
@@ -46,10 +65,12 @@ impl RepositoryResponse {
         RepositoryResponse {
             id: repository.id,
             name: repository.name,
-            organization_id: repository.organization_id,
-            icon: repository.icon,
-            url: repository.url,
-            e_tag: repository.e_tag,
+            // organization_id: repository.organization_id,
+            // icon: repository.icon,
+            // url: repository.url,
+            // e_tag: repository.e_tag,
+            // created_at: repository.created_at,
+            // updated_at: repository.updated_at,
         }
     }
 }

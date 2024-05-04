@@ -1,10 +1,16 @@
-use crate::auth_error::AuthenticationError;
+use base64::Engine;
 use std::env;
 use warp::{
     http::header::{HeaderMap, HeaderValue, AUTHORIZATION},
     reject, Filter, Rejection,
 };
+
+use self::errors::AuthenticationError;
+
+pub mod errors;
+
 const BASIC: &str = "Basic ";
+
 pub fn with_auth() -> impl Filter<Extract = (), Error = Rejection> + Clone {
     warp::filters::header::headers_cloned()
         .and_then(authorize)
@@ -13,7 +19,8 @@ pub fn with_auth() -> impl Filter<Extract = (), Error = Rejection> + Clone {
 async fn authorize(headers: HeaderMap<HeaderValue>) -> Result<(), Rejection> {
     match token_from_header(&headers) {
         Ok(token) => {
-            let credentials = base64::decode(token)
+            let credentials = base64::prelude::BASE64_STANDARD
+                .decode(token)
                 .map_err(|_| reject::custom(AuthenticationError::WrongCredentials))?;
             let credentials_str = String::from_utf8(credentials)
                 .map_err(|_| reject::custom(AuthenticationError::WrongCredentials))?;
