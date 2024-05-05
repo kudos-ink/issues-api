@@ -26,3 +26,10 @@ CREATE TABLE IF NOT EXISTS repositories (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT (now() AT TIME ZONE 'utc') NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE NULL
 );
+-- all the users including maintainers and admins
+CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(100) UNIQUE NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT (now() AT TIME ZONE 'utc') NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE NULL
+);

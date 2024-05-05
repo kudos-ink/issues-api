@@ -8,7 +8,7 @@ use warp::{
     reply::{Reply, Response},
 };
 
-use crate::error_handler::ErrorResponse;
+use crate::errors::ErrorResponse;
 
 #[derive(Clone, Error, Debug, Deserialize, PartialEq)]
 pub enum UserError {

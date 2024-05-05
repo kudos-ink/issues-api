@@ -3,4 +3,4 @@ pub mod health;
 // pub mod languages;
 pub mod projects;
 pub mod repositories;
-// pub mod users;
+pub mod users;

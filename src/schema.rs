@@ -40,6 +40,16 @@ diesel::table! {
     }
 }
 
+diesel::table! {
+    users (id) {
+        id -> Int4,
+        #[max_length = 100]
+        username -> Varchar,
+        created_at -> Timestamptz,
+        updated_at -> Nullable<Timestamptz>,
+    }
+}
+
 diesel::joinable!(repositories -> languages (language_id));
 diesel::joinable!(repositories -> projects (project_id));
 
@@ -47,4 +57,5 @@ diesel::allow_tables_to_appear_in_same_query!(
     languages,
     projects,
     repositories,
+    users,
 );
