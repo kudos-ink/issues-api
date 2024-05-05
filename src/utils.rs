@@ -2,7 +2,7 @@ use ::warp::Reply;
 use warp::{filters::BoxedFilter, Filter};
 
 use crate::{
-    api::{health, projects},
+    api::{health, projects, repositories},
     db::{
         self,
         errors::DBError,
@@ -42,17 +42,25 @@ pub async fn setup_db(url: &String) -> DBAccess {
 pub fn setup_filters(db: DBAccess) -> BoxedFilter<(impl Reply,)> {
     let health_route = health::routes::routes(db.clone());
     let projects_route = projects::routes::routes(db.clone());
+    let repositories_route = repositories::routes::routes(db.clone());
 
     health_route
         .or(projects_route)
+        .or(repositories_route)
         .with(warp::cors().allow_any_origin())
         .recover(error_handler)
         .boxed()
 }
 
-// pub fn parse_ids(s: &str) -> Vec<i32> {
-//     s.split(",").map(|id| id.parse::<i32>().unwrap()).collect() // TODO: Handle errors, remove unwrap()
-// }
+pub fn parse_ids(s: &str) -> Vec<i32> {
+    let mut ids = Vec::new();
+    for token in s.split_whitespace() {
+        if let Ok(id) = token.parse::<i32>() {
+            ids.push(id);
+        }
+    }
+    ids
+}
 
 pub fn parse_comma_values(s: &str) -> Vec<String> {
     s.split(",").map(|el: &str| el.to_string()).collect()

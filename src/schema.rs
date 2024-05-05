@@ -1,6 +1,16 @@
 // @generated automatically by Diesel CLI.
 
 diesel::table! {
+    languages (id) {
+        id -> Int4,
+        #[max_length = 255]
+        name -> Nullable<Varchar>,
+        created_at -> Timestamptz,
+        updated_at -> Nullable<Timestamp>,
+    }
+}
+
+diesel::table! {
     projects (id) {
         id -> Int4,
         #[max_length = 255]
@@ -23,15 +33,18 @@ diesel::table! {
         slug -> Varchar,
         #[max_length = 255]
         name -> Varchar,
-        project_id -> Nullable<Int4>,
+        language_id -> Int4,
+        project_id -> Int4,
         created_at -> Timestamptz,
         updated_at -> Nullable<Timestamptz>,
     }
 }
 
+diesel::joinable!(repositories -> languages (language_id));
 diesel::joinable!(repositories -> projects (project_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
+    languages,
     projects,
     repositories,
 );

@@ -4,97 +4,61 @@ use warp::{
     reply::{json, with_status, Reply},
 };
 
-// use crate::{
-//     organization::{db::DBOrganization, errors::OrganizationError},
-//     pagination::GetSort,
-// };
+use crate::types::PaginationParams;
 
 use super::{
     db::DBRepository,
     errors::RepositoryError,
-    models::{
-        GetRepositoryQuery, NewRepository, RepositoriesRelations, RepositoryQueryParams,
-        RepositoryResponse,
-    },
+    models::{NewRepository, QueryParams, UpdateRepository},
 };
-// use crate::pagination::GetPagination;
-use crate::repository::models::RepositorySort;
 
-// pub async fn create_repository_handler(
-//     body: NewRepository,
-//     db_access: impl DBRepository + DBOrganization,
-// ) -> Result<impl Reply, Rejection> {
-//     match db_access.get_organization(body.organization_id).await? {
-//         Some(_) => match db_access
-//             .get_repository_by_name(&body.name, RepositoriesRelations::default())
-//             .await?
-//         {
-//             Some(u) => Err(warp::reject::custom(RepositoryError::AlreadyExists(u.id)))?,
-//             None => Ok(with_status(
-//                 json(&RepositoryResponse::of(
-//                     db_access.create_repository(body).await?,
-//                 )),
-//                 StatusCode::CREATED,
-//             )),
-//         },
-//         None => Err(warp::reject::custom(
-//             OrganizationError::OrganizationNotFound(body.organization_id),
-//         ))?,
-//     }
-// }
-
-pub async fn get_repository_handler(
-    id: i32,
-    db_access: impl DBRepository,
-) -> Result<impl Reply, Rejection> {
-    match db_access.get_repository(id)? {
+pub async fn by_id(id: i32, db_access: impl DBRepository) -> Result<impl Reply, Rejection> {
+    match db_access.by_id(id)? {
         None => Err(warp::reject::custom(RepositoryError::NotFound(id)))?,
-        Some(repository) => Ok(json(&RepositoryResponse::of(repository))),
+        Some(repository) => Ok(json(&repository)),
     }
 }
 
-// pub async fn get_repository_handler_name(
-//     name: String,
-//     db_access: impl DBRepository,
-//     query: GetRepositoryQuery,
-// ) -> Result<impl Reply, Rejection> {
-//     let relations = RepositoriesRelations {
-//         tips: query.tips.unwrap_or_default(),
-//         maintainers: query.maintainers.unwrap_or_default(),
-//         issues: query.issues.unwrap_or_default(),
-//         languages: query.languages.unwrap_or_default(),
-//     };
-//     match db_access.get_repository_by_name(&name, relations).await? {
-//         None => Err(warp::reject::custom(RepositoryError::NotFoundByName(name)))?,
-//         Some(repository) => Ok(json(&RepositoryResponse::of(repository))),
-//     }
-// }
-
-pub async fn get_repositories_handler(
+pub async fn all_handler(
     db_access: impl DBRepository,
-    params: RepositoryQueryParams,
+    params: QueryParams,
+    pagination: PaginationParams,
 ) -> Result<impl Reply, Rejection> {
-    let repositories = db_access.get_repositories(params)?;
-    Ok(json::<Vec<_>>(
-        &repositories
-            .into_iter()
-            .map(RepositoryResponse::of)
-            .collect(),
-    ))
+    let repositories = db_access.all(params, pagination)?;
+    Ok(json::<Vec<_>>(&repositories))
 }
 
-// pub async fn delete_repository_handler(
-//     id: i32,
-//     db_access: impl DBRepository,
-// ) -> Result<impl Reply, Rejection> {
-//     match db_access
-//         .get_repository(id, RepositoriesRelations::default())
-//         .await?
-//     {
-//         Some(_) => {
-//             let _ = &db_access.delete_repository(id).await?;
-//             Ok(StatusCode::NO_CONTENT)
-//         }
-//         None => Err(warp::reject::custom(RepositoryError::NotFound(id)))?,
-//     }
-// }
+pub async fn create_handler(
+    repo: NewRepository,
+    db_access: impl DBRepository,
+) -> Result<impl Reply, Rejection> {
+    match db_access.by_slug(&repo.slug)? {
+        Some(r) => Err(warp::reject::custom(RepositoryError::AlreadyExists(r.id))),
+        None => Ok(with_status(
+            json(&db_access.create(&repo)?),
+            StatusCode::CREATED,
+        )),
+    }
+}
+pub async fn update_handler(
+    id: i32,
+    repo: UpdateRepository,
+    db_access: impl DBRepository,
+) -> Result<impl Reply, Rejection> {
+    match db_access.by_id(id)? {
+        Some(p) => Ok(with_status(
+            json(&db_access.update(p.id, &repo)?),
+            StatusCode::OK,
+        )),
+        None => Err(warp::reject::custom(RepositoryError::NotFound(id))),
+    }
+}
+pub async fn delete_handler(
+    id: i32,
+    db_access: impl DBRepository,
+) -> Result<impl Reply, Rejection> {
+    match db_access.by_id(id)? {
+        Some(p) => Ok(with_status(json(&db_access.delete(p.id)?), StatusCode::OK)),
+        None => Err(warp::reject::custom(RepositoryError::NotFound(id))),
+    }
+}
