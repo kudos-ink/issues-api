@@ -1,25 +1,16 @@
 mod types;
 
-use warp::Filter;
+use crate::types::ApiConfig;
 
-use crate::{
-    db::{
-        errors::DBError,
-        pool::{DBAccess, DBAccessor},
-    },
-    types::ApiConfig,
-};
-
+mod api;
 mod auth;
-mod auth_error;
 mod db;
-mod error_handler;
-mod health;
-mod issue;
-mod organization;
-mod pagination;
-mod repository;
-mod user;
+mod errors;
+// mod languages;
+// mod issue;
+// mod user;
+pub mod schema;
+mod utils;
 
 #[cfg(test)]
 mod tests;
@@ -36,26 +27,8 @@ async fn run() {
         database_url,
     } = ApiConfig::new();
 
-    // init db
-    let db_pool = db::pool::create_pool(&database_url)
-        .map_err(DBError::DBPoolConnection)
-        .expect("Cannot create DB connection");
-    let db = DBAccess::new(db_pool);
-
-    let health_route = health::routes::routes(db.clone());
-    let users_route = user::routes::routes(db.clone());
-    let organizations_route = organization::routes::routes(db.clone());
-    let repositories_route = repository::routes::routes(db);
-    //TODO: add issue route
-    let error_handler = error_handler::error_handler;
-
-    // string all the routes together
-    let routes = health_route
-        .or(users_route)
-        .or(organizations_route)
-        .or(repositories_route)
-        .with(warp::cors().allow_any_origin())
-        .recover(error_handler);
+    let db = utils::setup_db(&database_url).await;
+    let app_filters = utils::setup_filters(db);
 
     let addr = format!("{}:{}", host, port)
         .parse::<std::net::SocketAddr>()
@@ -63,5 +36,5 @@ async fn run() {
 
     println!("listening on {}", addr);
 
-    warp::serve(routes).run(addr).await;
+    warp::serve(app_filters).run(addr).await;
 }

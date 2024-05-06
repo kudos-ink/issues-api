@@ -3,7 +3,7 @@ use std::fmt;
 use thiserror::Error;
 use warp::{http::StatusCode, reject::Reject, reply::Response, Reply};
 
-use crate::error_handler::ErrorResponse;
+use crate::errors::ErrorResponse;
 
 #[derive(Clone, Error, Debug, Deserialize, PartialEq)]
 pub enum AuthenticationError {

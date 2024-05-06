@@ -1,6 +1,6 @@
-use mobc::{Connection, Pool};
-use mobc_postgres::{tokio_postgres, PgConnectionManager};
-use tokio_postgres::NoTls;
+use diesel::r2d2::PooledConnection;
+use diesel::r2d2::{self, ConnectionManager};
+use diesel::PgConnection;
 
-pub type DBCon = Connection<PgConnectionManager<NoTls>>;
-pub type DBPool = Pool<PgConnectionManager<NoTls>>;
+pub type DBConn = PooledConnection<ConnectionManager<PgConnection>>;
+pub type DBPool = r2d2::Pool<ConnectionManager<PgConnection>>;
