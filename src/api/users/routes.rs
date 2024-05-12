@@ -18,6 +18,7 @@ fn with_db(
 pub fn routes(db_access: impl DBUser) -> BoxedFilter<(impl Reply,)> {
     let user = warp::path!("users");
     let user_id = warp::path!("users" / i32);
+    let user_name = warp::path!("users" / "username" / String);
     let user_maintainer = warp::path!("users" / i32 / "maintainers");
 
     let get_users = user

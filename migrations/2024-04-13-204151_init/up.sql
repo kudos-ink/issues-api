@@ -33,17 +33,3 @@ CREATE TABLE IF NOT EXISTS users (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT (now() AT TIME ZONE 'utc') NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE NULL
 );
--- issues
-CREATE TABLE IF NOT EXISTS issues (
-    id SERIAL PRIMARY KEY,
-    number int NOT NULL,
-    title VARCHAR(100) NOT NULL,
-    labels TEXT [],
-    open boolean DEFAULT true NOT NULL,
-    assignee_id INT REFERENCES users(id) NULL,
-    e_tag VARCHAR(100) NOT NULL,
-    repository_id INT REFERENCES repositories(id) NOT NULL,
-    issue_created_at TIMESTAMP WITH TIME ZONE NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT (now() AT TIME ZONE 'utc') NOT NULL,
-    updated_at TIMESTAMP WITH TIME ZONE NULL
-);
