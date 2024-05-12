@@ -8,26 +8,26 @@ use warp::{
     reply::{Reply, Response},
 };
 
-use crate::error_handler::ErrorResponse;
+use crate::errors::ErrorResponse;
 
 #[derive(Clone, Error, Debug, Deserialize, PartialEq)]
 pub enum IssueError {
-    IssueExists(i32),
-    IssueNotFound(i32),
-    IssueInvalidURL,
+    AlreadyExists(i32),
+    NotFound(i32),
+    InvalidPayload,
 }
 
 impl fmt::Display for IssueError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            IssueError::IssueExists(id) => {
-                write!(f, "Issue #{} already exists", id)
+            IssueError::AlreadyExists(id) => {
+                write!(f, "Issue #{id} already exists")
             }
-            IssueError::IssueNotFound(id) => {
-                write!(f, "Issue #{} not found", id)
+            IssueError::NotFound(id) => {
+                write!(f, "Issue #{id} not found")
             }
-            IssueError::IssueInvalidURL => {
-                write!(f, "Issue url is invalid")
+            IssueError::InvalidPayload => {
+                write!(f, "Invalid payload")
             }
         }
     }
@@ -38,9 +38,9 @@ impl Reject for IssueError {}
 impl Reply for IssueError {
     fn into_response(self) -> Response {
         let code = match self {
-            IssueError::IssueExists(_) => StatusCode::BAD_REQUEST,
-            IssueError::IssueNotFound(_) => StatusCode::NOT_FOUND,
-            IssueError::IssueInvalidURL => StatusCode::BAD_REQUEST,
+            IssueError::AlreadyExists(_) => StatusCode::BAD_REQUEST,
+            IssueError::NotFound(_) => StatusCode::NOT_FOUND,
+            IssueError::InvalidPayload => StatusCode::UNPROCESSABLE_ENTITY,
         };
         let message = self.to_string();
 
