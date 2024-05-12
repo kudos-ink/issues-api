@@ -2,7 +2,7 @@ use ::warp::Reply;
 use warp::{filters::BoxedFilter, Filter};
 
 use crate::{
-    api::{health, projects, repositories},
+    api::{health, issues, projects, repositories},
     db::{
         self,
         errors::DBError,
@@ -43,10 +43,12 @@ pub fn setup_filters(db: DBAccess) -> BoxedFilter<(impl Reply,)> {
     let health_route = health::routes::routes(db.clone());
     let projects_route = projects::routes::routes(db.clone());
     let repositories_route = repositories::routes::routes(db.clone());
+    let issues_route = issues::routes::routes(db.clone());
 
     health_route
         .or(projects_route)
         .or(repositories_route)
+        .or(issues_route)
         .with(warp::cors().allow_any_origin())
         .recover(error_handler)
         .boxed()

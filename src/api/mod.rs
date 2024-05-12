@@ -1,5 +1,5 @@
 pub mod health;
-// pub mod issue;
+pub mod issues;
 // pub mod languages;
 pub mod projects;
 pub mod repositories;

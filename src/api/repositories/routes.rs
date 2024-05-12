@@ -44,7 +44,7 @@ pub fn routes(db_access: impl DBRepository) -> BoxedFilter<(impl Reply,)> {
 
     let update_repository = repository_id
         .and(with_auth())
-        .and(warp::post())
+        .and(warp::patch())
         .and(warp::body::json())
         .and(with_db(db_access.clone()))
         .and_then(handlers::update_handler);

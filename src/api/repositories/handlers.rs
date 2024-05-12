@@ -35,6 +35,7 @@ pub async fn create_handler(
     match db_access.by_slug(&repo.slug)? {
         Some(r) => Err(warp::reject::custom(RepositoryError::AlreadyExists(r.id))),
         None => Ok(with_status(
+            // check if project exists
             json(&db_access.create(&repo)?),
             StatusCode::CREATED,
         )),
