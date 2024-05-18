@@ -26,10 +26,17 @@ jobs:
         with:
           toolchain: stable
 
-      - name: Build and test code
+      - name: Run Clippy
+        run: |
+          cargo clippy --all-targets --all-features
+
+      - name: Build code
         run: |
           cargo build --verbose
-          cargo test --verbose
+
+      - name: Test code
+        run: |
+          make test
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
