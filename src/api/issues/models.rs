@@ -12,15 +12,15 @@ use serde_derive::{Deserialize, Serialize};
 pub struct Issue {
     pub id: i32,
     pub number: i32,
-    // pub title: String,
-    // pub labels: Option<Vec<Option<String>>>,
-    // pub open: bool,
-    // pub repository_id: i32,
-    // pub assignee_id: Option<i32>,
-    // pub e_tag: String,
-    // pub issue_created_at: DateTime<Utc>,
-    // pub created_at: DateTime<Utc>,
-    // pub updated_at: Option<DateTime<Utc>>,
+    pub title: String,
+    pub labels: Option<Vec<Option<String>>>,
+    pub open: bool,
+    pub assignee_id: Option<i32>,
+    pub e_tag: String,
+    pub repository_id: i32,
+    pub issue_created_at: DateTime<Utc>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: Option<DateTime<Utc>>,
 }
 
 #[derive(Insertable, Serialize, Deserialize, Debug)]

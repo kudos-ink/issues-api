@@ -32,16 +32,17 @@ pub async fn create_handler(
     issue: NewIssue,
     db_access: impl DBIssue + DBRepository,
 ) -> Result<impl Reply, Rejection> {
-    match DBRepository::by_id(&db_access, issue.repository_id) {
-        Ok(_) => match db_access.by_number(issue.repository_id, issue.number)? {
+    match DBRepository::by_id(&db_access, issue.repository_id)? {
+        Some(_) => match db_access.by_number(issue.repository_id, issue.number)? {
             Some(r) => Err(warp::reject::custom(IssueError::AlreadyExists(r.id))),
             None => Ok(with_status(
-                // check if repository exists
                 json(&DBIssue::create(&db_access, &issue)?),
                 StatusCode::CREATED,
             )),
         },
-        Err(_) => Err(warp::reject::custom(IssueError::InvalidPayload)),
+        None => Err(warp::reject::custom(IssueError::RepositoryNotFound(
+            issue.repository_id,
+        ))),
     }
 }
 pub async fn update_handler(
@@ -49,17 +50,20 @@ pub async fn update_handler(
     issue: UpdateIssue,
     db_access: impl DBIssue + DBRepository,
 ) -> Result<impl Reply, Rejection> {
-    if let Some(repo_id) = issue.repository_id {
-        if DBRepository::by_id(&db_access, repo_id).is_err() {
-            return Err(warp::reject::custom(IssueError::InvalidPayload));
-        }
-    }
-
     match DBIssue::by_id(&db_access, id)? {
-        Some(p) => Ok(with_status(
-            json(&DBIssue::update(&db_access, p.id, &issue)?),
-            StatusCode::OK,
-        )),
+        Some(p) => {
+            if let Some(repo_id) = issue.repository_id {
+                if DBRepository::by_id(&db_access, repo_id)?.is_none() {
+                    return Err(warp::reject::custom(IssueError::RepositoryNotFound(
+                        repo_id,
+                    )));
+                }
+            }
+            Ok(with_status(
+                json(&DBIssue::update(&db_access, p.id, &issue)?),
+                StatusCode::OK,
+            ))
+        }
         None => Err(warp::reject::custom(IssueError::NotFound(id))),
     }
 }

@@ -4,11 +4,9 @@ use std::convert::Infallible;
 use warp::{hyper::StatusCode, Rejection, Reply};
 
 use crate::{
-    auth::errors::AuthenticationError,
-    db::errors::DBError,
-    // pagination::{PaginationError, SortError},
-    // repository::{errors::RepositoryError, models::RepositorySortError},
-    // user::{errors::UserError, models::UserSortError},
+    api::issues::errors::IssueError, api::projects::errors::ProjectError,
+    api::repositories::errors::RepositoryError, api::users::errors::UserError,
+    auth::errors::AuthenticationError, db::errors::DBError,
 };
 
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
@@ -17,53 +15,63 @@ pub struct ErrorResponse {
 }
 
 pub async fn error_handler(err: Rejection) -> std::result::Result<impl Reply, Infallible> {
-    let (status, message) = if err.is_not_found() {
-        (StatusCode::NOT_FOUND, "Resource not found".to_string())
-    } else if err.find::<warp::reject::MethodNotAllowed>().is_some() {
-        (
-            StatusCode::METHOD_NOT_ALLOWED,
-            "Method not allowed".to_string(),
-        )
-    } else if let Some(e) = err.find::<warp::filters::body::BodyDeserializeError>() {
-        eprintln!("BodyDeserializeError error: {:?}", e);
-        (StatusCode::BAD_REQUEST, "Invalid request body".to_string())
-    } else if let Some(e) = err.find::<warp::reject::InvalidQuery>() {
-        eprintln!("InvalidQuery error: {:?}", e);
-        (
-            StatusCode::BAD_REQUEST,
-            "Invalid query parameters".to_string(),
-        )
+    eprintln!("error: {:?}", err);
+    if let Some(e) = err.find::<UserError>() {
+        Ok(e.clone().into_response())
+    } else if let Some(e) = err.find::<ProjectError>() {
+        Ok(e.clone().into_response())
+    } else if let Some(e) = err.find::<RepositoryError>() {
+        Ok(e.clone().into_response())
+    } else if let Some(e) = err.find::<IssueError>() {
+        Ok(e.clone().into_response())
     } else if let Some(e) = err.find::<AuthenticationError>() {
-        eprintln!("AuthenticationError: {}", e.to_string());
-        (
-            StatusCode::UNAUTHORIZED,
-            format!("AuthenticationError - {}", e.to_string()),
-        )
-    } else if let Some(db_error) = err.find::<DBError>() {
-        match db_error {
+        Ok(e.clone().into_response())
+    } else if let Some(e) = err.find::<DBError>() {
+        let (code, message) = match e {
             DBError::DBPoolConnection(_) => (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                "Database connection error".to_string(),
+                "Database connection error",
             ),
-            DBError::DBQuery(_) => (StatusCode::BAD_REQUEST, "Database query failed".to_string()),
-            DBError::ReadFile(_) => (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "File read error".to_string(),
-            ),
-            DBError::DBTimeout(_) => (
-                StatusCode::REQUEST_TIMEOUT,
-                "Database operation timed out".to_string(),
-            ),
-        }
+            DBError::DBQuery(_) => (StatusCode::BAD_REQUEST, "Database query failed"),
+            DBError::ReadFile(_) => (StatusCode::INTERNAL_SERVER_ERROR, "File read error"),
+            DBError::DBTimeout(_) => (StatusCode::REQUEST_TIMEOUT, "Database operation timed out"),
+        };
+
+        let json = warp::reply::json(&ErrorResponse {
+            message: message.to_string(),
+        });
+
+        Ok(warp::reply::with_status(json, code).into_response())
     } else {
-        eprintln!("Unhandled error: {:?}", err); // Ensure all unexpected errors are logged.
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "Internal server error".to_string(),
-        )
-    };
+        let code;
+        let message;
 
-    let json = warp::reply::json(&ErrorResponse { message });
+        if err.is_not_found() {
+            // Handle not found errors
+            code = StatusCode::NOT_FOUND;
+            message = "Not Found";
+        } else if err
+            .find::<warp::filters::body::BodyDeserializeError>()
+            .is_some()
+        {
+            // Handle invalid body errors
+            code = StatusCode::BAD_REQUEST;
+            message = "Invalid Body";
+        } else if err.find::<warp::reject::MethodNotAllowed>().is_some() {
+            // Handle method not allowed errors
+            code = StatusCode::METHOD_NOT_ALLOWED;
+            message = "Method Not Allowed";
+        } else {
+            // Handle all other errors
+            eprintln!("Unhandled error: {:?}", err);
+            code = StatusCode::INTERNAL_SERVER_ERROR;
+            message = "Internal Server Error";
+        }
 
-    Ok(warp::reply::with_status(json, status))
+        let json = warp::reply::json(&ErrorResponse {
+            message: message.into(),
+        });
+
+        Ok(warp::reply::with_status(json, code).into_response())
+    }
 }

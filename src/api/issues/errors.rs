@@ -14,7 +14,7 @@ use crate::errors::ErrorResponse;
 pub enum IssueError {
     AlreadyExists(i32),
     NotFound(i32),
-    InvalidPayload,
+    RepositoryNotFound(i32),
 }
 
 impl fmt::Display for IssueError {
@@ -26,8 +26,8 @@ impl fmt::Display for IssueError {
             IssueError::NotFound(id) => {
                 write!(f, "Issue #{id} not found")
             }
-            IssueError::InvalidPayload => {
-                write!(f, "Invalid payload")
+            IssueError::RepositoryNotFound(id) => {
+                write!(f, "Repository #{id} not found")
             }
         }
     }
@@ -40,7 +40,7 @@ impl Reply for IssueError {
         let code = match self {
             IssueError::AlreadyExists(_) => StatusCode::BAD_REQUEST,
             IssueError::NotFound(_) => StatusCode::NOT_FOUND,
-            IssueError::InvalidPayload => StatusCode::UNPROCESSABLE_ENTITY,
+            IssueError::RepositoryNotFound(_) => StatusCode::UNPROCESSABLE_ENTITY,
         };
         let message = self.to_string();
 
