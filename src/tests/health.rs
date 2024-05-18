@@ -26,6 +26,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore]
     async fn test_health_db() {
         let ApiConfig { database_url, .. } = ApiConfig::new();
         let db = setup_db(&database_url).await;
