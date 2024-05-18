@@ -15,7 +15,7 @@ run:
 
 .PHONY: test
 test:
-	cargo test
+	DATABASE_URL="$(DATABASE_URL)" cargo test
 
 # DB
 
