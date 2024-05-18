@@ -11,8 +11,8 @@ use crate::{
     errors::error_handler,
 };
 
-pub async fn setup_db(url: &String) -> DBAccess {
-    let db_pool = db::pool::create_db_pool(&url)
+pub async fn setup_db(url: &str) -> DBAccess {
+    let db_pool = db::pool::create_db_pool(url)
         .map_err(DBError::DBPoolConnection)
         .expect("Failed to create DB pool");
 
@@ -67,5 +67,5 @@ pub fn parse_ids(s: &str) -> Vec<i32> {
 }
 
 pub fn parse_comma_values(s: &str) -> Vec<String> {
-    s.split(",").map(|el: &str| el.to_string()).collect()
+    s.split(',').map(|el: &str| el.to_string()).collect()
 }
