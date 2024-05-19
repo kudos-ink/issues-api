@@ -37,7 +37,13 @@ jobs:
 
       - name: Test code
         run: |
+          make testse
+
+      - name: Integration tests
+        run: |
           make test
+        env:
+          DATABASE_URL: ${{ secrets.TESTS_DATABASE_URL }}
 
       - name: Build docker image
         run: |
