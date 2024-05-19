@@ -37,11 +37,11 @@ jobs:
 
       - name: Test code
         run: |
-          make testse
+          make test
 
       - name: Integration tests
         run: |
-          make test
+          make test-db
         env:
           DATABASE_URL: ${{ secrets.TESTS_DATABASE_URL }}
 
