@@ -3,7 +3,7 @@ mod tests {
     use crate::{
         api::health::{db::DBHealth, routes::routes},
         db::errors::DBError,
-        utils::generate_test_database,
+        tests::utils::generate_test_database,
     };
     use warp::test::request;
 
