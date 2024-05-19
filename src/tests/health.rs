@@ -3,8 +3,7 @@ mod tests {
     use crate::{
         api::health::{db::DBHealth, routes::routes},
         db::errors::DBError,
-        types::ApiConfig,
-        utils::setup_db,
+        tests::utils::generate_test_database,
     };
     use warp::test::request;
 
@@ -28,8 +27,7 @@ mod tests {
     #[tokio::test]
     #[ignore]
     async fn test_health_db() {
-        let ApiConfig { database_url, .. } = ApiConfig::new();
-        let db = setup_db(&database_url).await;
+        let db = generate_test_database().await;
         let r = routes(db);
         let resp = request().path("/health").reply(&r).await;
         assert_eq!(resp.status(), 200);

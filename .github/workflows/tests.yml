@@ -39,6 +39,12 @@ jobs:
         run: |
           make test
 
+      - name: Integration tests
+        run: |
+          make test-db
+        env:
+          DATABASE_URL: ${{ secrets.TESTS_DATABASE_URL }}
+
       - name: Build docker image
         run: |
           docker build -t ${{ vars.DOCKER_REGISTRY }}:${{ github.sha }} -f Dockerfile .

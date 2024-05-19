@@ -40,4 +40,4 @@ db-clean:
 	
 .PHONY: test-db
 test-db:
-	cargo test -- --ignored --test-threads=1
+	DATABASE_URL="$(DATABASE_URL)" cargo test -- --ignored --test-threads=1

@@ -18,3 +18,5 @@ base64 = "0.22.0"
 url = "2.5.0"
 diesel = { version = "2.1.5", features = ["postgres", "chrono", "r2d2"] }
 regex = "1.10.4"
+rand = "0.8.5"
+diesel_migrations = "2.1.0"
