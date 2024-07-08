@@ -12,9 +12,9 @@ CREATE TABLE IF NOT EXISTS projects (
 );
 CREATE TABLE IF NOT EXISTS languages (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(255) UNIQUE,
+    slug VARCHAR(255) NOT NULL UNIQUE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT (now() AT TIME ZONE 'utc') NOT NULL,
-    updated_at TIMESTAMP NULL
+    updated_at TIMESTAMP WITH TIME ZONE NULL
 );
 -- basic github repository
 CREATE TABLE IF NOT EXISTS repositories (

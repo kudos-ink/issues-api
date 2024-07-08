@@ -22,9 +22,9 @@ diesel::table! {
     languages (id) {
         id -> Int4,
         #[max_length = 255]
-        name -> Nullable<Varchar>,
+        slug -> Varchar,
         created_at -> Timestamptz,
-        updated_at -> Nullable<Timestamp>,
+        updated_at -> Nullable<Timestamptz>,
     }
 }
 
