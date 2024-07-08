@@ -50,8 +50,7 @@ diesel::table! {
         #[max_length = 255]
         slug -> Varchar,
         #[max_length = 255]
-        name -> Varchar,
-        language_id -> Int4,
+        language_slug -> Varchar,
         project_id -> Int4,
         created_at -> Timestamptz,
         updated_at -> Nullable<Timestamptz>,
@@ -70,7 +69,6 @@ diesel::table! {
 
 diesel::joinable!(issues -> repositories (repository_id));
 diesel::joinable!(issues -> users (assignee_id));
-diesel::joinable!(repositories -> languages (language_id));
 diesel::joinable!(repositories -> projects (project_id));
 
 diesel::allow_tables_to_appear_in_same_query!(

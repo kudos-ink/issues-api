@@ -1,4 +1,4 @@
-use crate::types::PaginationParams;
+use crate::types::{PaginatedResponse, PaginationParams};
 
 use super::{
     db::DBProject,
@@ -16,8 +16,19 @@ pub async fn all_handler(
     params: QueryParams,
     pagination: PaginationParams,
 ) -> Result<impl Reply, Rejection> {
-    let projects = db_access.all(params, pagination)?;
-    Ok(json::<Vec<_>>(&projects))
+    let projects = db_access.all(params, pagination.clone())?;
+    let total_count = projects.len() as i64;
+    let has_next_page = pagination.offset + pagination.limit < total_count;
+    let has_previous_page = pagination.offset > 0;
+
+    let response = PaginatedResponse {
+        total_count: Some(total_count),
+        has_next_page,
+        has_previous_page,
+        data: projects,
+    };
+
+    Ok(json(&response))
 }
 
 pub async fn create_handler(

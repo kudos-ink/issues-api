@@ -27,7 +27,42 @@ impl DBIssue for DBAccess {
         pagination: PaginationParams,
     ) -> Result<Vec<Issue>, DBError> {
         let conn = &mut self.get_db_conn();
-        let mut query = issues_dsl::issues.into_boxed();
+        let mut query = issues_dsl::issues
+            .inner_join(
+                repositories_dsl::repositories
+                    .on(issues_dsl::repository_id.eq(repositories_dsl::id)),
+            )
+            .inner_join(
+                projects_dsl::projects.on(repositories_dsl::project_id.eq(projects_dsl::id)),
+            )
+            .left_join(
+                languages_dsl::languages.on(repositories_dsl::language_id.eq(languages_dsl::id)),
+            )
+            .into_boxed();
+
+        if let Some(ref slug) = params.slug {
+            query = query.filter(projects::slug.eq(slug));
+        }
+
+        if let Some(ref category) = params.categories {
+            query = query.filter(projects::categories.contains(vec![category]));
+        }
+
+        if let Some(ref purpose) = params.purposes {
+            query = query.filter(projects::purposes.contains(vec![purpose]));
+        }
+
+        if let Some(ref stack_level) = params.stack_levels {
+            query = query.filter(projects::stack_levels.contains(vec![stack_level]));
+        }
+
+        if let Some(ref technology) = params.technologies {
+            query = query.filter(projects::technologies.contains(vec![technology]));
+        }
+
+        if let Some(language_id) = params.language_slug {
+            query = query.filter(languages::id.eq(language_id));
+        }
 
         if let Some(raw_labels) = params.labels {
             let labels: Vec<String> = utils::parse_comma_values(&raw_labels);
@@ -48,7 +83,7 @@ impl DBIssue for DBAccess {
 
         query = query.offset(pagination.offset).limit(pagination.limit);
 
-        let result = query.load::<Issue>(conn)?;
+        let result = query.select(issues::all_columns).load::<Issue>(conn)?;
         Ok(result)
     }
     fn by_id(&self, id: i32) -> Result<Option<Issue>, DBError> {

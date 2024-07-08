@@ -1,5 +1,5 @@
 use dotenv::dotenv;
-use serde::Deserialize;
+use serde_derive::{Deserialize, Serialize};
 use std::env;
 
 /// Configuration used by this API.
@@ -27,7 +27,7 @@ impl ApiConfig {
     }
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct PaginationParams {
     #[serde(default = "default_limit")]
     pub limit: i64,
@@ -41,4 +41,12 @@ fn default_limit() -> i64 {
 
 fn default_offset() -> i64 {
     0 // Default offset
+}
+
+#[derive(Serialize)]
+pub struct PaginatedResponse<T> {
+    pub total_count: Option<i64>,
+    pub has_next_page: bool,
+    pub has_previous_page: bool,
+    pub data: Vec<T>,
 }

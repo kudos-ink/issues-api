@@ -4,7 +4,7 @@ use warp::{
     reply::{json, with_status, Reply},
 };
 
-use crate::types::PaginationParams;
+use crate::types::{PaginatedResponse, PaginationParams};
 
 use super::{
     db::DBRepository,
@@ -24,8 +24,19 @@ pub async fn all_handler(
     params: QueryParams,
     pagination: PaginationParams,
 ) -> Result<impl Reply, Rejection> {
-    let repositories = db_access.all(params, pagination)?;
-    Ok(json::<Vec<_>>(&repositories))
+    let repositories = db_access.all(params, pagination.clone())?;
+    let total_count = repositories.len() as i64;
+    let has_next_page = pagination.offset + pagination.limit < total_count;
+    let has_previous_page = pagination.offset > 0;
+
+    let response = PaginatedResponse {
+        total_count: Some(total_count),
+        has_next_page,
+        has_previous_page,
+        data: repositories,
+    };
+
+    Ok(json(&response))
 }
 
 pub async fn create_handler(
@@ -62,4 +73,9 @@ pub async fn delete_handler(
         Some(p) => Ok(with_status(json(&db_access.delete(p.id)?), StatusCode::OK)),
         None => Err(warp::reject::custom(RepositoryError::NotFound(id))),
     }
+}
+
+pub async fn get_languages_handler(db_access: impl DBRepository) -> Result<impl Reply, Rejection> {
+    let languages = db_access.aggregate_languages()?;
+    Ok(json(&languages))
 }
