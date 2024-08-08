@@ -15,6 +15,7 @@ on:
 env:
   AWS_REGION: us-east-1
   ECR_REPOSITORY: issues-api
+
 permissions:
   id-token: write
   contents: read
@@ -42,6 +43,7 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v2
 
       - name: Build, tag, and push docker image to Amazon ECR
+        id: build-image
         env:
           REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           REPOSITORY: issues-api
@@ -50,7 +52,27 @@ jobs:
           image=$REGISTRY/${{ env.ECR_REPOSITORY }}:${{ github.sha }} # TODO: delete
           docker build -t $image .
           docker push $image
-      
+          echo "image=$image >> $GITHUB_OUTPUT
+
+      - name: Download task definition
+        run: |
+          aws ecs describe-task-definition --task-definition issues-api --query taskDefinition > task-definition.json
+
+      - name: Fill in the new image ID in the Amazon ECS task definition
+        id: task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-definition.json
+          container-name: issues-api
+          image: ${{ steps.build-image.outputs.image }}
+
+      - name: Deploy Amazon ECS task definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          service: issues-api
+          cluster: production
+          # wait-for-service-stability: true
       # TODO: restore?
       # - name: Log in to Docker Hub
       #   uses: docker/login-action@v3
