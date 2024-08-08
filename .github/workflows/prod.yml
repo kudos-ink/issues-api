@@ -45,9 +45,10 @@ jobs:
           REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           REPOSITORY: issues-api
         run: |
-          # docker build -t $REGISTRY/${{ env.ECR_REPOSITORY }}:${{ github.event.release.tag_name }} .
-          docker build -t $REGISTRY/${{ env.ECR_REPOSITORY }}:${{ github.sha }} .
-          docker push $REGISTRY/${{ env.ECR_REPOSITORY }}:${{ github.event.release.tag_name }}
+          image=$REGISTRY/${{ env.ECR_REPOSITORY }}:${{ github.event.release.tag_name }}
+          image=$REGISTRY/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
+          docker build -t $image .
+          docker push $image
 
       # - name: Log in to Docker Hub
       #   uses: docker/login-action@v3
