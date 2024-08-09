@@ -52,7 +52,7 @@ jobs:
           image=$REGISTRY/${{ env.ECR_REPOSITORY }}:${{ github.sha }} # TODO: delete
           docker build -t $image .
           docker push $image
-          echo "image=$image >> $GITHUB_OUTPUT
+          echo "image=$image" >> $GITHUB_OUTPUT
 
       - name: Download task definition
         run: |
