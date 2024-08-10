@@ -3,6 +3,9 @@ use diesel::prelude::*;
 
 use super::models::{Issue, NewIssue, QueryParams, UpdateIssue};
 use crate::schema::issues::dsl as issues_dsl;
+use crate::schema::languages::dsl as languages_dsl;
+use crate::schema::projects::dsl as projects_dsl;
+use crate::schema::repositories::dsl as repositories_dsl;
 
 use crate::db::{
     errors::DBError,
@@ -11,8 +14,11 @@ use crate::db::{
 use crate::types::PaginationParams;
 use crate::utils;
 pub trait DBIssue: Send + Sync + Clone + 'static {
-    fn all(&self, params: QueryParams, pagination: PaginationParams)
-        -> Result<Vec<Issue>, DBError>;
+    fn all(
+        &self,
+        params: QueryParams,
+        pagination: PaginationParams,
+    ) -> Result<(Vec<Issue>, i64), DBError>;
     fn by_id(&self, id: i32) -> Result<Option<Issue>, DBError>;
     fn by_number(&self, repository_id: i32, number: i32) -> Result<Option<Issue>, DBError>;
     fn create(&self, issue: &NewIssue) -> Result<Issue, DBError>;
@@ -25,66 +31,77 @@ impl DBIssue for DBAccess {
         &self,
         params: QueryParams,
         pagination: PaginationParams,
-    ) -> Result<Vec<Issue>, DBError> {
+    ) -> Result<(Vec<Issue>, i64), DBError> {
         let conn = &mut self.get_db_conn();
-        let mut query = issues_dsl::issues
-            .inner_join(
-                repositories_dsl::repositories
-                    .on(issues_dsl::repository_id.eq(repositories_dsl::id)),
-            )
-            .inner_join(
-                projects_dsl::projects.on(repositories_dsl::project_id.eq(projects_dsl::id)),
-            )
-            .left_join(
-                languages_dsl::languages.on(repositories_dsl::language_id.eq(languages_dsl::id)),
-            )
-            .into_boxed();
 
-        if let Some(ref slug) = params.slug {
-            query = query.filter(projects::slug.eq(slug));
-        }
+        let build_query = || {
+            let mut query = issues_dsl::issues
+                .inner_join(
+                    repositories_dsl::repositories
+                        .on(issues_dsl::repository_id.eq(repositories_dsl::id)),
+                )
+                .inner_join(
+                    projects_dsl::projects.on(repositories_dsl::project_id.eq(projects_dsl::id)),
+                )
+                .left_join(
+                    languages_dsl::languages
+                        .on(repositories_dsl::language_slug.eq(languages_dsl::slug)),
+                )
+                .into_boxed();
 
-        if let Some(ref category) = params.categories {
-            query = query.filter(projects::categories.contains(vec![category]));
-        }
+            if let Some(slug) = params.slug.as_ref() {
+                query = query.filter(projects_dsl::slug.eq(slug));
+            }
 
-        if let Some(ref purpose) = params.purposes {
-            query = query.filter(projects::purposes.contains(vec![purpose]));
-        }
+            if let Some(category) = params.categories.as_ref() {
+                query = query.filter(projects_dsl::categories.contains(vec![category]));
+            }
 
-        if let Some(ref stack_level) = params.stack_levels {
-            query = query.filter(projects::stack_levels.contains(vec![stack_level]));
-        }
+            if let Some(purpose) = params.purposes.as_ref() {
+                query = query.filter(projects_dsl::purposes.contains(vec![purpose]));
+            }
 
-        if let Some(ref technology) = params.technologies {
-            query = query.filter(projects::technologies.contains(vec![technology]));
-        }
+            if let Some(stack_level) = params.stack_levels.as_ref() {
+                query = query.filter(projects_dsl::stack_levels.contains(vec![stack_level]));
+            }
 
-        if let Some(language_id) = params.language_slug {
-            query = query.filter(languages::id.eq(language_id));
-        }
+            if let Some(technology) = params.technologies.as_ref() {
+                query = query.filter(projects_dsl::technologies.contains(vec![technology]));
+            }
 
-        if let Some(raw_labels) = params.labels {
-            let labels: Vec<String> = utils::parse_comma_values(&raw_labels);
-            query = query.filter(issues_dsl::labels.overlaps_with(labels));
-        }
+            if let Some(language_slug) = params.language_slug.as_ref() {
+                query = query.filter(languages_dsl::slug.eq(language_slug));
+            }
 
-        if let Some(open) = params.open {
-            query = query.filter(issues_dsl::open.eq(open));
-        }
+            if let Some(raw_labels) = params.labels.as_ref() {
+                let labels: Vec<String> = utils::parse_comma_values(&raw_labels);
+                query = query.filter(issues_dsl::labels.overlaps_with(labels));
+            }
 
-        if let Some(assignee_id) = params.assignee_id {
-            query = query.filter(issues_dsl::assignee_id.eq(assignee_id));
-        }
+            if let Some(open) = params.open.as_ref() {
+                query = query.filter(issues_dsl::open.eq(open));
+            }
 
-        if let Some(repository_id) = params.repository_id {
-            query = query.filter(issues_dsl::repository_id.eq(repository_id));
-        }
+            if let Some(assignee_id) = params.assignee_id.as_ref() {
+                query = query.filter(issues_dsl::assignee_id.eq(assignee_id));
+            }
 
-        query = query.offset(pagination.offset).limit(pagination.limit);
+            if let Some(repository_id) = params.repository_id.as_ref() {
+                query = query.filter(issues_dsl::repository_id.eq(repository_id));
+            }
 
-        let result = query.select(issues::all_columns).load::<Issue>(conn)?;
-        Ok(result)
+            query
+        };
+
+        let total_count = build_query().count().get_result::<i64>(conn)?;
+
+        let result = build_query()
+            .offset(pagination.offset)
+            .limit(pagination.limit)
+            .select(issues_dsl::issues::all_columns())
+            .load::<Issue>(conn)?;
+
+        Ok((result, total_count))
     }
     fn by_id(&self, id: i32) -> Result<Option<Issue>, DBError> {
         let conn = &mut self.get_db_conn();

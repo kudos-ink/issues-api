@@ -16,7 +16,7 @@ pub trait DBProject: Send + Sync + Clone + 'static {
         &self,
         params: QueryParams,
         pagination: PaginationParams,
-    ) -> Result<Vec<Project>, DBError>;
+    ) -> Result<(Vec<Project>, i64), DBError>;
     fn by_id(&self, id: i32) -> Result<Option<Project>, DBError>;
     fn by_slug(&self, slug: &str) -> Result<Option<Project>, DBError>;
     fn create(&self, form: &NewForm) -> Result<Project, DBError>;
@@ -29,33 +29,42 @@ impl DBProject for DBAccess {
         &self,
         params: QueryParams,
         pagination: PaginationParams,
-    ) -> Result<Vec<Project>, DBError> {
+    ) -> Result<(Vec<Project>, i64), DBError> {
         let conn = &mut self.get_db_conn();
-        let mut query = projects_dsl::projects.into_boxed();
 
-        if let Some(slug) = params.slug {
-            query = query.filter(projects_dsl::slug.eq(slug));
-        }
+        let build_query = || {
+            let mut query = projects_dsl::projects.into_boxed();
 
-        if let Some(raw_categories) = params.categories {
-            let categories: Vec<String> = utils::parse_comma_values(&raw_categories);
-            query = query.filter(projects_dsl::categories.overlaps_with(categories));
-        }
+            if let Some(slug) = params.slug.as_ref() {
+                query = query.filter(projects_dsl::slug.eq(slug));
+            }
 
-        if let Some(raw_purposes) = params.purposes {
-            let purposes: Vec<String> = utils::parse_comma_values(&raw_purposes);
-            query = query.filter(projects_dsl::purposes.overlaps_with(purposes));
-        }
+            if let Some(raw_categories) = params.categories.as_ref() {
+                let categories: Vec<String> = utils::parse_comma_values(raw_categories);
+                query = query.filter(projects_dsl::categories.overlaps_with(categories));
+            }
 
-        if let Some(raw_technologies) = params.technologies {
-            let technologies: Vec<String> = utils::parse_comma_values(&raw_technologies);
-            query = query.filter(projects_dsl::technologies.overlaps_with(technologies));
-        }
+            if let Some(raw_purposes) = params.purposes.as_ref() {
+                let purposes: Vec<String> = utils::parse_comma_values(raw_purposes);
+                query = query.filter(projects_dsl::purposes.overlaps_with(purposes));
+            }
 
-        query = query.offset(pagination.offset).limit(pagination.limit);
+            if let Some(raw_technologies) = params.technologies.as_ref() {
+                let technologies: Vec<String> = utils::parse_comma_values(raw_technologies);
+                query = query.filter(projects_dsl::technologies.overlaps_with(technologies));
+            }
 
-        let result = query.load::<Project>(conn)?;
-        Ok(result)
+            query
+        };
+
+        let total_count = build_query().count().get_result::<i64>(conn)?;
+
+        let result = build_query()
+            .offset(pagination.offset)
+            .limit(pagination.limit)
+            .load::<Project>(conn)?;
+
+        Ok((result, total_count))
     }
 
     fn by_id(&self, id: i32) -> Result<Option<Project>, DBError> {

@@ -4,7 +4,10 @@ use warp::{
     reply::{json, with_status, Reply},
 };
 
-use crate::{api::repositories::db::DBRepository, types::PaginationParams};
+use crate::{
+    api::repositories::db::DBRepository,
+    types::{PaginatedResponse, PaginationParams},
+};
 
 use super::{
     db::DBIssue,
@@ -24,8 +27,18 @@ pub async fn all_handler(
     params: QueryParams,
     pagination: PaginationParams,
 ) -> Result<impl Reply, Rejection> {
-    let issues = db_access.all(params, pagination)?;
-    Ok(json::<Vec<_>>(&issues))
+    let (issues, total_count) = db_access.all(params, pagination.clone())?;
+    let has_next_page = pagination.offset + pagination.limit < total_count;
+    let has_previous_page = pagination.offset > 0;
+
+    let response = PaginatedResponse {
+        total_count: Some(total_count),
+        has_next_page,
+        has_previous_page,
+        data: issues,
+    };
+
+    Ok(json(&response))
 }
 
 pub async fn create_handler(

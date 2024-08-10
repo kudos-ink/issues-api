@@ -16,8 +16,7 @@ pub async fn all_handler(
     params: QueryParams,
     pagination: PaginationParams,
 ) -> Result<impl Reply, Rejection> {
-    let projects = db_access.all(params, pagination.clone())?;
-    let total_count = projects.len() as i64;
+    let (projects, total_count) = db_access.all(params, pagination.clone())?;
     let has_next_page = pagination.offset + pagination.limit < total_count;
     let has_previous_page = pagination.offset > 0;
 
