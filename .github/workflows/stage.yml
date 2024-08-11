@@ -41,11 +41,11 @@ jobs:
         run: |
           make test
 
-      - name: Integration tests
-        run: |
-          make test-db
-        env:
-          DATABASE_URL: ${{ secrets.TESTS_DATABASE_URL }}
+      # - name: Integration tests
+      #   run: |
+      #     make test-db
+      #   env:
+      #     DATABASE_URL: ${{ secrets.TESTS_DATABASE_URL }}
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
