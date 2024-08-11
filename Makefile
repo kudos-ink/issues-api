@@ -4,6 +4,7 @@ PORT?=8000
 USERNAME?=test
 PASSWORD?=test
 DOCKER_DB_CONTAINER_NAME:=db
+DOCKER_API_CONTAINER_NAME:=api
 DOCKER_COMPOSE:=docker-compose
 DOCKER_COMPOSE_FILE:=docker-compose.yaml
 
@@ -17,6 +18,10 @@ run:
 test:
 	DATABASE_URL="$(DATABASE_URL)" cargo test
 
+# Start the PostgreSQL container
+.PHONY: docker-api
+docker-api:
+	$(DOCKER_COMPOSE) -f $(DOCKER_COMPOSE_FILE) up $(DOCKER_API_CONTAINER_NAME) 
 # DB
 
 # Start the PostgreSQL container
