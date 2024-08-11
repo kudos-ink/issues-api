@@ -1,3 +1,7 @@
+[![Production](https://github.com/kudos-ink/issues-api/actions/workflows/prod.yml/badge.svg)](https://github.com/kudos-ink/issues-api/actions/workflows/prod.yml)
+[![Stage](https://github.com/kudos-ink/issues-api/actions/workflows/stage.yml/badge.svg)](https://github.com/kudos-ink/issues-api/actions/workflows/stage.yml)
+[![Stage cron](https://github.com/kudos-ink/issues-api/actions/workflows/stage_cron.yaml/badge.svg)](https://github.com/kudos-ink/issues-api/actions/workflows/stage_cron.yaml)
+
 # kudos api
 
 # Local Development
