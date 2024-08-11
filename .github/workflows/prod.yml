@@ -85,5 +85,5 @@ jobs:
       - name: Tag and push docker image to Docker Hub
         run: |
           image=${{ vars.DOCKER_REGISTRY }}:${{ github.event.release.tag_name }}
-          docker image tag ${{ steps.build-image.outputs.image }} $image
+          docker build -t $image .
           docker push $image
