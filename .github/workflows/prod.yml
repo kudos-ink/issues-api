@@ -94,6 +94,6 @@ jobs:
 
       - name: Deploy staging
         run: |
-          image=docker.io/${{ steps.build-dockerhub-image.outputs.image }}
-          hook=${{ secrets.STAGE_DEPLOY_HOOK }}&imgURL=$(echo $image | jq -sRr @uri)
-          curl -f $hook
+          image="docker.io/${{ steps.build-dockerhub-image.outputs.image }}"
+          encoded_image=$(echo $image | jq -sRr @uri)
+          curl -f "${{ secrets.STAGE_DEPLOY_HOOK }}&imgURL=$encoded_image"
