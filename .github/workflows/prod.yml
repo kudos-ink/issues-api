@@ -18,6 +18,7 @@ env:
   ECS_SERVICE: issues-api
   ECS_CONTAINER: issues-api
   TASK_FILE: task.json
+  DOCKERHUB_REGISTRY: kudosportal/issues
 
 permissions:
   id-token: write
@@ -84,6 +85,7 @@ jobs:
 
       - name: Tag and push docker image to Docker Hub
         run: |
-          image=${{ vars.DOCKER_REGISTRY }}:${{ github.event.release.tag_name }}
+          image=${{ env.DOCKERHUB_REGISTRY }}:${{ github.event.release.tag_name }}
+          image=${{ env.DOCKERHUB_REGISTRY }}:${{ github.sha }} # TODO: delete
           docker build -t $image .
           docker push $image
