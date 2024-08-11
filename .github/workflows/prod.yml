@@ -86,6 +86,6 @@ jobs:
       - name: Tag and push docker image to Docker Hub
         run: |
           image=${{ env.DOCKERHUB_REGISTRY }}:${{ github.event.release.tag_name }}
-          image=${{ env.DOCKERHUB_REGISTRY }}:${{ github.sha }} # TODO: delete
+          image=${{ env.DOCKERHUB_REGISTRY }}:latest # TODO: delete
           docker build -t $image .
           docker push $image
