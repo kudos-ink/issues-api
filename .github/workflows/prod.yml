@@ -84,8 +84,14 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Tag and push docker image to Docker Hub
+        id: build-dockerhub-image
         run: |
           image=${{ env.DOCKERHUB_REGISTRY }}:${{ github.event.release.tag_name }}
           image=${{ env.DOCKERHUB_REGISTRY }}:latest # TODO: delete
           docker build -t $image .
           docker push $image
+          echo "image=$image" >> $GITHUB_OUTPUT
+
+      - name: Deploy staging
+        run: |
+          curl -f ${{ secrets.STAGE_DEPLOY_HOOK }}?imgURL=${{ steps.build-dockerhub-image.outputs.image }}
