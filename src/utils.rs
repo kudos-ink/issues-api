@@ -11,8 +11,8 @@ use crate::{
     errors::error_handler,
 };
 
-pub async fn setup_db(url: &String) -> DBAccess {
-    let db_pool = db::pool::create_db_pool(&url)
+pub async fn setup_db(url: &str) -> DBAccess {
+    let db_pool = db::pool::create_db_pool(url)
         .map_err(DBError::DBPoolConnection)
         .expect("Failed to create DB pool");
 

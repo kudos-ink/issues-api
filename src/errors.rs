@@ -34,10 +34,10 @@ pub async fn error_handler(err: Rejection) -> std::result::Result<impl Reply, In
             "Invalid query parameters".to_string(),
         )
     } else if let Some(e) = err.find::<AuthenticationError>() {
-        eprintln!("AuthenticationError: {}", e.to_string());
+        eprintln!("AuthenticationError: {e}");
         (
             StatusCode::UNAUTHORIZED,
-            format!("AuthenticationError - {}", e.to_string()),
+            format!("AuthenticationError - {e}"),
         )
     } else if let Some(db_error) = err.find::<DBError>() {
         match db_error {

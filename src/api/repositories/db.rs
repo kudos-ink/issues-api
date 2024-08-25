@@ -42,7 +42,7 @@ impl DBRepository for DBAccess {
         }
         if let Some(project_id) = params.project_ids {
             let ids: Vec<i32> = utils::parse_ids(&project_id);
-            if ids.len() > 0 {
+            if !ids.is_empty() {
                 query = query.filter(repositories_dsl::project_id.eq_any(ids));
             }
         }

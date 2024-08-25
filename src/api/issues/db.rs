@@ -74,7 +74,7 @@ impl DBIssue for DBAccess {
             }
 
             if let Some(raw_labels) = params.labels.as_ref() {
-                let labels: Vec<String> = utils::parse_comma_values(&raw_labels);
+                let labels: Vec<String> = utils::parse_comma_values(raw_labels);
                 query = query.filter(issues_dsl::labels.overlaps_with(labels));
             }
 
