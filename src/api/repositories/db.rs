@@ -1,3 +1,5 @@
+use diesel::dsl::sql;
+use diesel::sql_types::Text;
 use diesel::{dsl::now, prelude::*};
 
 use super::models::{NewRepository, QueryParams, Repository, UpdateRepository};
@@ -22,6 +24,7 @@ pub trait DBRepository: Send + Sync + Clone + 'static {
     fn update(&self, id: i32, repo: &UpdateRepository) -> Result<Repository, DBError>;
     fn delete(&self, id: i32) -> Result<(), DBError>;
     fn by_slug(&self, slug: &str) -> Result<Option<Repository>, DBError>;
+    fn aggregate_languages(&self) -> Result<Vec<String>, DBError>;
 }
 
 impl DBRepository for DBAccess {
@@ -33,16 +36,14 @@ impl DBRepository for DBAccess {
         let conn = &mut self.get_db_conn();
         let mut query = repositories_dsl::repositories.into_boxed();
 
-        if let Some(language_id) = params.language_ids {
-            let ids: Vec<i32> = utils::parse_ids(&language_id);
-            if !ids.is_empty() {
-                query = query.filter(repositories_dsl::language_id.eq_any(ids));
-            }
+        if let Some(raw_languages) = params.languages {
+            let languages: Vec<String> = utils::parse_comma_values(&raw_languages);
+            query = query.filter(repositories_dsl::language_slug.eq_any(languages));
         }
         if let Some(project_id) = params.project_ids {
             let ids: Vec<i32> = utils::parse_ids(&project_id);
             if !ids.is_empty() {
-                query = query.filter(repositories_dsl::language_id.eq_any(ids));
+                query = query.filter(repositories_dsl::project_id.eq_any(ids));
             }
         }
 
@@ -86,6 +87,7 @@ impl DBRepository for DBAccess {
 
         Ok(project)
     }
+
     fn delete(&self, id: i32) -> Result<(), DBError> {
         let conn = &mut self.get_db_conn();
         diesel::delete(repositories_dsl::repositories.filter(repositories_dsl::id.eq(id)))
@@ -94,6 +96,7 @@ impl DBRepository for DBAccess {
 
         Ok(())
     }
+
     fn by_slug(&self, slug: &str) -> Result<Option<Repository>, DBError> {
         let conn = &mut self.get_db_conn();
 
@@ -104,5 +107,13 @@ impl DBRepository for DBAccess {
             .map_err(DBError::from)?;
 
         Ok(result)
+    }
+
+    fn aggregate_languages(&self) -> Result<Vec<String>, DBError> {
+        let conn = &mut self.get_db_conn();
+        let languages = repositories_dsl::repositories
+            .select(sql::<Text>("DISTINCT language_slug"))
+            .load::<String>(conn)?;
+        Ok(languages)
     }
 }

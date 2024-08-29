@@ -36,7 +36,7 @@ pub fn routes(db_access: impl DBIssue + DBRepository) -> BoxedFilter<(impl Reply
     let create_issue = issue
         .and(with_auth())
         .and(warp::post())
-        .and(warp::body::json())
+        .and(warp::body::aggregate())
         .and(with_db(db_access.clone()))
         .and_then(handlers::create_handler);
 

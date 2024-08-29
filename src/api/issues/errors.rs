@@ -15,20 +15,18 @@ pub enum IssueError {
     AlreadyExists(i32),
     NotFound(i32),
     RepositoryNotFound(i32),
+    InvalidPayload(String),
+    CannotCreate(String),
 }
 
 impl fmt::Display for IssueError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            IssueError::AlreadyExists(id) => {
-                write!(f, "Issue #{id} already exists")
-            }
-            IssueError::NotFound(id) => {
-                write!(f, "Issue #{id} not found")
-            }
-            IssueError::RepositoryNotFound(id) => {
-                write!(f, "Repository #{id} not found")
-            }
+            IssueError::AlreadyExists(id) => write!(f, "Issue #{id} already exists"),
+            IssueError::NotFound(id) => write!(f, "Issue #{id} not found"),
+            IssueError::InvalidPayload(error) => write!(f, "Invalid payload: {error}"),
+            IssueError::RepositoryNotFound(id) => write!(f, "Repository #{id} not found"),
+            IssueError::CannotCreate(error) =>  write!(f, "error creating the issue: {error}"),
         }
     }
 }
@@ -40,6 +38,8 @@ impl Reply for IssueError {
         let code = match self {
             IssueError::AlreadyExists(_) => StatusCode::BAD_REQUEST,
             IssueError::NotFound(_) => StatusCode::NOT_FOUND,
+            IssueError::InvalidPayload(_) => StatusCode::UNPROCESSABLE_ENTITY,
+            IssueError::CannotCreate(_) => StatusCode::INTERNAL_SERVER_ERROR,
             IssueError::RepositoryNotFound(_) => StatusCode::UNPROCESSABLE_ENTITY,
         };
         let message = self.to_string();

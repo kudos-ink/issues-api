@@ -29,7 +29,7 @@ pub fn setup_filters(db: DBAccess) -> BoxedFilter<(impl Reply,)> {
         .or(repositories_route)
         .or(issues_route)
         .or(users_route)
-        .with(warp::cors().allow_any_origin())
+        .with(warp::cors().allow_any_origin().allow_header("Authorization")) //TODO: restrict url 
         .recover(error_handler)
         .boxed()
 }

@@ -15,20 +15,18 @@ pub enum ProjectError {
     AlreadyExists(i32),
     NotFound(i32),
     NotFoundBySlug(String),
+    InvalidPayload(String),
+    CannotCreate(String),
 }
 
 impl fmt::Display for ProjectError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            ProjectError::AlreadyExists(id) => {
-                write!(f, "Project #{id} already exists")
-            }
-            ProjectError::NotFound(id) => {
-                write!(f, "Project #{id} not found")
-            }
-            ProjectError::NotFoundBySlug(slug) => {
-                write!(f, "Project {slug} not found")
-            }
+            ProjectError::AlreadyExists(id) => write!(f, "Project #{id} already exists"),
+            ProjectError::NotFound(id) =>     write!(f, "Project #{id} not found"),
+            ProjectError::NotFoundBySlug(slug) => write!(f, "Project {slug} not found"),
+            ProjectError::InvalidPayload(error) => write!(f, "Invalid payload: {error}"),
+            ProjectError::CannotCreate(error) => write!(f, "Cannot create the project: {error}"),
         }
     }
 }
@@ -41,6 +39,8 @@ impl Reply for ProjectError {
             ProjectError::AlreadyExists(_) => StatusCode::BAD_REQUEST,
             ProjectError::NotFound(_) => StatusCode::NOT_FOUND,
             ProjectError::NotFoundBySlug(_) => StatusCode::NOT_FOUND,
+            ProjectError::InvalidPayload(_) => StatusCode::UNPROCESSABLE_ENTITY,
+            ProjectError::CannotCreate(_) => StatusCode::INTERNAL_SERVER_ERROR,
         };
         let message = self.to_string();
 

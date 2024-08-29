@@ -1,4 +1,6 @@
+
 mod types;
+use log::{info, warn};
 
 use crate::types::ApiConfig;
 
@@ -24,6 +26,8 @@ async fn run() {
         database_url,
     } = ApiConfig::new();
 
+    env_logger::init();
+
     let db = utils::setup_db(&database_url).await;
     let app_filters = utils::setup_filters(db);
 
@@ -31,7 +35,8 @@ async fn run() {
         .parse::<std::net::SocketAddr>()
         .expect("Invalid server address");
 
-    println!("listening on {}", addr);
+    info!("listening on {}", addr);
+    warn!("listening on {}", addr);
 
     warp::serve(app_filters).run(addr).await;
 }
