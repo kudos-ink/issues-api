@@ -1,5 +1,9 @@
+use bytes::Buf;
+use log::{error, info, warn};
+use thiserror::Error;
 use warp::{
     http::StatusCode,
+    reject,
     reject::Rejection,
     reply::{json, with_status, Reply},
 };
@@ -27,6 +31,7 @@ pub async fn all_handler(
     params: QueryParams,
     pagination: PaginationParams,
 ) -> Result<impl Reply, Rejection> {
+    info!("getting all the issues");
     let (issues, total_count) = db_access.all(params, pagination.clone())?;
     let has_next_page = pagination.offset + pagination.limit < total_count;
     let has_previous_page = pagination.offset > 0;
@@ -42,19 +47,47 @@ pub async fn all_handler(
 }
 
 pub async fn create_handler(
-    issue: NewIssue,
+    buf: impl Buf,
     db_access: impl DBIssue + DBRepository,
 ) -> Result<impl Reply, Rejection> {
+    let des = &mut serde_json::Deserializer::from_reader(buf.reader());
+    let issue: NewIssue = serde_path_to_error::deserialize(des).map_err(|e| {
+        let e = e.to_string();
+        warn!("invalid issue '{e}'",);
+        reject::custom(IssueError::InvalidPayload(e))
+    })?;
+
+    info!("creating issue id '{}'", issue.id);
     match DBRepository::by_id(&db_access, issue.repository_id) {
-        Ok(_) => match db_access.by_number(issue.repository_id, issue.number)? {
-            Some(r) => Err(warp::reject::custom(IssueError::AlreadyExists(r.id))),
-            None => Ok(with_status(
-                // check if repository exists
-                json(&DBIssue::create(&db_access, &issue)?),
-                StatusCode::CREATED,
-            )),
+        Ok(repo) => match repo {
+            Some(_) => match db_access.by_number(issue.repository_id, issue.number)? {
+                Some(r) => {
+                    warn!("issue id '{}' exists", issue.id);
+                    Err(warp::reject::custom(IssueError::AlreadyExists(r.id)))
+                }
+                None => match DBIssue::create(&db_access, &issue) {
+                    Ok(issue) => {
+                        info!("issue id '{}' created", issue.id);
+                        Ok(with_status(json(&issue), StatusCode::CREATED))
+                    }
+                    Err(err) => {
+                        error!("error creating the issue '{:?}': {}", issue, err);
+                        Err(warp::reject::custom(IssueError::CannotCreate(
+                            "error creating the issue".to_owned(),
+                        )))
+                    }
+                },
+            },
+            None => {
+                warn!("repository '{}' invalid", issue.repository_id);
+                Err(warp::reject::custom(IssueError::RepositoryNotFound(
+                    issue.repository_id
+                )))
+            }
         },
-        Err(_) => Err(warp::reject::custom(IssueError::InvalidPayload)),
+        Err(_) => Err(warp::reject::custom(IssueError::CannotCreate(
+            "cannot check if the repository is valid".to_owned(),
+        ))),
     }
 }
 pub async fn update_handler(
@@ -64,7 +97,9 @@ pub async fn update_handler(
 ) -> Result<impl Reply, Rejection> {
     if let Some(repo_id) = issue.repository_id {
         if DBRepository::by_id(&db_access, repo_id).is_err() {
-            return Err(warp::reject::custom(IssueError::InvalidPayload));
+            return Err(warp::reject::custom(IssueError::InvalidPayload(
+                "invalid".to_owned(),
+            )));
         }
     }
 

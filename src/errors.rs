@@ -5,6 +5,7 @@ use warp::{hyper::StatusCode, Rejection, Reply};
 
 use crate::{
     auth::errors::AuthenticationError,
+    api::issues::errors::IssueError,
     db::errors::DBError,
     // pagination::{PaginationError, SortError},
     // repository::{errors::RepositoryError, models::RepositorySortError},
@@ -17,13 +18,13 @@ pub struct ErrorResponse {
 }
 
 pub async fn error_handler(err: Rejection) -> std::result::Result<impl Reply, Infallible> {
+    if let Some(e) = err.find::<IssueError>() {
+        return Ok(e.clone().into_response());
+    }
+    // TODO: add more errors
+    
     let (status, message) = if err.is_not_found() {
         (StatusCode::NOT_FOUND, "Resource not found".to_string())
-    } else if err.find::<warp::reject::MethodNotAllowed>().is_some() {
-        (
-            StatusCode::METHOD_NOT_ALLOWED,
-            "Method not allowed".to_string(),
-        )
     } else if let Some(e) = err.find::<warp::filters::body::BodyDeserializeError>() {
         eprintln!("BodyDeserializeError error: {:?}", e);
         (StatusCode::BAD_REQUEST, "Invalid request body".to_string())
@@ -64,6 +65,6 @@ pub async fn error_handler(err: Rejection) -> std::result::Result<impl Reply, In
     };
 
     let json = warp::reply::json(&ErrorResponse { message });
-
-    Ok(warp::reply::with_status(json, status))
+    let response = warp::reply::with_status(json, status).into_response();
+    Ok(response)
 }
