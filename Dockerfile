@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-ARG RUST_VERSION=1.74.0
+ARG RUST_VERSION=1.78.0
 FROM rust:${RUST_VERSION} AS build
 
 RUN --mount=type=bind,source=src,target=src \
