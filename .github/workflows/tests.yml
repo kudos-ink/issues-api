@@ -6,9 +6,6 @@ on:
       - main
     types: [opened, synchronize]
 
-# env:
-#   RUSTFLAGS: "-Dwarnings"
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -30,9 +27,9 @@ jobs:
         with:
           toolchain: stable
 
-      # - name: Run Clippy
-      #   run: |
-      #     cargo clippy --all-targets --all-features
+      - name: Run Clippy
+        run: |
+          cargo clippy --all-targets --all-features
 
       - name: Build code
         run: |
@@ -40,7 +37,13 @@ jobs:
 
       - name: Test code
         run: |
-          cargo test --verbose
+          make test
+
+      # - name: Integration tests
+      #   run: |
+      #     make test-db
+      #   env:
+      #     DATABASE_URL: ${{ secrets.TESTS_DATABASE_URL }}
 
       - name: Build docker image
         run: |

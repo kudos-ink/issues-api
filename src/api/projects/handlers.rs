@@ -3,7 +3,7 @@ use crate::types::{PaginatedResponse, PaginationParams};
 use super::{
     db::DBProject,
     errors::ProjectError,
-    models::{NewProject, QueryParams, UpdateForm},
+    models::{NewProject, QueryParams, UpdateProject},
 };
 use warp::{
     http::StatusCode,
@@ -65,7 +65,7 @@ pub async fn create_handler(
 
 pub async fn update_handler(
     id: i32,
-    form: UpdateForm,
+    form: UpdateProject,
     db_access: impl DBProject,
 ) -> Result<impl Reply, Rejection> {
     match db_access.by_id(id)? {

@@ -104,10 +104,19 @@ pub async fn update_handler(
     }
 
     match DBIssue::by_id(&db_access, id)? {
-        Some(p) => Ok(with_status(
-            json(&DBIssue::update(&db_access, p.id, &issue)?),
-            StatusCode::OK,
-        )),
+        Some(p) => {
+            if let Some(repo_id) = issue.repository_id {
+                if DBRepository::by_id(&db_access, repo_id)?.is_none() {
+                    return Err(warp::reject::custom(IssueError::RepositoryNotFound(
+                        repo_id,
+                    )));
+                }
+            }
+            Ok(with_status(
+                json(&DBIssue::update(&db_access, p.id, &issue)?),
+                StatusCode::OK,
+            ))
+        }
         None => Err(warp::reject::custom(IssueError::NotFound(id))),
     }
 }

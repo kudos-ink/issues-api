@@ -5,6 +5,8 @@ USERNAME?=test
 PASSWORD?=test
 DOCKER_DB_CONTAINER_NAME:=db
 DOCKER_COMPOSE:=docker compose
+DOCKER_API_CONTAINER_NAME:=api
+DOCKER_COMPOSE:=docker-compose
 DOCKER_COMPOSE_FILE:=docker-compose.yaml
 
 # API
@@ -15,8 +17,12 @@ run:
 
 .PHONY: test
 test:
-	cargo test
+	DATABASE_URL="$(DATABASE_URL)" cargo test
 
+# Start the PostgreSQL container
+.PHONY: docker-api
+docker-api:
+	$(DOCKER_COMPOSE) -f $(DOCKER_COMPOSE_FILE) up $(DOCKER_API_CONTAINER_NAME) 
 # DB
 
 # Start the PostgreSQL container
@@ -40,4 +46,4 @@ db-clean:
 	
 .PHONY: test-db
 test-db:
-	cargo test -- --ignored --test-threads=1
+	DATABASE_URL="$(DATABASE_URL)" cargo test -- --ignored --test-threads=1

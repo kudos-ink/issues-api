@@ -43,7 +43,7 @@ pub struct NewProject {
 
 #[derive(AsChangeset, Serialize, Deserialize, Debug)]
 #[diesel(table_name = projects)]
-pub struct UpdateForm {
+pub struct UpdateProject {
     pub name: Option<String>,
     pub slug: Option<String>,
     pub categories: Option<Vec<Option<String>>>,

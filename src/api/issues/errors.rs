@@ -22,21 +22,11 @@ pub enum IssueError {
 impl fmt::Display for IssueError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            IssueError::AlreadyExists(id) => {
-                write!(f, "Issue #{id} already exists")
-            }
-            IssueError::NotFound(id) => {
-                write!(f, "Issue #{id} not found")
-            }
-            IssueError::InvalidPayload(error) => {
-                write!(f, "Invalid payload: {error}")
-            }
-            IssueError::CannotCreate(error) =>  {
-                write!(f, "error creating the issue: {error}")
-            },
-            IssueError::RepositoryNotFound(id) => {
-                write!(f, "Repository '{id}' does not exist")
-            },
+            IssueError::AlreadyExists(id) => write!(f, "Issue #{id} already exists"),
+            IssueError::NotFound(id) => write!(f, "Issue #{id} not found"),
+            IssueError::InvalidPayload(error) => write!(f, "Invalid payload: {error}"),
+            IssueError::RepositoryNotFound(id) => write!(f, "Repository #{id} not found"),
+            IssueError::CannotCreate(error) =>  write!(f, "error creating the issue: {error}"),
         }
     }
 }

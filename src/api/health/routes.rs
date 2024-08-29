@@ -5,7 +5,7 @@ use super::db::DBHealth;
 use super::handlers;
 
 pub fn routes(db_access: impl DBHealth) -> BoxedFilter<(impl Reply,)> {
-        warp::path!("health")
+    warp::path!("health")
         .and(warp::any().map(move || db_access.clone()))
         .and_then(handlers::health_handler)
         .boxed()
