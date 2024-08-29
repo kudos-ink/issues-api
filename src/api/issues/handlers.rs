@@ -1,6 +1,5 @@
 use bytes::Buf;
 use log::{error, info, warn};
-use thiserror::Error;
 use warp::{
     http::StatusCode,
     reject,
@@ -20,6 +19,7 @@ use super::{
 };
 
 pub async fn by_id(id: i32, db_access: impl DBIssue) -> Result<impl Reply, Rejection> {
+    info!("getting issues '{id}'");
     match db_access.by_id(id)? {
         None => Err(warp::reject::custom(IssueError::NotFound(id)))?,
         Some(repository) => Ok(json(&repository)),

@@ -3,6 +3,7 @@ use std::convert::Infallible;
 use warp::filters::BoxedFilter;
 use warp::{Filter, Reply};
 
+use crate::api::projects::db::DBProject;
 use crate::auth::with_auth;
 use crate::types::PaginationParams;
 
@@ -13,12 +14,12 @@ use super::models::QueryParams;
 // use crate::pagination::GetSort;
 
 fn with_db(
-    db_pool: impl DBRepository,
-) -> impl Filter<Extract = (impl DBRepository,), Error = Infallible> + Clone {
+    db_pool: impl DBRepository + DBProject,
+) -> impl Filter<Extract = (impl DBRepository + DBProject,), Error = Infallible> + Clone {
     warp::any().map(move || db_pool.clone())
 }
 
-pub fn routes(db_access: impl DBRepository) -> BoxedFilter<(impl Reply,)> {
+pub fn routes(db_access: impl DBRepository + DBProject) -> BoxedFilter<(impl Reply,)> {
     let repository = warp::path!("repositories");
     let repository_id = warp::path!("repositories" / i32);
 
@@ -37,7 +38,7 @@ pub fn routes(db_access: impl DBRepository) -> BoxedFilter<(impl Reply,)> {
     let create_route = repository
         .and(with_auth())
         .and(warp::post())
-        .and(warp::body::json())
+        .and(warp::body::aggregate())
         .and(with_db(db_access.clone()))
         .and_then(handlers::create_handler);
 

@@ -1,7 +1,7 @@
 use diesel::dsl::now;
 use diesel::prelude::*;
 
-use super::models::{NewForm, Project, QueryParams, UpdateForm};
+use super::models::{NewProject, Project, QueryParams, UpdateForm};
 use crate::schema::projects::dsl as projects_dsl;
 
 use crate::db::{
@@ -19,7 +19,7 @@ pub trait DBProject: Send + Sync + Clone + 'static {
     ) -> Result<(Vec<Project>, i64), DBError>;
     fn by_id(&self, id: i32) -> Result<Option<Project>, DBError>;
     fn by_slug(&self, slug: &str) -> Result<Option<Project>, DBError>;
-    fn create(&self, form: &NewForm) -> Result<Project, DBError>;
+    fn create(&self, form: &NewProject) -> Result<Project, DBError>;
     fn update(&self, id: i32, form: &UpdateForm) -> Result<Project, DBError>;
     fn delete(&self, id: i32) -> Result<(), DBError>;
 }
@@ -91,7 +91,7 @@ impl DBProject for DBAccess {
         Ok(result)
     }
 
-    fn create(&self, form: &NewForm) -> Result<Project, DBError> {
+    fn create(&self, form: &NewProject) -> Result<Project, DBError> {
         let conn = &mut self.get_db_conn();
 
         let project = diesel::insert_into(projects_dsl::projects)

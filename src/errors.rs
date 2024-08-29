@@ -6,6 +6,8 @@ use warp::{hyper::StatusCode, Rejection, Reply};
 use crate::{
     auth::errors::AuthenticationError,
     api::issues::errors::IssueError,
+    api::repositories::errors::RepositoryError,
+    api::projects::errors::ProjectError,
     db::errors::DBError,
     // pagination::{PaginationError, SortError},
     // repository::{errors::RepositoryError, models::RepositorySortError},
@@ -20,9 +22,13 @@ pub struct ErrorResponse {
 pub async fn error_handler(err: Rejection) -> std::result::Result<impl Reply, Infallible> {
     if let Some(e) = err.find::<IssueError>() {
         return Ok(e.clone().into_response());
+    } else if let Some(e) = err.find::<RepositoryError>() {
+        return Ok(e.clone().into_response());
+    }else if let Some(e) = err.find::<ProjectError>() {
+        return Ok(e.clone().into_response());
     }
     // TODO: add more errors
-    
+
     let (status, message) = if err.is_not_found() {
         (StatusCode::NOT_FOUND, "Resource not found".to_string())
     } else if let Some(e) = err.find::<warp::filters::body::BodyDeserializeError>() {

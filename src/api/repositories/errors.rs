@@ -15,20 +15,31 @@ pub enum RepositoryError {
     AlreadyExists(i32),
     NotFound(i32),
     NotFoundByName(String),
+    ProjectNotFound(i32),
+    InvalidPayload(String),
+    CannotCreate(String),
 }
 
 impl fmt::Display for RepositoryError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             RepositoryError::AlreadyExists(id) => {
-                write!(f, "Repository #{id} already exists")
+                write!(f, "Repository '{id}' already exists")
             }
             RepositoryError::NotFound(id) => {
-                write!(f, "Repository #{id} not found")
+                write!(f, "Repository '{id}' not found")
             }
             RepositoryError::NotFoundByName(name) => {
-                write!(f, "Repository {name} not found")
+                write!(f, "Repository '{name}' not found")
             }
+            RepositoryError::InvalidPayload(error) => {
+                write!(f, "Invalid payload: {error}")
+            },
+            RepositoryError::CannotCreate(err) => {
+                write!(f, "error creating the repository: {err}")
+            },
+            RepositoryError::ProjectNotFound(id) => {
+                write!(f, "Project id '{id}' does not exist")},
         }
     }
 }
@@ -41,6 +52,9 @@ impl Reply for RepositoryError {
             RepositoryError::AlreadyExists(_) => StatusCode::BAD_REQUEST,
             RepositoryError::NotFound(_) => StatusCode::NOT_FOUND,
             RepositoryError::NotFoundByName(_) => StatusCode::NOT_FOUND,
+            RepositoryError::InvalidPayload(_) => StatusCode::UNPROCESSABLE_ENTITY,
+            RepositoryError::CannotCreate(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            RepositoryError::ProjectNotFound(_) => StatusCode::UNPROCESSABLE_ENTITY,
         };
         let message = self.to_string();
 

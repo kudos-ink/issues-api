@@ -31,11 +31,11 @@ impl fmt::Display for IssueError {
             IssueError::InvalidPayload(error) => {
                 write!(f, "Invalid payload: {error}")
             }
-            IssueError::CannotCreate(err) =>  {
-                write!(f, "error creating the issue: {err}")
+            IssueError::CannotCreate(error) =>  {
+                write!(f, "error creating the issue: {error}")
             },
             IssueError::RepositoryNotFound(id) => {
-                write!(f, "Repository #{id} does not exist")
+                write!(f, "Repository '{id}' does not exist")
             },
         }
     }

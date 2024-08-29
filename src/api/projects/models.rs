@@ -32,7 +32,7 @@ pub struct QueryParams {
 
 #[derive(Insertable, Serialize, Deserialize, Debug)]
 #[diesel(table_name = projects)]
-pub struct NewForm {
+pub struct NewProject {
     pub name: String,
     pub slug: String,
     pub categories: Option<Vec<Option<String>>>,
