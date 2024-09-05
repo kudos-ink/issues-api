@@ -26,11 +26,11 @@ pub struct Issue {
 #[derive(Insertable, Serialize, Deserialize, Debug)]
 #[diesel(table_name = issues)]
 pub struct NewIssue {
-    pub id: i32,
     pub number: i32,
     pub title: String,
     pub labels: Option<Vec<String>>,
     pub open: bool,
+    pub certified: Option<bool>,
     pub repository_id: i32,
     pub assignee_id: Option<i32>,
     pub issue_created_at: DateTime<Utc>,
@@ -44,6 +44,7 @@ pub struct UpdateIssue {
     pub title: String,
     pub labels: Option<Vec<String>>,
     pub open: bool,
+    pub certified: Option<bool>,
     pub repository_id: Option<i32>,
     pub assignee_id: Option<i32>,
     pub issue_created_at: DateTime<Utc>,

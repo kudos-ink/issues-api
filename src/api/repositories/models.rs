@@ -32,6 +32,8 @@ pub struct QueryParams {
 #[diesel(table_name = repositories)]
 pub struct NewRepository {
     pub slug: String,
+    pub name: String,
+    pub url: String,
     pub language_slug: String,
     pub project_id: i32,
 }
