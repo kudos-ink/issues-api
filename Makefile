@@ -39,6 +39,10 @@ db-down:
 db-migrate:
 	DATABASE_URL="$(DATABASE_URL)" diesel migration run
 
+.PHONY: db-migrate-redo
+db-migrate-redo:
+	DATABASE_URL="$(DATABASE_URL)" diesel migration redo
+
 # Clean up the Docker volume
 .PHONY: db-clean
 db-clean:
