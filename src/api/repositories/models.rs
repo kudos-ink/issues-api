@@ -12,6 +12,8 @@ use serde_derive::{Deserialize, Serialize};
 pub struct Repository {
     pub id: i32,
     pub slug: String,
+    pub name: String,
+    pub url: String,
     pub language_slug: String,
     pub project_id: i32,
     pub created_at: DateTime<Utc>,
@@ -30,6 +32,8 @@ pub struct QueryParams {
 #[diesel(table_name = repositories)]
 pub struct NewRepository {
     pub slug: String,
+    pub name: String,
+    pub url: String,
     pub language_slug: String,
     pub project_id: i32,
 }
@@ -38,6 +42,8 @@ pub struct NewRepository {
 #[diesel(table_name = repositories)]
 pub struct UpdateRepository {
     pub slug: Option<String>,
+    pub name: Option<String>,
+    pub url: Option<String>,
     pub language_slug: Option<String>,
     pub project_id: Option<i32>,
 }

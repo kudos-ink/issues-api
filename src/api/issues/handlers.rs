@@ -57,17 +57,17 @@ pub async fn create_handler(
         reject::custom(IssueError::InvalidPayload(e))
     })?;
 
-    info!("creating issue id '{}'", issue.id);
+    info!("creating issue number '{}'", issue.number);
     match DBRepository::by_id(&db_access, issue.repository_id) {
         Ok(repo) => match repo {
             Some(_) => match db_access.by_number(issue.repository_id, issue.number)? {
                 Some(r) => {
-                    warn!("issue id '{}' exists", issue.id);
-                    Err(warp::reject::custom(IssueError::AlreadyExists(r.id)))
+                    warn!("issue number '{}' exists", issue.number);
+                    Err(warp::reject::custom(IssueError::AlreadyExists(r.number)))
                 }
                 None => match DBIssue::create(&db_access, &issue) {
                     Ok(issue) => {
-                        info!("issue id '{}' created", issue.id);
+                        info!("issue number '{}' created", issue.number);
                         Ok(with_status(json(&issue), StatusCode::CREATED))
                     }
                     Err(err) => {
