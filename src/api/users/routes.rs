@@ -34,7 +34,7 @@ pub fn routes(db_access: impl DBUser) -> BoxedFilter<(impl Reply,)> {
     let create_user = user
         .and(with_auth())
         .and(warp::post())
-        .and(warp::body::json())
+        .and(warp::body::aggregate())
         .and(with_db(db_access.clone()))
         .and_then(handlers::create_handler);
 

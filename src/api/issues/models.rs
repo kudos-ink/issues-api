@@ -36,18 +36,24 @@ pub struct NewIssue {
     pub issue_created_at: DateTime<Utc>,
 }
 
-#[derive(AsChangeset, Serialize, Deserialize, Debug)]
+#[derive(AsChangeset, Serialize, Deserialize, Debug, Default)]
 #[diesel(table_name = issues)]
 pub struct UpdateIssue {
-    pub id: i32,
-    pub number: i32,
-    pub title: String,
+    pub title: Option<String>,
     pub labels: Option<Vec<String>>,
-    pub open: bool,
+    pub open: Option<bool>,
     pub certified: Option<bool>,
-    pub repository_id: Option<i32>,
     pub assignee_id: Option<i32>,
-    pub issue_created_at: DateTime<Utc>,
+}
+
+impl UpdateIssue {
+    pub fn has_any_field(&self) -> bool {
+        self.title.is_some()
+            || self.labels.is_some()
+            || self.open.is_some()
+            || self.certified.is_some()
+            || self.assignee_id.is_some()
+    }
 }
 
 #[derive(Deserialize, Debug)]
@@ -62,4 +68,9 @@ pub struct QueryParams {
     pub repository_id: Option<i32>,
     pub assignee_id: Option<i32>,
     pub open: Option<bool>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct IssueAssignee {
+    pub username: String,
 }

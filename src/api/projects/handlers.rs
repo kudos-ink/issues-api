@@ -5,14 +5,14 @@ use super::{
     errors::ProjectError,
     models::{NewProject, QueryParams, UpdateProject},
 };
+use bytes::Buf;
+use log::{error, info, warn};
 use warp::{
     http::StatusCode,
-    reject::Rejection,
     reject,
+    reject::Rejection,
     reply::{json, with_status, Reply},
 };
-use log::{error, info, warn};
-use bytes::Buf;
 
 pub async fn all_handler(
     db_access: impl DBProject,
@@ -47,20 +47,17 @@ pub async fn create_handler(
         Some(p) => Err(warp::reject::custom(ProjectError::AlreadyExists(p.id))),
         None => match db_access.create(&project) {
             Ok(project) => {
-            info!("project slug '{}' created", project.slug);
-            Ok(with_status(
-                json(&project),
-                StatusCode::CREATED,
-            ))
-        },
+                info!("project slug '{}' created", project.slug);
+                Ok(with_status(json(&project), StatusCode::CREATED))
+            }
             Err(error) => {
                 error!("error creating the project '{:?}': {}", project, error);
                 Err(warp::reject::custom(ProjectError::CannotCreate(
                     "error creating the project".to_string(),
                 )))
-            },
-            },
-        }
+            }
+        },
+    }
 }
 
 pub async fn update_handler(
@@ -79,7 +76,10 @@ pub async fn update_handler(
 
 pub async fn delete_handler(id: i32, db_access: impl DBProject) -> Result<impl Reply, Rejection> {
     match db_access.by_id(id)? {
-        Some(p) => Ok(with_status(json(&db_access.delete(p.id)?), StatusCode::OK)),
+        Some(p) => Ok(with_status(
+            json(&db_access.delete(p.id)?),
+            StatusCode::NO_CONTENT,
+        )),
         None => Err(warp::reject::custom(ProjectError::NotFound(id))),
     }
 }

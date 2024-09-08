@@ -15,28 +15,22 @@ pub enum UserError {
     AlreadyExists(i32),
     NotFound(i32),
     NotFoundByName(String),
-    CannotBeCreated(String),
-    CannotBeUpdated(i32, String),
+    CannotCreate(String),
+    CannotUpdate(i32, String),
+    InvalidPayload(String),
 }
 
 impl fmt::Display for UserError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            UserError::AlreadyExists(id) => {
-                write!(f, "User #{id} already exists")
-            }
-            UserError::NotFound(id) => {
-                write!(f, "User #{id} not found")
-            }
-            UserError::NotFoundByName(name) => {
-                write!(f, "User {name} not found")
-            }
-            UserError::CannotBeCreated(error) => {
-                write!(f, "User cannot be created: {error}")
-            }
-            UserError::CannotBeUpdated(id, error) => {
+            UserError::AlreadyExists(id) => write!(f, "User #{id} already exists"),
+            UserError::NotFound(id) => write!(f, "User #{id} not found"),
+            UserError::NotFoundByName(name) => write!(f, "User {name} not found"),
+            UserError::CannotCreate(error) => write!(f, "User cannot be created: {error}"),
+            UserError::CannotUpdate(id, error) => {
                 write!(f, "User #{id} cannot be updated: {error}")
             }
+            UserError::InvalidPayload(error) => write!(f, "Cannot create the user: {error}"),
         }
     }
 }
@@ -49,8 +43,9 @@ impl Reply for UserError {
             UserError::AlreadyExists(_) => StatusCode::BAD_REQUEST,
             UserError::NotFound(_) => StatusCode::NOT_FOUND,
             UserError::NotFoundByName(_) => StatusCode::NOT_FOUND,
-            UserError::CannotBeCreated(_) => StatusCode::UNPROCESSABLE_ENTITY,
-            UserError::CannotBeUpdated(_, _) => StatusCode::UNPROCESSABLE_ENTITY,
+            UserError::CannotCreate(_) => StatusCode::UNPROCESSABLE_ENTITY,
+            UserError::CannotUpdate(_, _) => StatusCode::UNPROCESSABLE_ENTITY,
+            UserError::InvalidPayload(_) => StatusCode::UNPROCESSABLE_ENTITY,
         };
         let message = self.to_string();
 
