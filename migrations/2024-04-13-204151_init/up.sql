@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS repositories (
     name VARCHAR(255) NOT NULL,
     url VARCHAR(255) NOT NULL,
     language_slug VARCHAR(255) NOT NULL,
-    project_id INT REFERENCES projects(id) NOT NULL,
+    project_id INT REFERENCES projects(id) ON DELETE CASCADE NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT (now() AT TIME ZONE 'utc') NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE NULL
 );
@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS issues (
     open boolean DEFAULT true NOT NULL,
     certified boolean,
     assignee_id INT REFERENCES users(id) NULL,
-    repository_id INT REFERENCES repositories(id) NOT NULL,
+    repository_id INT REFERENCES repositories(id) ON DELETE CASCADE NOT NULL,
     issue_created_at TIMESTAMP WITH TIME ZONE NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT (now() AT TIME ZONE 'utc') NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE NULL
