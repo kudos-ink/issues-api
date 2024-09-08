@@ -74,10 +74,4 @@ diesel::joinable!(issues -> repositories (repository_id));
 diesel::joinable!(issues -> users (assignee_id));
 diesel::joinable!(repositories -> projects (project_id));
 
-diesel::allow_tables_to_appear_in_same_query!(
-    issues,
-    languages,
-    projects,
-    repositories,
-    users,
-);
+diesel::allow_tables_to_appear_in_same_query!(issues, languages, projects, repositories, users,);
