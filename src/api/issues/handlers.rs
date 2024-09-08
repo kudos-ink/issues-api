@@ -8,14 +8,14 @@ use warp::{
 };
 
 use crate::{
-    api::repositories::db::DBRepository,
+    api::{repositories::db::DBRepository, users::db::DBUser},
     types::{PaginatedResponse, PaginationParams},
 };
 
 use super::{
     db::DBIssue,
     errors::IssueError,
-    models::{NewIssue, QueryParams, UpdateIssue},
+    models::{IssueAssignee, NewIssue, QueryParams, UpdateIssue},
 };
 
 pub async fn by_id(id: i32, db_access: impl DBIssue) -> Result<impl Reply, Rejection> {
@@ -81,7 +81,7 @@ pub async fn create_handler(
             None => {
                 warn!("repository '{}' invalid", issue.repository_id);
                 Err(warp::reject::custom(IssueError::RepositoryNotFound(
-                    issue.repository_id
+                    issue.repository_id,
                 )))
             }
         },
@@ -92,31 +92,33 @@ pub async fn create_handler(
 }
 pub async fn update_handler(
     id: i32,
-    issue: UpdateIssue,
-    db_access: impl DBIssue + DBRepository,
+    buf: impl Buf,
+    db_access: impl DBIssue,
 ) -> Result<impl Reply, Rejection> {
-    if let Some(repo_id) = issue.repository_id {
-        if DBRepository::by_id(&db_access, repo_id).is_err() {
-            return Err(warp::reject::custom(IssueError::InvalidPayload(
-                "invalid".to_owned(),
-            )));
-        }
+    let des = &mut serde_json::Deserializer::from_reader(buf.reader());
+    let issue: UpdateIssue = serde_path_to_error::deserialize(des).map_err(|e| {
+        let e = e.to_string();
+        warn!("invalid issue update: '{e}'",);
+        reject::custom(IssueError::InvalidPayload(e))
+    })?;
+    if !issue.has_any_field() {
+        let e = "all the fields are empty";
+        warn!("invalid issue update: '{e}'",);
+        return Err(reject::custom(IssueError::InvalidPayload(e.to_string())));
     }
-
     match DBIssue::by_id(&db_access, id)? {
-        Some(p) => {
-            if let Some(repo_id) = issue.repository_id {
-                if DBRepository::by_id(&db_access, repo_id)?.is_none() {
-                    return Err(warp::reject::custom(IssueError::RepositoryNotFound(
-                        repo_id,
-                    )));
-                }
+        Some(p) => match db_access.update(p.id, &issue) {
+            Ok(issue) => {
+                info!("issue '{}' updated", issue.id);
+                Ok(with_status(json(&issue), StatusCode::OK))
             }
-            Ok(with_status(
-                json(&DBIssue::update(&db_access, p.id, &issue)?),
-                StatusCode::OK,
-            ))
-        }
+            Err(error) => {
+                error!("error updating the issue '{:?}': {}", issue, error);
+                Err(warp::reject::custom(IssueError::CannotUpdate(
+                    "error updating the issue".to_owned(),
+                )))
+            }
+        },
         None => Err(warp::reject::custom(IssueError::NotFound(id))),
     }
 }
@@ -124,8 +126,62 @@ pub async fn delete_handler(id: i32, db_access: impl DBIssue) -> Result<impl Rep
     match DBIssue::by_id(&db_access, id)? {
         Some(_) => {
             let _ = &db_access.delete(id)?;
-            Ok(StatusCode::OK)
+            Ok(StatusCode::NO_CONTENT)
         }
         None => Err(warp::reject::custom(IssueError::NotFound(id)))?,
+    }
+}
+
+pub async fn update_asignee_handler(
+    id: i32,
+    buf: impl Buf,
+    db_access: impl DBIssue + DBUser,
+) -> Result<impl Reply, Rejection> {
+    let des = &mut serde_json::Deserializer::from_reader(buf.reader());
+    let assignee: IssueAssignee = serde_path_to_error::deserialize(des).map_err(|e| {
+        let e = e.to_string();
+        warn!("invalid issue assignee: '{e}'",);
+        reject::custom(IssueError::InvalidPayload(e))
+    })?;
+
+    match DBUser::by_username(&db_access, &assignee.username)? {
+        Some(u) => {
+            let update_issue = UpdateIssue {
+                assignee_id: Some(u.id),
+                ..Default::default()
+            };
+            match DBIssue::update(&db_access, id, &update_issue) {
+                Ok(issue) => {
+                    info!("issue '{}' assignee '{}' updated", issue.id, u.id);
+                    Ok(with_status(json(&issue), StatusCode::OK))
+                }
+                Err(error) => {
+                    error!("error updating the issue '{id}': {error}");
+                    Err(warp::reject::custom(IssueError::CannotUpdate(
+                        "error updating the issue assignee".to_owned(),
+                    )))
+                }
+            }
+        }
+        None => Err(warp::reject::custom(IssueError::InvalidPayload(
+            "username not found".to_string(),
+        ))),
+    }
+}
+pub async fn delete_asignee_handler(
+    id: i32,
+    db_access: impl DBIssue + DBUser,
+) -> Result<impl Reply, Rejection> {
+    match db_access.delete_issue_assignee(id) {
+        Ok(issue) => {
+            info!("issue '{}' assignee deleted", id);
+            Ok(with_status(json(&issue), StatusCode::NO_CONTENT))
+        }
+        Err(error) => {
+            error!("error deleteing the issue '{id}' assignee: {error}");
+            Err(warp::reject::custom(IssueError::CannotUpdate(
+                "error deleting the issue assignee".to_owned(),
+            )))
+        }
     }
 }

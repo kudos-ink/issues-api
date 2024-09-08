@@ -17,6 +17,7 @@ pub enum IssueError {
     RepositoryNotFound(i32),
     InvalidPayload(String),
     CannotCreate(String),
+    CannotUpdate(String),
 }
 
 impl fmt::Display for IssueError {
@@ -26,7 +27,8 @@ impl fmt::Display for IssueError {
             IssueError::NotFound(id) => write!(f, "Issue #{id} not found"),
             IssueError::InvalidPayload(error) => write!(f, "Invalid payload: {error}"),
             IssueError::RepositoryNotFound(id) => write!(f, "Repository #{id} not found"),
-            IssueError::CannotCreate(error) =>  write!(f, "error creating the issue: {error}"),
+            IssueError::CannotCreate(error) => write!(f, "error creating the issue: {error}"),
+            IssueError::CannotUpdate(error) => write!(f, "error updating the issue: {error}"),
         }
     }
 }
@@ -40,6 +42,7 @@ impl Reply for IssueError {
             IssueError::NotFound(_) => StatusCode::NOT_FOUND,
             IssueError::InvalidPayload(_) => StatusCode::UNPROCESSABLE_ENTITY,
             IssueError::CannotCreate(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            IssueError::CannotUpdate(_) => StatusCode::INTERNAL_SERVER_ERROR,
             IssueError::RepositoryNotFound(_) => StatusCode::UNPROCESSABLE_ENTITY,
         };
         let message = self.to_string();

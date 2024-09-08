@@ -1,5 +1,6 @@
 use diesel::dsl::now;
 use diesel::prelude::*;
+use diesel::sql_query;
 
 use super::models::{Issue, NewIssue, QueryParams, UpdateIssue};
 use crate::schema::issues::dsl as issues_dsl;
@@ -23,6 +24,7 @@ pub trait DBIssue: Send + Sync + Clone + 'static {
     fn by_number(&self, repository_id: i32, number: i32) -> Result<Option<Issue>, DBError>;
     fn create(&self, issue: &NewIssue) -> Result<Issue, DBError>;
     fn update(&self, id: i32, issue: &UpdateIssue) -> Result<Issue, DBError>;
+    fn delete_issue_assignee(&self, id: i32) -> Result<(), DBError>;
     fn delete(&self, id: i32) -> Result<(), DBError>;
 }
 
@@ -124,23 +126,32 @@ impl DBIssue for DBAccess {
     }
     fn create(&self, form: &NewIssue) -> Result<Issue, DBError> {
         let conn = &mut self.get_db_conn();
-        let project = diesel::insert_into(issues_dsl::issues)
+        let issue = diesel::insert_into(issues_dsl::issues)
             .values(form)
             .get_result(conn)
             .map_err(DBError::from)?;
 
-        Ok(project)
+        Ok(issue)
     }
 
     fn update(&self, id: i32, issue: &UpdateIssue) -> Result<Issue, DBError> {
         let conn = &mut self.get_db_conn();
 
-        let project = diesel::update(issues_dsl::issues.filter(issues_dsl::id.eq(id)))
+        let issue = diesel::update(issues_dsl::issues.filter(issues_dsl::id.eq(id)))
             .set((issue, issues_dsl::updated_at.eq(now)))
             .get_result::<Issue>(conn)
             .map_err(DBError::from)?;
 
-        Ok(project)
+        Ok(issue)
+    }
+    fn delete_issue_assignee(&self, id: i32) -> Result<(), DBError> {
+        let conn = &mut self.get_db_conn();
+        let query =
+            format!("UPDATE issues SET assignee_id = NULL, updated_at = now() WHERE id = {id}");
+
+        sql_query(query).execute(conn).map_err(DBError::from)?;
+
+        Ok(())
     }
 
     fn delete(&self, id: i32) -> Result<(), DBError> {
