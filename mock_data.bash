@@ -93,3 +93,26 @@ curl --location "$BASE_URL/issues" \
     "repository_id": 3,
     "issue_created_at": "2024-09-03T09:13:54Z"
 }'
+
+# Cretae users
+
+curl --location "$BASE_URL/users" \
+--header "$AUTH_HEADER" \
+--header "$CONTENT_TYPE_HEADER" \
+--data '{
+    "username": "leapalazzolo"
+}'
+
+curl --location "$BASE_URL/users" \
+--header "$AUTH_HEADER" \
+--header "$CONTENT_TYPE_HEADER" \
+--data '{
+    "username": "CJ13th"
+}'
+
+curl --location "$BASE_URL/users" \
+--header "$AUTH_HEADER" \
+--header "$CONTENT_TYPE_HEADER" \
+--data '{
+    "username": "ipapandinas"
+}'
