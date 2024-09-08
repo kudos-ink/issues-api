@@ -4,14 +4,9 @@ use std::convert::Infallible;
 use warp::{hyper::StatusCode, Rejection, Reply};
 
 use crate::{
-    auth::errors::AuthenticationError,
-    api::issues::errors::IssueError,
-    api::repositories::errors::RepositoryError,
-    api::projects::errors::ProjectError,
-    db::errors::DBError,
-    // pagination::{PaginationError, SortError},
-    // repository::{errors::RepositoryError, models::RepositorySortError},
-    // user::{errors::UserError, models::UserSortError},
+    api::issues::errors::IssueError, api::projects::errors::ProjectError,
+    api::repositories::errors::RepositoryError, api::users::errors::UserError,
+    auth::errors::AuthenticationError, db::errors::DBError,
 };
 
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
@@ -24,7 +19,9 @@ pub async fn error_handler(err: Rejection) -> std::result::Result<impl Reply, In
         return Ok(e.clone().into_response());
     } else if let Some(e) = err.find::<RepositoryError>() {
         return Ok(e.clone().into_response());
-    }else if let Some(e) = err.find::<ProjectError>() {
+    } else if let Some(e) = err.find::<ProjectError>() {
+        return Ok(e.clone().into_response());
+    } else if let Some(e) = err.find::<UserError>() {
         return Ok(e.clone().into_response());
     }
     // TODO: add more errors
