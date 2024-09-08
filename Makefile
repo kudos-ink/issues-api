@@ -35,9 +35,13 @@ db-up:
 db-down:
 	$(DOCKER_COMPOSE) -f $(DOCKER_COMPOSE_FILE) down $(DOCKER_DB_CONTAINER_NAME)
 
-.PHONY: db-migrate
-db-migrate:
+.PHONY: db-migrate-up
+db-migrate-up:
 	DATABASE_URL="$(DATABASE_URL)" diesel migration run
+
+.PHONY: db-migrate-down
+db-migrate-down:
+	DATABASE_URL="$(DATABASE_URL)" diesel migration revert
 
 .PHONY: db-migrate-redo
 db-migrate-redo:
