@@ -1,9 +1,9 @@
 -- basic github repository
 CREATE TABLE IF NOT EXISTS projects (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    slug VARCHAR(255) NOT NULL UNIQUE,
-    categories TEXT [],
+    name TEXT NOT NULL,
+    slug TEXT NOT NULL UNIQUE,
+    types TEXT [],
     purposes TEXT [],
     stack_levels TEXT [],
     technologies TEXT [],
@@ -12,17 +12,17 @@ CREATE TABLE IF NOT EXISTS projects (
 );
 CREATE TABLE IF NOT EXISTS languages (
     id SERIAL PRIMARY KEY,
-    slug VARCHAR(255) NOT NULL UNIQUE,
+    slug TEXT NOT NULL UNIQUE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT (now() AT TIME ZONE 'utc') NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE NULL
 );
 -- basic github repository
 CREATE TABLE IF NOT EXISTS repositories (
     id SERIAL PRIMARY KEY,
-    slug VARCHAR(255) NOT NULL UNIQUE,
-    name VARCHAR(255) NOT NULL,
-    url VARCHAR(255) NOT NULL,
-    language_slug VARCHAR(255) NOT NULL,
+    slug TEXT NOT NULL UNIQUE,
+    name TEXT NOT NULL,
+    url TEXT NOT NULL,
+    language_slug TEXT NOT NULL,
     project_id INT REFERENCES projects(id) ON DELETE CASCADE NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT (now() AT TIME ZONE 'utc') NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE NULL
@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS repositories (
 -- all the users including maintainers and admins
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
-    username VARCHAR(255) UNIQUE NOT NULL,
+    username TEXT UNIQUE NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT (now() AT TIME ZONE 'utc') NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE NULL
 );
@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS issues (
     id SERIAL PRIMARY KEY,
     number int NOT NULL,
-    title VARCHAR(255) NOT NULL,
+    title TEXT NOT NULL,
     labels TEXT [],
     open boolean DEFAULT true NOT NULL,
     certified boolean,
