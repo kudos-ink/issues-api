@@ -55,8 +55,8 @@ impl DBIssue for DBAccess {
                 query = query.filter(projects_dsl::slug.eq(slug));
             }
 
-            if let Some(category) = params.categories.as_ref() {
-                query = query.filter(projects_dsl::categories.contains(vec![category]));
+            if let Some(types) = params.types.as_ref() {
+                query = query.filter(projects_dsl::types.contains(vec![types]));
             }
 
             if let Some(purpose) = params.purposes.as_ref() {

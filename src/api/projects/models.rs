@@ -13,7 +13,7 @@ pub struct Project {
     pub id: i32,
     pub name: String,
     pub slug: String,
-    pub categories: Option<Vec<Option<String>>>,
+    pub types: Option<Vec<Option<String>>>,
     pub purposes: Option<Vec<Option<String>>>,
     pub stack_levels: Option<Vec<Option<String>>>,
     pub technologies: Option<Vec<Option<String>>>,
@@ -24,7 +24,7 @@ pub struct Project {
 #[derive(Deserialize, Debug)]
 pub struct QueryParams {
     pub slug: Option<String>,
-    pub categories: Option<String>,
+    pub types: Option<String>,
     pub purposes: Option<String>,
     pub stack_levels: Option<String>,
     pub technologies: Option<String>,
@@ -35,7 +35,7 @@ pub struct QueryParams {
 pub struct NewProject {
     pub name: String,
     pub slug: String,
-    pub categories: Option<Vec<Option<String>>>,
+    pub types: Option<Vec<Option<String>>>,
     pub purposes: Option<Vec<Option<String>>>,
     pub stack_levels: Option<Vec<Option<String>>>,
     pub technologies: Option<Vec<Option<String>>>,
@@ -46,7 +46,7 @@ pub struct NewProject {
 pub struct UpdateProject {
     pub name: Option<String>,
     pub slug: Option<String>,
-    pub categories: Option<Vec<Option<String>>>,
+    pub types: Option<Vec<Option<String>>>,
     pub purposes: Option<Vec<Option<String>>>,
     pub stack_levels: Option<Vec<Option<String>>>,
     pub technologies: Option<Vec<Option<String>>>,
