@@ -59,7 +59,7 @@ impl UpdateIssue {
 #[derive(Deserialize, Debug)]
 pub struct QueryParams {
     pub slug: Option<String>,
-    pub categories: Option<String>,
+    pub types: Option<String>,
     pub purposes: Option<String>,
     pub stack_levels: Option<String>,
     pub technologies: Option<String>,
