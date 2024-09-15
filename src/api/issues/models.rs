@@ -1,4 +1,4 @@
-use crate::schema::issues;
+use crate::{api::users::models::User, schema::issues};
 use chrono::{DateTime, Utc};
 use diesel::prelude::*;
 
@@ -19,6 +19,24 @@ pub struct Issue {
     pub assignee_id: Option<i32>,
     pub repository_id: i32,
     pub issue_created_at: DateTime<Utc>,
+    pub issue_closed_at: Option<DateTime<Utc>>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: Option<DateTime<Utc>>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Queryable)]
+pub struct IssueWithUsername {
+    pub id: i32,
+    pub number: i32,
+    pub title: String,
+    pub labels: Option<Vec<Option<String>>>,
+    pub open: bool,
+    pub certified: Option<bool>,
+    pub assignee_id: Option<i32>,
+    pub assignee_username: Option<String>,
+    pub repository_id: i32,
+    pub issue_created_at: DateTime<Utc>,
+    pub issue_closed_at: Option<DateTime<Utc>>,
     pub created_at: DateTime<Utc>,
     pub updated_at: Option<DateTime<Utc>>,
 }
@@ -44,6 +62,7 @@ pub struct UpdateIssue {
     pub open: Option<bool>,
     pub certified: Option<bool>,
     pub assignee_id: Option<i32>,
+    pub issue_closed_at: Option<DateTime<Utc>>,
 }
 
 impl UpdateIssue {
@@ -53,6 +72,7 @@ impl UpdateIssue {
             || self.open.is_some()
             || self.certified.is_some()
             || self.assignee_id.is_some()
+            || self.issue_closed_at.is_some()
     }
 }
 
@@ -67,6 +87,9 @@ pub struct QueryParams {
     pub repository_id: Option<i32>,
     pub assignee_id: Option<i32>,
     pub open: Option<bool>,
+    pub has_assignee: Option<bool>,
+    pub issue_closed_at_min: Option<DateTime<Utc>>,
+    pub issue_closed_at_max: Option<DateTime<Utc>>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
