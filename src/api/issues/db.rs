@@ -2,11 +2,13 @@ use diesel::dsl::now;
 use diesel::prelude::*;
 use diesel::sql_query;
 
+use super::models::IssueWithUsername;
 use super::models::{Issue, NewIssue, QueryParams, UpdateIssue};
 use crate::schema::issues::dsl as issues_dsl;
 use crate::schema::languages::dsl as languages_dsl;
 use crate::schema::projects::dsl as projects_dsl;
 use crate::schema::repositories::dsl as repositories_dsl;
+use crate::schema::users::dsl as users_dsl;
 
 use crate::db::{
     errors::DBError,
@@ -19,7 +21,7 @@ pub trait DBIssue: Send + Sync + Clone + 'static {
         &self,
         params: QueryParams,
         pagination: PaginationParams,
-    ) -> Result<(Vec<Issue>, i64), DBError>;
+    ) -> Result<(Vec<IssueWithUsername>, i64), DBError>;
     fn by_id(&self, id: i32) -> Result<Option<Issue>, DBError>;
     fn by_number(&self, repository_id: i32, number: i32) -> Result<Option<Issue>, DBError>;
     fn create(&self, issue: &NewIssue) -> Result<Issue, DBError>;
@@ -33,7 +35,7 @@ impl DBIssue for DBAccess {
         &self,
         params: QueryParams,
         pagination: PaginationParams,
-    ) -> Result<(Vec<Issue>, i64), DBError> {
+    ) -> Result<(Vec<IssueWithUsername>, i64), DBError> {
         let conn = &mut self.get_db_conn();
 
         let build_query = || {
@@ -48,6 +50,9 @@ impl DBIssue for DBAccess {
                 .left_join(
                     languages_dsl::languages
                         .on(repositories_dsl::language_slug.eq(languages_dsl::slug)),
+                )
+                .left_join(
+                    users_dsl::users.on(issues_dsl::assignee_id.eq(users_dsl::id.nullable())),
                 )
                 .into_boxed();
 
@@ -88,6 +93,30 @@ impl DBIssue for DBAccess {
                 query = query.filter(issues_dsl::repository_id.eq(repository_id));
             }
 
+            if let Some(has_assignee) = params.has_assignee.as_ref() {
+                if *has_assignee {
+                    query = query.filter(issues_dsl::assignee_id.is_not_null());
+                } else {
+                    query = query.filter(issues_dsl::assignee_id.is_null());
+                }
+            }
+
+            if let Some(closed_at_min) = params.issue_closed_at_min.as_ref() {
+                query = query.filter(
+                    issues_dsl::issue_closed_at
+                        .is_not_null()
+                        .and(issues_dsl::issue_closed_at.ge(closed_at_min)),
+                );
+            }
+
+            if let Some(closed_at_max) = params.issue_closed_at_max.as_ref() {
+                query = query.filter(
+                    issues_dsl::issue_closed_at
+                        .is_not_null()
+                        .and(issues_dsl::issue_closed_at.le(closed_at_max)),
+                );
+            }
+
             query
         };
 
@@ -96,8 +125,31 @@ impl DBIssue for DBAccess {
         let result = build_query()
             .offset(pagination.offset)
             .limit(pagination.limit)
-            .select(issues_dsl::issues::all_columns())
-            .load::<Issue>(conn)?;
+            .select((
+                issues_dsl::issues::all_columns(),
+                users_dsl::username.nullable(),
+            ))
+            .load::<(Issue, Option<String>)>(conn)
+            .map(|results| {
+                results
+                    .into_iter()
+                    .map(|(issue, username)| IssueWithUsername {
+                        id: issue.id,
+                        number: issue.number,
+                        title: issue.title,
+                        labels: issue.labels,
+                        open: issue.open,
+                        certified: issue.certified,
+                        assignee_id: issue.assignee_id,
+                        assignee_username: username,
+                        repository_id: issue.repository_id,
+                        issue_created_at: issue.issue_created_at,
+                        issue_closed_at: issue.issue_closed_at,
+                        created_at: issue.created_at,
+                        updated_at: issue.updated_at,
+                    })
+                    .collect::<Vec<IssueWithUsername>>()
+            })?;
 
         Ok((result, total_count))
     }
