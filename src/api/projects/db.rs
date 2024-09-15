@@ -39,11 +39,6 @@ impl DBProject for DBAccess {
                 query = query.filter(projects_dsl::slug.eq(slug));
             }
 
-            if let Some(raw_categories) = params.categories.as_ref() {
-                let categories: Vec<String> = utils::parse_comma_values(raw_categories);
-                query = query.filter(projects_dsl::categories.overlaps_with(categories));
-            }
-
             if let Some(raw_purposes) = params.purposes.as_ref() {
                 let purposes: Vec<String> = utils::parse_comma_values(raw_purposes);
                 query = query.filter(projects_dsl::purposes.overlaps_with(purposes));
