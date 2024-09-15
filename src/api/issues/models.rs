@@ -19,6 +19,7 @@ pub struct Issue {
     pub assignee_id: Option<i32>,
     pub repository_id: i32,
     pub issue_created_at: DateTime<Utc>,
+    pub issue_closed_at: Option<DateTime<Utc>>,
     pub created_at: DateTime<Utc>,
     pub updated_at: Option<DateTime<Utc>>,
 }
@@ -44,6 +45,7 @@ pub struct UpdateIssue {
     pub open: Option<bool>,
     pub certified: Option<bool>,
     pub assignee_id: Option<i32>,
+    pub issue_closed_at: Option<DateTime<Utc>>,
 }
 
 impl UpdateIssue {
@@ -53,6 +55,7 @@ impl UpdateIssue {
             || self.open.is_some()
             || self.certified.is_some()
             || self.assignee_id.is_some()
+            || self.issue_closed_at.is_some()
     }
 }
 

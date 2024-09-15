@@ -11,6 +11,7 @@ diesel::table! {
         assignee_id -> Nullable<Int4>,
         repository_id -> Int4,
         issue_created_at -> Timestamptz,
+        issue_closed_at -> Nullable<Timestamptz>,
         created_at -> Timestamptz,
         updated_at -> Nullable<Timestamptz>,
     }
