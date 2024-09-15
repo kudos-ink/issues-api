@@ -114,9 +114,15 @@ pub async fn update_handler(
             }
             Err(error) => {
                 error!("error updating the issue '{:?}': {}", issue, error);
-                Err(warp::reject::custom(IssueError::CannotUpdate(
-                    "error updating the issue".to_owned(),
-                )))
+                if error.to_string().contains("issue_closed_at_check") {
+                    Err(warp::reject::custom(IssueError::InvalidPayload(
+                        "issue_closed_at is lower than issue_created_at".to_owned(),
+                    )))
+                } else {
+                    Err(warp::reject::custom(IssueError::CannotUpdate(
+                        "error updating the issue".to_owned(),
+                    )))
+                }
             }
         },
         None => Err(warp::reject::custom(IssueError::NotFound(id))),
