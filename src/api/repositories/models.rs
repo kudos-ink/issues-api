@@ -1,4 +1,4 @@
-use crate::schema::repositories;
+use crate::{api::projects::models::ProjectResponse, schema::repositories};
 use chrono::{DateTime, Utc};
 use diesel::prelude::*;
 
@@ -46,4 +46,16 @@ pub struct UpdateRepository {
     pub url: Option<String>,
     pub language_slug: Option<String>,
     pub project_id: Option<i32>,
+}
+
+#[derive(Serialize, Debug)]
+pub struct RepositoryResponse {
+    pub id: i32,
+    pub slug: String,
+    pub name: String,
+    pub url: String,
+    pub language_slug: String,
+    pub project: ProjectResponse,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: Option<DateTime<Utc>>,
 }
