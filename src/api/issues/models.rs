@@ -1,4 +1,4 @@
-use crate::{api::users::models::User, schema::issues};
+use crate::{api::repositories::models::RepositoryResponse, schema::issues};
 use chrono::{DateTime, Utc};
 use diesel::prelude::*;
 
@@ -17,23 +17,6 @@ pub struct Issue {
     pub open: bool,
     pub certified: Option<bool>,
     pub assignee_id: Option<i32>,
-    pub repository_id: i32,
-    pub issue_created_at: DateTime<Utc>,
-    pub issue_closed_at: Option<DateTime<Utc>>,
-    pub created_at: DateTime<Utc>,
-    pub updated_at: Option<DateTime<Utc>>,
-}
-
-#[derive(Debug, Serialize, Deserialize, Queryable)]
-pub struct IssueWithUsername {
-    pub id: i32,
-    pub number: i32,
-    pub title: String,
-    pub labels: Option<Vec<Option<String>>>,
-    pub open: bool,
-    pub certified: Option<bool>,
-    pub assignee_id: Option<i32>,
-    pub assignee_username: Option<String>,
     pub repository_id: i32,
     pub issue_created_at: DateTime<Utc>,
     pub issue_closed_at: Option<DateTime<Utc>>,
@@ -79,6 +62,7 @@ impl UpdateIssue {
 #[derive(Deserialize, Debug)]
 pub struct QueryParams {
     pub slug: Option<String>,
+    pub certified: Option<bool>,
     pub purposes: Option<String>,
     pub stack_levels: Option<String>,
     pub technologies: Option<String>,
@@ -95,4 +79,20 @@ pub struct QueryParams {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct IssueAssignee {
     pub username: String,
+}
+
+#[derive(Serialize, Debug)]
+pub struct IssueResponse {
+    pub id: i32,
+    pub issue_id: i32,
+    pub certified: bool,
+    pub title: String,
+    pub labels: Option<Vec<Option<String>>>,
+    pub open: bool,
+    pub assignee_id: Option<i32>,
+    pub assignee_username: Option<String>,
+    pub repository: RepositoryResponse,
+    pub timestamp_created_at: DateTime<Utc>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: Option<DateTime<Utc>>,
 }

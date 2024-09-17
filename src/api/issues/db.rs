@@ -2,8 +2,11 @@ use diesel::dsl::now;
 use diesel::prelude::*;
 use diesel::sql_query;
 
-use super::models::IssueWithUsername;
-use super::models::{Issue, NewIssue, QueryParams, UpdateIssue};
+use super::models::{Issue, IssueResponse, NewIssue, QueryParams, UpdateIssue};
+use crate::api::projects::models::Project;
+use crate::api::projects::models::ProjectResponse;
+use crate::api::repositories::models::Repository;
+use crate::api::repositories::models::RepositoryResponse;
 use crate::schema::issues::dsl as issues_dsl;
 use crate::schema::languages::dsl as languages_dsl;
 use crate::schema::projects::dsl as projects_dsl;
@@ -21,7 +24,7 @@ pub trait DBIssue: Send + Sync + Clone + 'static {
         &self,
         params: QueryParams,
         pagination: PaginationParams,
-    ) -> Result<(Vec<IssueWithUsername>, i64), DBError>;
+    ) -> Result<(Vec<IssueResponse>, i64), DBError>;
     fn by_id(&self, id: i32) -> Result<Option<Issue>, DBError>;
     fn by_number(&self, repository_id: i32, number: i32) -> Result<Option<Issue>, DBError>;
     fn create(&self, issue: &NewIssue) -> Result<Issue, DBError>;
@@ -35,7 +38,7 @@ impl DBIssue for DBAccess {
         &self,
         params: QueryParams,
         pagination: PaginationParams,
-    ) -> Result<(Vec<IssueWithUsername>, i64), DBError> {
+    ) -> Result<(Vec<IssueResponse>, i64), DBError> {
         let conn = &mut self.get_db_conn();
 
         let build_query = || {
@@ -79,6 +82,10 @@ impl DBIssue for DBAccess {
             if let Some(raw_labels) = params.labels.as_ref() {
                 let labels: Vec<String> = utils::parse_comma_values(raw_labels);
                 query = query.filter(issues_dsl::labels.overlaps_with(labels));
+            }
+
+            if let Some(certified) = params.certified.as_ref() {
+                query = query.filter(issues_dsl::certified.eq(certified));
             }
 
             if let Some(open) = params.open.as_ref() {
@@ -127,31 +134,49 @@ impl DBIssue for DBAccess {
             .limit(pagination.limit)
             .select((
                 issues_dsl::issues::all_columns(),
+                repositories_dsl::repositories::all_columns(),
+                projects_dsl::projects::all_columns(),
                 users_dsl::username.nullable(),
             ))
-            .load::<(Issue, Option<String>)>(conn)
-            .map(|results| {
-                results
-                    .into_iter()
-                    .map(|(issue, username)| IssueWithUsername {
-                        id: issue.id,
-                        number: issue.number,
-                        title: issue.title,
-                        labels: issue.labels,
-                        open: issue.open,
-                        certified: issue.certified,
-                        assignee_id: issue.assignee_id,
-                        assignee_username: username,
-                        repository_id: issue.repository_id,
-                        issue_created_at: issue.issue_created_at,
-                        issue_closed_at: issue.issue_closed_at,
-                        created_at: issue.created_at,
-                        updated_at: issue.updated_at,
-                    })
-                    .collect::<Vec<IssueWithUsername>>()
-            })?;
+            .load::<(Issue, Repository, Project, Option<String>)>(conn)?;
 
-        Ok((result, total_count))
+        let issues_full = result
+            .into_iter()
+            .map(|(issue, repo, project, username)| IssueResponse {
+                id: issue.id,
+                issue_id: issue.number,
+                labels: issue.labels,
+                open: issue.open,
+                assignee_id: issue.assignee_id,
+                assignee_username: username,
+                title: issue.title,
+                certified: issue.certified.unwrap_or(false),
+                repository: RepositoryResponse {
+                    id: repo.id,
+                    slug: repo.slug,
+                    name: repo.name,
+                    url: repo.url,
+                    language_slug: repo.language_slug,
+                    project: ProjectResponse {
+                        id: project.id,
+                        name: project.name,
+                        slug: project.slug,
+                        purposes: project.purposes,
+                        stack_levels: project.stack_levels,
+                        technologies: project.technologies,
+                        created_at: project.created_at,
+                        updated_at: project.updated_at,
+                    },
+                    created_at: repo.created_at,
+                    updated_at: repo.updated_at,
+                },
+                timestamp_created_at: issue.issue_created_at,
+                created_at: issue.created_at,
+                updated_at: issue.updated_at,
+            })
+            .collect();
+
+        Ok((issues_full, total_count))
     }
     fn by_id(&self, id: i32) -> Result<Option<Issue>, DBError> {
         let conn = &mut self.get_db_conn();

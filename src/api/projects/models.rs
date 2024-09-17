@@ -48,3 +48,15 @@ pub struct UpdateProject {
     pub stack_levels: Option<Vec<Option<String>>>,
     pub technologies: Option<Vec<Option<String>>>,
 }
+
+#[derive(Serialize, Debug)]
+pub struct ProjectResponse {
+    pub id: i32,
+    pub name: String,
+    pub slug: String,
+    pub purposes: Option<Vec<Option<String>>>,
+    pub stack_levels: Option<Vec<Option<String>>>,
+    pub technologies: Option<Vec<Option<String>>>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: Option<DateTime<Utc>>,
+}
