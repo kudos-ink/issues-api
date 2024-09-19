@@ -170,7 +170,8 @@ impl DBIssue for DBAccess {
                     created_at: repo.created_at,
                     updated_at: repo.updated_at,
                 },
-                timestamp_created_at: issue.issue_created_at,
+                issue_created_at: issue.issue_created_at,
+                issue_closed_at: issue.issue_closed_at,
                 created_at: issue.created_at,
                 updated_at: issue.updated_at,
             })

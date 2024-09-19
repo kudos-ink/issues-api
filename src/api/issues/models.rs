@@ -85,14 +85,15 @@ pub struct IssueAssignee {
 pub struct IssueResponse {
     pub id: i32,
     pub issue_id: i32,
-    pub certified: bool,
     pub title: String,
     pub labels: Option<Vec<Option<String>>>,
     pub open: bool,
+    pub certified: bool,
     pub assignee_id: Option<i32>,
     pub assignee_username: Option<String>,
     pub repository: RepositoryResponse,
-    pub timestamp_created_at: DateTime<Utc>,
+    pub issue_created_at: DateTime<Utc>,
+    pub issue_closed_at: Option<DateTime<Utc>>,
     pub created_at: DateTime<Utc>,
     pub updated_at: Option<DateTime<Utc>>,
 }
