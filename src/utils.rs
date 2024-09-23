@@ -32,8 +32,8 @@ pub fn setup_filters(db: DBAccess) -> BoxedFilter<(impl Reply,)> {
         .with(
             warp::cors()
                 .allow_any_origin()
-                .allow_header("Authorization"),
-        ) //TODO: restrict url
+                .allow_headers(vec!["Authorization", "Content-Type"]),
+        )
         .recover(error_handler)
         .boxed()
 }
