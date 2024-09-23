@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS repositories (
     id SERIAL PRIMARY KEY,
     slug TEXT NOT NULL UNIQUE,
     name TEXT NOT NULL,
-    url TEXT NOT NULL,
+    url TEXT UNIQUE NOT NULL,
     language_slug TEXT NOT NULL,
     project_id INT REFERENCES projects(id) ON DELETE CASCADE NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT (now() AT TIME ZONE 'utc') NOT NULL,
