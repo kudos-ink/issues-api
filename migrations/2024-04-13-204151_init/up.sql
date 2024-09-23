@@ -48,10 +48,11 @@ CREATE TABLE IF NOT EXISTS issues (
     issue_created_at TIMESTAMP WITH TIME ZONE NOT NULL,
     issue_closed_at TIMESTAMP WITH TIME ZONE NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT (now() AT TIME ZONE 'utc') NOT NULL,
-    updated_at TIMESTAMP WITH TIME ZONE NULL
+    updated_at TIMESTAMP WITH TIME ZONE NULL,
     CONSTRAINT issue_closed_at_check CHECK (
         issue_closed_at IS NULL OR (
             issue_closed_at > issue_created_at
         )
-    )
+    ),
+    CONSTRAINT issues_repo_number_unique UNIQUE (repository_id, number)
 );
