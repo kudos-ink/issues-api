@@ -17,6 +17,7 @@ pub struct Project {
     pub purposes: Option<Vec<Option<String>>>,
     pub stack_levels: Option<Vec<Option<String>>>,
     pub technologies: Option<Vec<Option<String>>>,
+    pub avatar: Option<String>,
     pub created_at: DateTime<Utc>,
     pub updated_at: Option<DateTime<Utc>>,
 }
@@ -37,6 +38,7 @@ pub struct NewProject {
     pub purposes: Option<Vec<Option<String>>>,
     pub stack_levels: Option<Vec<Option<String>>>,
     pub technologies: Option<Vec<Option<String>>>,
+    pub avatar: Option<String>,
 }
 
 #[derive(AsChangeset, Serialize, Deserialize, Debug)]
@@ -47,6 +49,7 @@ pub struct UpdateProject {
     pub purposes: Option<Vec<Option<String>>>,
     pub stack_levels: Option<Vec<Option<String>>>,
     pub technologies: Option<Vec<Option<String>>>,
+    pub avatar: Option<String>,
 }
 
 #[derive(Serialize, Debug)]
@@ -57,6 +60,7 @@ pub struct ProjectResponse {
     pub purposes: Option<Vec<Option<String>>>,
     pub stack_levels: Option<Vec<Option<String>>>,
     pub technologies: Option<Vec<Option<String>>>,
+    pub avatar: Option<String>,
     pub created_at: DateTime<Utc>,
     pub updated_at: Option<DateTime<Utc>>,
 }

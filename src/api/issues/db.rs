@@ -164,6 +164,7 @@ impl DBIssue for DBAccess {
                         purposes: project.purposes,
                         stack_levels: project.stack_levels,
                         technologies: project.technologies,
+                        avatar: project.avatar,
                         created_at: project.created_at,
                         updated_at: project.updated_at,
                     },

@@ -35,6 +35,8 @@ diesel::table! {
         purposes -> Nullable<Array<Nullable<Text>>>,
         stack_levels -> Nullable<Array<Nullable<Text>>>,
         technologies -> Nullable<Array<Nullable<Text>>>,
+        #[max_length = 255]
+        avatar -> Nullable<Varchar>,
         created_at -> Timestamptz,
         updated_at -> Nullable<Timestamptz>,
     }
