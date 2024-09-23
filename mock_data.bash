@@ -10,7 +10,8 @@ curl --location "$BASE_URL/projects" \
 --header "$CONTENT_TYPE_HEADER" \
 --data '{
     "name": "polkadot",
-    "slug":"polkadot"
+    "slug":"polkadot",
+    "avatar":"https://cryptologos.cc/logos/polkadot-new-dot-logo.png"
 }'
 
 # Create Asar project

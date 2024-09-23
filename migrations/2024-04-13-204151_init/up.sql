@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS projects (
     purposes TEXT [],
     stack_levels TEXT [],
     technologies TEXT [],
+    avatar VARCHAR(255),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT (now() AT TIME ZONE 'utc') NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE NULL
 );
