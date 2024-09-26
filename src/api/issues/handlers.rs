@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use bytes::Buf;
 use log::{error, info, warn};
 use warp::{
@@ -8,14 +10,14 @@ use warp::{
 };
 
 use crate::{
-    api::{repositories::db::DBRepository, users::db::DBUser},
+    api::{issues::models::LeaderboardEntry, repositories::db::DBRepository, users::db::DBUser},
     types::{PaginatedResponse, PaginationParams},
 };
 
 use super::{
     db::DBIssue,
     errors::IssueError,
-    models::{IssueAssignee, NewIssue, QueryParams, UpdateIssue},
+    models::{IssueAssignee, LeaderboardQueryParams, NewIssue, QueryParams, UpdateIssue},
 };
 
 pub async fn by_id(id: i32, db_access: impl DBIssue) -> Result<impl Reply, Rejection> {
@@ -44,6 +46,51 @@ pub async fn all_handler(
     };
 
     Ok(json(&response))
+}
+pub async fn leaderboard(
+    db_access: impl DBIssue,
+    params: LeaderboardQueryParams,
+) -> Result<impl Reply, Rejection> {
+    info!("getting the leaderboard");
+    let (issues, _) = db_access.all(
+        QueryParams {
+            slug: None,
+            certified: params.certified,
+            purposes: params.purposes,
+            stack_levels: params.stack_levels,
+            technologies: params.technologies,
+            labels: params.labels,
+            language_slug: params.language_slug,
+            repository_id: params.repository_id,
+            assignee_id: None,
+            open: Some(false),
+            has_assignee: Some(true),
+            issue_closed_at_min: params.start_date,
+            issue_closed_at_max: params.close_date,
+        },
+        PaginationParams {
+            limit: i64::max_value(),
+            offset: 0,
+        },
+    )?;
+    let mut scores = HashMap::new();
+
+    issues.into_iter().for_each(|issue| {
+        scores
+            .entry(issue.assignee_username)
+            .and_modify(|count| *count += 1)
+            .or_insert(1); // Start the count at 1, not 0.
+    });
+
+    let leaderboard: Vec<LeaderboardEntry> = scores
+        .into_iter()
+        .map(|(username, score)| LeaderboardEntry {
+            username: username.unwrap_or_default(),
+            score,
+        })
+        .collect();
+
+    Ok(json(&leaderboard))
 }
 
 pub async fn create_handler(

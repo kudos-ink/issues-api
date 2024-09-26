@@ -10,7 +10,7 @@ use crate::types::PaginationParams;
 
 use super::db::DBIssue;
 use super::handlers;
-use super::models::QueryParams;
+use super::models::{LeaderboardQueryParams, QueryParams};
 
 fn with_db(
     db_pool: impl DBIssue + DBRepository + DBUser,
@@ -22,6 +22,7 @@ pub fn routes(db_access: impl DBIssue + DBRepository + DBUser) -> BoxedFilter<(i
     let issue = warp::path!("issues");
     let issue_id = warp::path!("issues" / i32);
     let issue_id_assignee = warp::path!("issues" / i32 / "assignee");
+    let issue_leaderboard = warp::path!("issues" / "leaderboard");
 
     let get_issues = issue
         .and(warp::get())
@@ -29,6 +30,12 @@ pub fn routes(db_access: impl DBIssue + DBRepository + DBUser) -> BoxedFilter<(i
         .and(warp::query::<QueryParams>())
         .and(warp::query::<PaginationParams>())
         .and_then(handlers::all_handler);
+
+    let get_issues_leaderboard = issue_leaderboard
+        .and(warp::get())
+        .and(with_db(db_access.clone()))
+        .and(warp::query::<LeaderboardQueryParams>())
+        .and_then(handlers::leaderboard);
 
     let get_issue = issue_id
         .and(warp::get())
@@ -74,7 +81,8 @@ pub fn routes(db_access: impl DBIssue + DBRepository + DBUser) -> BoxedFilter<(i
         .or(delete_issue)
         .or(update_issue)
         .or(update_issue_assignee)
-        .or(delete_issue_assignee);
+        .or(delete_issue_assignee)
+        .or(get_issues_leaderboard);
 
     route.boxed()
 }
