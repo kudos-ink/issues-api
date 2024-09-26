@@ -97,3 +97,22 @@ pub struct IssueResponse {
     pub created_at: DateTime<Utc>,
     pub updated_at: Option<DateTime<Utc>>,
 }
+
+#[derive(Serialize, Debug)]
+pub struct LeaderboardEntry {
+    pub username: String,
+    pub score: i64,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct LeaderboardQueryParams {
+    pub certified: Option<bool>,
+    pub purposes: Option<String>,
+    pub stack_levels: Option<String>,
+    pub technologies: Option<String>,
+    pub labels: Option<String>,
+    pub language_slug: Option<String>,
+    pub repository_id: Option<i32>,
+    pub start_date: Option<DateTime<Utc>>,
+    pub close_date: Option<DateTime<Utc>>,
+}
