@@ -43,6 +43,7 @@ impl DBUser for DBAccess {
             Ok(Some(User {
                 id: result[0].id,
                 username: result[0].username.clone(),
+                avatar: result[0].avatar.clone(),
                 created_at: result[0].created_at,
                 updated_at: result[0].updated_at,
             }))

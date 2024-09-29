@@ -131,18 +131,20 @@ impl DBIssue for DBAccess {
                 repositories_dsl::repositories::all_columns(),
                 projects_dsl::projects::all_columns(),
                 users_dsl::username.nullable(),
+                users_dsl::avatar.nullable(),
             ))
-            .load::<(Issue, Repository, Project, Option<String>)>(conn)?;
+            .load::<(Issue, Repository, Project, Option<String>, Option<String>)>(conn)?;
 
         let issues_full = result
             .into_iter()
-            .map(|(issue, repo, project, username)| IssueResponse {
+            .map(|(issue, repo, project, username, avatar)| IssueResponse {
                 id: issue.id,
                 issue_id: issue.number,
                 labels: issue.labels,
                 open: issue.open,
                 assignee_id: issue.assignee_id,
                 assignee_username: username,
+                assignee_avatar: avatar,
                 title: issue.title,
                 certified: issue.certified.unwrap_or(false),
                 repository: RepositoryResponse {

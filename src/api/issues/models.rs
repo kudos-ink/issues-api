@@ -91,6 +91,7 @@ pub struct IssueResponse {
     pub certified: bool,
     pub assignee_id: Option<i32>,
     pub assignee_username: Option<String>,
+    pub assignee_avatar: Option<String>,
     pub repository: RepositoryResponse,
     pub issue_created_at: DateTime<Utc>,
     pub issue_closed_at: Option<DateTime<Utc>>,
