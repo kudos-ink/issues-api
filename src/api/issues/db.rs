@@ -123,6 +123,9 @@ impl DBIssue for DBAccess {
                         .and(issues_dsl::issue_closed_at.le(closed_at_max)),
                 );
             }
+            // query = query.order_by(issues_dsl::issue_created_at.asc());
+            // query = query.order(issues_dsl::issue_created_at.asc());
+            // query = query.then_order_by(issues_dsl::issue_created_at.asc());
 
             query
         };
@@ -130,6 +133,7 @@ impl DBIssue for DBAccess {
         let total_count = build_query().count().get_result::<i64>(conn)?;
 
         let result = build_query()
+            .order(issues_dsl::issue_created_at.desc())
             .offset(pagination.offset)
             .limit(pagination.limit)
             .select((
