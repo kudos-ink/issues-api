@@ -123,10 +123,6 @@ impl DBIssue for DBAccess {
                         .and(issues_dsl::issue_closed_at.le(closed_at_max)),
                 );
             }
-            // query = query.order_by(issues_dsl::issue_created_at.asc());
-            // query = query.order(issues_dsl::issue_created_at.asc());
-            // query = query.then_order_by(issues_dsl::issue_created_at.asc());
-
             query
         };
 
