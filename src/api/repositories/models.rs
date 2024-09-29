@@ -22,8 +22,8 @@ pub struct Repository {
 
 #[derive(Deserialize, Debug)]
 pub struct QueryParams {
-    pub slug: Option<String>,
-    pub name: Option<String>,
+    pub slugs: Option<String>,
+    pub names: Option<String>,
     pub languages: Option<String>,
     pub project_ids: Option<String>,
 }

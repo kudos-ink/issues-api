@@ -34,21 +34,18 @@ impl DBProject for DBAccess {
 
         let build_query = || {
             let mut query = projects_dsl::projects.into_boxed();
-
-            if let Some(slug) = params.slug.as_ref() {
-                query = query.filter(projects_dsl::slug.eq(slug));
+            if let Some(slugs) = params.slugs.as_ref() {
+                query = query.filter(projects_dsl::slug.eq_any(utils::parse_comma_values(slugs)));
             }
-
-            if let Some(raw_purposes) = params.purposes.as_ref() {
-                let purposes: Vec<String> = utils::parse_comma_values(raw_purposes);
-                query = query.filter(projects_dsl::purposes.overlaps_with(purposes));
+            if let Some(purposes) = params.purposes.as_ref() {
+                query = query.filter(projects_dsl::purposes.overlaps_with( utils::parse_comma_values(purposes)));
             }
-
-            if let Some(raw_technologies) = params.technologies.as_ref() {
-                let technologies: Vec<String> = utils::parse_comma_values(raw_technologies);
-                query = query.filter(projects_dsl::technologies.overlaps_with(technologies));
+            if let Some(technologies) = params.technologies.as_ref() {
+                query = query.filter(projects_dsl::technologies.overlaps_with(utils::parse_comma_values(technologies)));
             }
-
+            if let Some(stack_levels) = params.stack_levels.as_ref() {
+                    query = query.filter(projects_dsl::stack_levels.overlaps_with(utils::parse_comma_values(stack_levels)));
+            }
             query
         };
 
