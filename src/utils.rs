@@ -31,7 +31,7 @@ pub fn setup_filters(db: DBAccess) -> BoxedFilter<(impl Reply,)> {
         .or(users_route)
         .with(
             warp::cors()
-                .allow_origins(vec!["https://morekudos.com", "http://localhost:3000"])
+                .allow_any_origin()
                 .allow_headers(vec!["Authorization", "Content-Type"])
                 .allow_methods(vec!["GET", "POST", "DELETE", "PUT", "PATCH", "OPTIONS"]),
         )
