@@ -22,6 +22,13 @@ pub async fn by_id(id: i32, db_access: impl DBUser) -> Result<impl Reply, Reject
     }
 }
 
+pub async fn by_username(username: String, db_access: impl DBUser) -> Result<impl Reply, Rejection> {
+    match db_access.by_username(&username)? {
+        None => Err(warp::reject::custom(UserError::NotFoundByName(username)))?,
+        Some(user) => Ok(json(&user)),
+    }
+}
+
 pub async fn all_handler(
     db_access: impl DBUser,
     pagination: PaginationParams,
