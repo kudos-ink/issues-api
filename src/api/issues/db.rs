@@ -59,29 +59,23 @@ impl DBIssue for DBAccess {
                 )
                 .into_boxed();
 
-            if let Some(slug) = params.slug.as_ref() {
-                query = query.filter(projects_dsl::slug.eq(slug));
+            if let Some(slugs) = params.slugs.as_ref() {
+                query = query.filter(projects_dsl::slug.eq_any(utils::parse_comma_values(slugs)));
             }
-
-            if let Some(purpose) = params.purposes.as_ref() {
-                query = query.filter(projects_dsl::purposes.contains(vec![purpose]));
+            if let Some(purposes) = params.purposes.as_ref() {
+                query = query.filter(projects_dsl::purposes.overlaps_with( utils::parse_comma_values(purposes)));
             }
-
-            if let Some(stack_level) = params.stack_levels.as_ref() {
-                query = query.filter(projects_dsl::stack_levels.contains(vec![stack_level]));
+            if let Some(stack_levels) = params.stack_levels.as_ref() {
+                    query = query.filter(projects_dsl::stack_levels.overlaps_with(utils::parse_comma_values(stack_levels)));
             }
-
-            if let Some(technology) = params.technologies.as_ref() {
-                query = query.filter(projects_dsl::technologies.contains(vec![technology]));
+            if let Some(technologies) = params.technologies.as_ref() {
+                    query = query.filter(projects_dsl::technologies.overlaps_with(utils::parse_comma_values(technologies)));
             }
-
-            if let Some(language_slug) = params.language_slug.as_ref() {
-                query = query.filter(languages_dsl::slug.eq(language_slug));
+            if let Some(language_slug) = params.language_slugs.as_ref() {
+                    query = query.filter(languages_dsl::slug.eq_any(utils::parse_comma_values(language_slug)));
             }
-
-            if let Some(raw_labels) = params.labels.as_ref() {
-                let labels: Vec<String> = utils::parse_comma_values(raw_labels);
-                query = query.filter(issues_dsl::labels.overlaps_with(labels));
+            if let Some(labels) = params.labels.as_ref() {
+                    query = query.filter(issues_dsl::labels.overlaps_with(utils::parse_comma_values(labels)));
             }
 
             if let Some(certified) = params.certified.as_ref() {
@@ -123,13 +117,13 @@ impl DBIssue for DBAccess {
                         .and(issues_dsl::issue_closed_at.le(closed_at_max)),
                 );
             }
-
             query
         };
 
         let total_count = build_query().count().get_result::<i64>(conn)?;
 
         let result = build_query()
+            .order(issues_dsl::issue_created_at.desc())
             .offset(pagination.offset)
             .limit(pagination.limit)
             .select((

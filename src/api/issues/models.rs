@@ -61,13 +61,13 @@ impl UpdateIssue {
 
 #[derive(Deserialize, Debug)]
 pub struct QueryParams {
-    pub slug: Option<String>,
+    pub slugs: Option<String>,
     pub certified: Option<bool>,
     pub purposes: Option<String>,
     pub stack_levels: Option<String>,
     pub technologies: Option<String>,
     pub labels: Option<String>,
-    pub language_slug: Option<String>,
+    pub language_slugs: Option<String>,
     pub repository_id: Option<i32>,
     pub assignee_id: Option<i32>,
     pub open: Option<bool>,
@@ -106,6 +106,7 @@ pub struct LeaderboardEntry {
 
 #[derive(Deserialize, Debug)]
 pub struct LeaderboardQueryParams {
+    pub slugs: Option<String>,
     pub certified: Option<bool>,
     pub purposes: Option<String>,
     pub stack_levels: Option<String>,

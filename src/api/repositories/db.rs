@@ -36,10 +36,16 @@ impl DBRepository for DBAccess {
         let conn = &mut self.get_db_conn();
         let mut query = repositories_dsl::repositories.into_boxed();
 
-        if let Some(raw_languages) = params.languages {
-            let languages: Vec<String> = utils::parse_comma_values(&raw_languages);
-            query = query.filter(repositories_dsl::language_slug.eq_any(languages));
+        if let Some(languages) = params.languages {
+            query = query.filter(repositories_dsl::language_slug.eq_any(utils::parse_comma_values(&languages)));
         }
+        if let Some(slugs) = params.slugs {
+            query = query.filter(repositories_dsl::slug.eq_any(utils::parse_comma_values(&slugs)));
+        }
+        if let Some(names) = params.names {
+            query = query.filter(repositories_dsl::name.eq_any(utils::parse_comma_values(&names)));
+        }
+
         if let Some(project_id) = params.project_ids {
             let ids: Vec<i32> = utils::parse_ids(&project_id);
             if !ids.is_empty() {

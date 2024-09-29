@@ -54,13 +54,13 @@ pub async fn leaderboard(
     info!("getting the leaderboard");
     let (issues, _) = db_access.all(
         QueryParams {
-            slug: None,
+            slugs: params.slugs,
             certified: params.certified,
             purposes: params.purposes,
             stack_levels: params.stack_levels,
             technologies: params.technologies,
             labels: params.labels,
-            language_slug: params.language_slug,
+            language_slugs: params.language_slug,
             repository_id: params.repository_id,
             assignee_id: None,
             open: Some(false),
@@ -69,7 +69,7 @@ pub async fn leaderboard(
             issue_closed_at_max: params.close_date,
         },
         PaginationParams {
-            limit: i64::max_value(),
+            limit: i64::MAX,
             offset: 0,
         },
     )?;
