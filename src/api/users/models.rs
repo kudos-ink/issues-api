@@ -20,6 +20,7 @@ use serde_derive::{Deserialize, Serialize};
 pub struct User {
     pub id: i32,
     pub username: String,
+    pub avatar: Option<String>,
     pub created_at: DateTime<Utc>,
     pub updated_at: Option<DateTime<Utc>>,
 }
@@ -28,10 +29,12 @@ pub struct User {
 #[diesel(table_name = users)]
 pub struct NewUser {
     pub username: String,
+    pub avatar: Option<String>,
 }
 
 #[derive(AsChangeset, Serialize, Deserialize, Debug)]
 #[diesel(table_name = users)]
 pub struct UpdateUser {
     pub username: Option<String>,
+    pub avatar: Option<String>
 }

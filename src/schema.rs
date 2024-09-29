@@ -59,6 +59,7 @@ diesel::table! {
     users (id) {
         id -> Int4,
         username -> Text,
+        avatar -> Nullable<Text>,
         created_at -> Timestamptz,
         updated_at -> Nullable<Timestamptz>,
     }

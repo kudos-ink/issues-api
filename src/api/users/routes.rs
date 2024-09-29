@@ -18,7 +18,6 @@ fn with_db(
 pub fn routes(db_access: impl DBUser) -> BoxedFilter<(impl Reply,)> {
     let user = warp::path!("users");
     let user_id = warp::path!("users" / i32);
-    let user_maintainer = warp::path!("users" / i32 / "maintainers");
 
     let get_users = user
         .and(warp::get())
@@ -31,19 +30,20 @@ pub fn routes(db_access: impl DBUser) -> BoxedFilter<(impl Reply,)> {
         .and(with_db(db_access.clone()))
         .and_then(handlers::by_id);
 
-    let create_user = user
+        let create_user = user
         .and(with_auth())
         .and(warp::post())
         .and(warp::body::aggregate())
         .and(with_db(db_access.clone()))
         .and_then(handlers::create_handler);
 
-    let update_user = user_maintainer
+    let update_user = user_id
         .and(with_auth())
-        .and(warp::patch())
-        .and(warp::body::json())
+        .and(warp::put())
+        .and(warp::body::aggregate())
         .and(with_db(db_access.clone()))
         .and_then(handlers::update_handler);
+
 
     let delete_user = user_id
         .and(with_auth())

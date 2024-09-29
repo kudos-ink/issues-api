@@ -61,12 +61,18 @@ pub async fn create_handler(
 }
 pub async fn update_handler(
     id: i32,
-    repo: UpdateUser,
+    buf: impl Buf,
     db_access: impl DBUser,
 ) -> Result<impl Reply, Rejection> {
+    let des = &mut serde_json::Deserializer::from_reader(buf.reader());
+    let user: UpdateUser = serde_path_to_error::deserialize(des).map_err(|e| {
+        let e = e.to_string();
+        warn!("invalid user '{e}'",);
+        reject::custom(UserError::InvalidPayload(e))
+    })?;
     match db_access.by_id(id)? {
         Some(p) => Ok(with_status(
-            json(&db_access.update(p.id, &repo)?),
+            json(&db_access.update(p.id, &user)?),
             StatusCode::OK,
         )),
         None => Err(warp::reject::custom(UserError::NotFound(id))),
