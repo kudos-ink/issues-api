@@ -8,7 +8,7 @@ use crate::{
     errors::error_handler,
 };
 use ::warp::Reply;
-use warp::{filters::BoxedFilter, Filter};
+use warp::{filters::BoxedFilter, http::Method, Filter};
 
 pub async fn setup_db(url: &str) -> DBAccess {
     let db_pool = db::pool::create_db_pool(url)
@@ -24,18 +24,22 @@ pub fn setup_filters(db: DBAccess) -> BoxedFilter<(impl Reply,)> {
     let issues_route = issues::routes::routes(db.clone());
     let users_route = users::routes::routes(db.clone());
 
+
+    let cors = warp::cors()
+        .allow_any_origin()
+        .allow_headers(vec!["Access-Control-Allow-Headers", "Access-Control-Request-Method", "Access-Control-Request-Headers", "Origin", "Accept", "X-Requested-With", "Content-Type", "Authorization"])
+        .allow_credentials(true)
+        .allow_methods(&[Method::GET, Method::POST, Method::PUT, Method::PATCH, Method::DELETE, Method::OPTIONS, Method::HEAD]);
+
+
     health_route
         .or(projects_route)
         .or(repositories_route)
         .or(issues_route)
         .or(users_route)
-        .with(
-            warp::cors()
-                .allow_any_origin()
-                .allow_header("*")
-                .allow_methods(vec!["GET", "POST", "DELETE", "PUT", "PATCH", "OPTIONS"]),
-        )
         .recover(error_handler)
+        .with(warp::log("api"))
+        .with(cors)
         .boxed()
 }
 
