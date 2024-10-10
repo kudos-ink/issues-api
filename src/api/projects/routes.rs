@@ -26,6 +26,11 @@ pub fn routes(db_access: impl DBProject) -> BoxedFilter<(impl Reply,)> {
         .and(warp::query::<PaginationParams>())
         .and_then(handlers::all_handler);
 
+    let get_route = project_id
+        .and(warp::get())
+        .and(with_db(db_access.clone()))
+        .and_then(handlers::by_id);
+
     let create_route = project
         .and(with_auth())
         .and(warp::post())
@@ -48,6 +53,7 @@ pub fn routes(db_access: impl DBProject) -> BoxedFilter<(impl Reply,)> {
 
     all_route
         .or(create_route)
+        .or(get_route)
         .or(update_route)
         .or(delete_route)
         .boxed()
