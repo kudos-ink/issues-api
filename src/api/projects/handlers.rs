@@ -83,3 +83,9 @@ pub async fn delete_handler(id: i32, db_access: impl DBProject) -> Result<impl R
         None => Err(warp::reject::custom(ProjectError::NotFound(id))),
     }
 }
+pub async fn by_id(id: i32, db_access: impl DBProject) -> Result<impl Reply, Rejection> {
+    match db_access.by_id(id)? {
+        None => Err(warp::reject::custom(ProjectError::NotFound(id)))?,
+        Some(project) => Ok(json(&project)),
+    }
+}
