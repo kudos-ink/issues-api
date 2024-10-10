@@ -51,10 +51,6 @@ impl DBIssue for DBAccess {
                     projects_dsl::projects.on(repositories_dsl::project_id.eq(projects_dsl::id)),
                 )
                 .left_join(
-                    languages_dsl::languages
-                        .on(repositories_dsl::language_slug.eq(languages_dsl::slug)),
-                )
-                .left_join(
                     users_dsl::users.on(issues_dsl::assignee_id.eq(users_dsl::id.nullable())),
                 )
                 .into_boxed();
@@ -72,7 +68,7 @@ impl DBIssue for DBAccess {
                     query = query.filter(projects_dsl::technologies.overlaps_with(utils::parse_comma_values(technologies)));
             }
             if let Some(language_slug) = params.language_slugs.as_ref() {
-                    query = query.filter(languages_dsl::slug.eq_any(utils::parse_comma_values(language_slug)));
+                    query = query.filter(repositories_dsl::language_slug.eq_any(utils::parse_comma_values(language_slug)));
             }
             if let Some(labels) = params.labels.as_ref() {
                     query = query.filter(issues_dsl::labels.overlaps_with(utils::parse_comma_values(labels)));
