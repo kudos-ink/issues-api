@@ -14,6 +14,7 @@ diesel::table! {
         issue_closed_at -> Nullable<Timestamptz>,
         created_at -> Timestamptz,
         updated_at -> Nullable<Timestamptz>,
+        description -> Nullable<Text>,
     }
 }
 

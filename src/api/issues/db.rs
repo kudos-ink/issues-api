@@ -8,7 +8,6 @@ use crate::api::projects::models::ProjectResponse;
 use crate::api::repositories::models::Repository;
 use crate::api::repositories::models::RepositoryResponse;
 use crate::schema::issues::dsl as issues_dsl;
-use crate::schema::languages::dsl as languages_dsl;
 use crate::schema::projects::dsl as projects_dsl;
 use crate::schema::repositories::dsl as repositories_dsl;
 use crate::schema::users::dsl as users_dsl;
@@ -167,6 +166,7 @@ impl DBIssue for DBAccess {
                 issue_closed_at: issue.issue_closed_at,
                 created_at: issue.created_at,
                 updated_at: issue.updated_at,
+                description: issue.description,
             })
             .collect();
 
