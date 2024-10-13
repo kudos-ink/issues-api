@@ -22,6 +22,7 @@ pub struct Issue {
     pub issue_closed_at: Option<DateTime<Utc>>,
     pub created_at: DateTime<Utc>,
     pub updated_at: Option<DateTime<Utc>>,
+    pub description: Option<String>,
 }
 
 #[derive(Insertable, Serialize, Deserialize, Debug)]
@@ -35,6 +36,7 @@ pub struct NewIssue {
     pub repository_id: i32,
     pub assignee_id: Option<i32>,
     pub issue_created_at: DateTime<Utc>,
+    pub description: Option<String>,
 }
 
 #[derive(AsChangeset, Serialize, Deserialize, Debug, Default)]
@@ -46,6 +48,7 @@ pub struct UpdateIssue {
     pub certified: Option<bool>,
     pub assignee_id: Option<i32>,
     pub issue_closed_at: Option<DateTime<Utc>>,
+    pub description: Option<String>,
 }
 
 impl UpdateIssue {
@@ -56,6 +59,7 @@ impl UpdateIssue {
             || self.certified.is_some()
             || self.assignee_id.is_some()
             || self.issue_closed_at.is_some()
+            || self.description.is_some()
     }
 }
 
@@ -97,6 +101,7 @@ pub struct IssueResponse {
     pub issue_closed_at: Option<DateTime<Utc>>,
     pub created_at: DateTime<Utc>,
     pub updated_at: Option<DateTime<Utc>>,
+    pub description: Option<String>,
 }
 
 #[derive(Serialize, Debug)]
