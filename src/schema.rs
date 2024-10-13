@@ -40,6 +40,7 @@ diesel::table! {
         avatar -> Nullable<Varchar>,
         created_at -> Timestamptz,
         updated_at -> Nullable<Timestamptz>,
+        rewards -> Bool,
     }
 }
 

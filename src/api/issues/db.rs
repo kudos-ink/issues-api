@@ -112,6 +112,9 @@ impl DBIssue for DBAccess {
                         .and(issues_dsl::issue_closed_at.le(closed_at_max)),
                 );
             }
+            if let Some(rewards) = params.rewards.as_ref() {
+                    query = query.filter(projects_dsl::rewards.eq(rewards));
+            }
             query
         };
 
@@ -158,6 +161,7 @@ impl DBIssue for DBAccess {
                         avatar: project.avatar,
                         created_at: project.created_at,
                         updated_at: project.updated_at,
+                        rewards: project.rewards,
                     },
                     created_at: repo.created_at,
                     updated_at: repo.updated_at,

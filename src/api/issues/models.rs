@@ -78,6 +78,7 @@ pub struct QueryParams {
     pub has_assignee: Option<bool>,
     pub issue_closed_at_min: Option<DateTime<Utc>>,
     pub issue_closed_at_max: Option<DateTime<Utc>>,
+    pub rewards: Option<bool>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -122,4 +123,5 @@ pub struct LeaderboardQueryParams {
     pub repository_id: Option<i32>,
     pub start_date: Option<DateTime<Utc>>,
     pub close_date: Option<DateTime<Utc>>,
+    pub rewards: Option<bool>,
 }
