@@ -74,22 +74,34 @@ pub async fn leaderboard(
             offset: 0,
         },
     )?;
-    let mut scores = HashMap::new();
-
+    let mut issues_number: HashMap<Option<String>, u64>  = HashMap::new();
+    let mut estimations : HashMap<Option<String>, u64> = HashMap::new();
+    
     issues.into_iter().for_each(|issue| {
-        scores
-            .entry(issue.assignee_username)
+        issues_number
+            .entry(issue.assignee_username.clone())
             .and_modify(|count| *count += 1)
             .or_insert(1); // Start the count at 1, not 0.
+        estimations
+        .entry(issue.assignee_username)
+        .and_modify(|count| *count += issue.estimation as u64)
+        .or_insert(issue.estimation as u64); 
     });
 
-    let leaderboard: Vec<LeaderboardEntry> = scores
-        .into_iter()
-        .map(|(username, score)| LeaderboardEntry {
+
+    let mut leaderboard: Vec<LeaderboardEntry> = issues_number
+    .into_iter()
+    .map(|(username, issue_count)| {
+        let total_score = estimations.get(&username).cloned().unwrap_or_default();
+
+        LeaderboardEntry {
             username: username.unwrap_or_default(),
-            score,
-        })
-        .collect();
+            issues:  issue_count,
+            score: total_score,
+        }
+    })
+    .collect();
+    leaderboard.sort_by(|a, b| b.score.cmp(&a.score));
 
     Ok(json(&leaderboard))
 }
@@ -104,7 +116,10 @@ pub async fn create_handler(
         warn!("invalid issue '{e}'",);
         reject::custom(IssueError::InvalidPayload(e))
     })?;
-
+    if issue.estimation.filter(|&estimation| estimation < 1).is_some() {
+        return Err(reject::custom(IssueError::InvalidPayload("invalid estimation".to_string())));
+    }
+    
     info!("creating issue number '{}'", issue.number);
     match DBRepository::by_id(&db_access, issue.repository_id) {
         Ok(repo) => match repo {
@@ -154,6 +169,11 @@ pub async fn update_handler(
         warn!("invalid issue update: '{e}'",);
         return Err(reject::custom(IssueError::InvalidPayload(e.to_string())));
     }
+
+    if issue.estimation.filter(|&estimation| estimation < 1).is_some() {
+        return Err(reject::custom(IssueError::InvalidPayload("invalid estimation".to_string())));
+    }
+    
     match DBIssue::by_id(&db_access, id)? {
         Some(p) => match db_access.update(p.id, &issue) {
             Ok(issue) => {

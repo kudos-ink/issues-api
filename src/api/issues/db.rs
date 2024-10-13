@@ -171,6 +171,7 @@ impl DBIssue for DBAccess {
                 created_at: issue.created_at,
                 updated_at: issue.updated_at,
                 description: issue.description,
+                estimation: issue.estimation
             })
             .collect();
 

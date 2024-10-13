@@ -23,6 +23,7 @@ pub struct Issue {
     pub created_at: DateTime<Utc>,
     pub updated_at: Option<DateTime<Utc>>,
     pub description: Option<String>,
+    pub estimation: i32,
 }
 
 #[derive(Insertable, Serialize, Deserialize, Debug)]
@@ -37,6 +38,7 @@ pub struct NewIssue {
     pub assignee_id: Option<i32>,
     pub issue_created_at: DateTime<Utc>,
     pub description: Option<String>,
+    pub estimation: Option<i32>,
 }
 
 #[derive(AsChangeset, Serialize, Deserialize, Debug, Default)]
@@ -49,6 +51,7 @@ pub struct UpdateIssue {
     pub assignee_id: Option<i32>,
     pub issue_closed_at: Option<DateTime<Utc>>,
     pub description: Option<String>,
+    pub estimation: Option<i32>,
 }
 
 impl UpdateIssue {
@@ -60,6 +63,7 @@ impl UpdateIssue {
             || self.assignee_id.is_some()
             || self.issue_closed_at.is_some()
             || self.description.is_some()
+            || self.estimation.is_some()
     }
 }
 
@@ -103,12 +107,14 @@ pub struct IssueResponse {
     pub created_at: DateTime<Utc>,
     pub updated_at: Option<DateTime<Utc>>,
     pub description: Option<String>,
+    pub estimation: i32,
 }
 
 #[derive(Serialize, Debug)]
 pub struct LeaderboardEntry {
     pub username: String,
-    pub score: i64,
+    pub issues: u64,
+    pub score: u64,
 }
 
 #[derive(Deserialize, Debug)]

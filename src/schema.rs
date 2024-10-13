@@ -15,6 +15,7 @@ diesel::table! {
         created_at -> Timestamptz,
         updated_at -> Nullable<Timestamptz>,
         description -> Nullable<Text>,
+        estimation -> Int4,
     }
 }
 
