@@ -20,6 +20,7 @@ pub struct Project {
     pub avatar: Option<String>,
     pub created_at: DateTime<Utc>,
     pub updated_at: Option<DateTime<Utc>>,
+    pub rewards: bool,
 }
 
 #[derive(Deserialize, Debug)]
@@ -28,6 +29,7 @@ pub struct QueryParams {
     pub purposes: Option<String>,
     pub stack_levels: Option<String>,
     pub technologies: Option<String>,
+    pub rewards: Option<bool>,
 }
 
 #[derive(Insertable, Serialize, Deserialize, Debug)]
@@ -39,6 +41,7 @@ pub struct NewProject {
     pub stack_levels: Option<Vec<Option<String>>>,
     pub technologies: Option<Vec<Option<String>>>,
     pub avatar: Option<String>,
+    pub rewards: Option<bool>,
 }
 
 #[derive(AsChangeset, Serialize, Deserialize, Debug)]
@@ -50,6 +53,7 @@ pub struct UpdateProject {
     pub stack_levels: Option<Vec<Option<String>>>,
     pub technologies: Option<Vec<Option<String>>>,
     pub avatar: Option<String>,
+    pub rewards: Option<bool>,
 }
 
 #[derive(Serialize, Debug)]
@@ -63,4 +67,5 @@ pub struct ProjectResponse {
     pub avatar: Option<String>,
     pub created_at: DateTime<Utc>,
     pub updated_at: Option<DateTime<Utc>>,
+    pub rewards: bool,
 }

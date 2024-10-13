@@ -46,6 +46,9 @@ impl DBProject for DBAccess {
             if let Some(stack_levels) = params.stack_levels.as_ref() {
                     query = query.filter(projects_dsl::stack_levels.overlaps_with(utils::parse_comma_values(stack_levels)));
             }
+            if let Some(rewards) = params.rewards.as_ref() {
+                    query = query.filter(projects_dsl::rewards.eq(rewards));
+            }
             query
         };
 
