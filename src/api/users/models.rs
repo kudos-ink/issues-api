@@ -38,3 +38,7 @@ pub struct UpdateUser {
     pub username: Option<String>,
     pub avatar: Option<String>
 }
+#[derive(Deserialize, Debug)]
+pub struct QueryParams {
+    pub labels: Option<String>,
+}

@@ -12,7 +12,7 @@ use log::{error, info, warn};
 use super::{
     db::DBUser,
     errors::UserError,
-    models::{NewUser, UpdateUser},
+    models::{NewUser, QueryParams, UpdateUser},
 };
 
 pub async fn by_id(id: i32, db_access: impl DBUser) -> Result<impl Reply, Rejection> {
@@ -31,9 +31,10 @@ pub async fn by_username(username: String, db_access: impl DBUser) -> Result<imp
 
 pub async fn all_handler(
     db_access: impl DBUser,
+    params: QueryParams,
     pagination: PaginationParams,
 ) -> Result<impl Reply, Rejection> {
-    let users = db_access.all(pagination)?;
+    let users = db_access.all(params, pagination)?;
     Ok(json::<Vec<_>>(&users))
 }
 

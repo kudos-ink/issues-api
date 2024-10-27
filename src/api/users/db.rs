@@ -1,19 +1,22 @@
 use diesel::dsl::now;
 use diesel::prelude::*;
 
-use super::models::{NewUser, UpdateUser, User};
+use super::models::{NewUser, QueryParams, UpdateUser, User};
 use crate::schema::users::dsl as users_dsl;
+use crate::schema::issues::dsl as issues_dsl;
+use crate::schema::repositories::dsl as repositories_dsl;
 
 use crate::db::{
     errors::DBError,
     pool::{DBAccess, DBAccessor},
 };
 use crate::types::PaginationParams;
+use crate::utils;
 
 pub trait DBUser: Send + Sync + Clone + 'static {
     fn by_id(&self, id: i32) -> Result<Option<User>, DBError>;
     fn by_username(&self, username: &str) -> Result<Option<User>, DBError>;
-    fn all(&self, pagination: PaginationParams) -> Result<Vec<User>, DBError>;
+    fn all(&self, params: QueryParams,pagination: PaginationParams) -> Result<Vec<User>, DBError>;
     fn create(&self, user: &NewUser) -> Result<User, DBError>;
     fn update(&self, id: i32, user: &UpdateUser) -> Result<User, DBError>;
     fn delete(&self, id: i32) -> Result<(), DBError>;
@@ -50,10 +53,42 @@ impl DBUser for DBAccess {
         }
     }
 
-    fn all(&self, pagination: PaginationParams) -> Result<Vec<User>, DBError> {
+    fn all(
+        &self,
+        params: QueryParams,
+        pagination: PaginationParams,
+    ) -> Result<Vec<User>, DBError> {
         let conn = &mut self.get_db_conn();
+
+        let user_ids: Option<Vec<i32>> = if let Some(labels) = params.labels.as_ref() {
+            let ids: Vec<Option<i32>> = issues_dsl::issues
+                .inner_join(
+                    repositories_dsl::repositories
+                        .on(issues_dsl::repository_id.eq(repositories_dsl::id)),
+                )
+                .select(issues_dsl::assignee_id) 
+                .filter(issues_dsl::labels.overlaps_with(utils::parse_comma_values(labels)))
+                .distinct()
+                .load::<Option<i32>>(conn) 
+                .optional()? 
+                .unwrap_or_default(); 
+        
+            let user_ids: Vec<i32> = ids.into_iter().filter_map(|id| id).collect();
+            if user_ids.is_empty() {
+                None
+            } else {
+                Some(user_ids)
+            }
+        } else {
+            None
+        };
         let mut query = users_dsl::users.into_boxed();
 
+        if let Some(ids) = user_ids {
+            query = query.filter(users_dsl::id.eq_any(ids));
+        } else if let Some(_) = params.labels {
+            return Ok(vec![])
+        }
         query = query.offset(pagination.offset).limit(pagination.limit);
 
         let result = query.load::<User>(conn)?;
