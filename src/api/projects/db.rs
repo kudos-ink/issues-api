@@ -37,7 +37,8 @@ impl DBProject for DBAccess {
         // filter by labels
         let project_ids: Option<Vec<i32>> = if let Some(labels) = params.labels.as_ref() {
             let label_ids = utils::parse_comma_values(labels);
-            let ids = issues_dsl::issues
+    
+            issues_dsl::issues
                 .inner_join(
                     repositories_dsl::repositories
                         .on(issues_dsl::repository_id.eq(repositories_dsl::id)),
@@ -50,9 +51,8 @@ impl DBProject for DBAccess {
                 .filter(issues_dsl::labels.overlaps_with(label_ids))
                 .distinct()
                 .load::<i32>(conn)
-                .optional()?;
+                .optional()?
     
-            ids
         } else {
             None
         };

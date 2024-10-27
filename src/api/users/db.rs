@@ -73,7 +73,7 @@ impl DBUser for DBAccess {
                 .optional()? 
                 .unwrap_or_default(); 
         
-            let user_ids: Vec<i32> = ids.into_iter().filter_map(|id| id).collect();
+            let user_ids: Vec<i32> = ids.into_iter().flatten().collect();
             if user_ids.is_empty() {
                 None
             } else {
@@ -86,7 +86,7 @@ impl DBUser for DBAccess {
 
         if let Some(ids) = user_ids {
             query = query.filter(users_dsl::id.eq_any(ids));
-        } else if let Some(_) = params.labels {
+        } else if params.labels.is_some() {
             return Ok(vec![])
         }
         query = query.offset(pagination.offset).limit(pagination.limit);
