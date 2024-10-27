@@ -30,6 +30,7 @@ pub struct QueryParams {
     pub stack_levels: Option<String>,
     pub technologies: Option<String>,
     pub rewards: Option<bool>,
+    pub labels: Option<String>
 }
 
 #[derive(Insertable, Serialize, Deserialize, Debug)]

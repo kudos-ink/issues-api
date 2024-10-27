@@ -8,6 +8,7 @@ use crate::types::PaginationParams;
 
 use super::db::DBUser;
 use super::handlers;
+use super::models::QueryParams;
 
 fn with_db(
     db_pool: impl DBUser,
@@ -23,6 +24,7 @@ pub fn routes(db_access: impl DBUser) -> BoxedFilter<(impl Reply,)> {
     let get_users = user
         .and(warp::get())
         .and(with_db(db_access.clone()))
+        .and(warp::query::<QueryParams>())
         .and(warp::query::<PaginationParams>())
         .and_then(handlers::all_handler);
 

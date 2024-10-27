@@ -3,6 +3,8 @@ use diesel::prelude::*;
 
 use super::models::{NewProject, Project, QueryParams, UpdateProject};
 use crate::schema::projects::dsl as projects_dsl;
+use crate::schema::issues::dsl as issues_dsl;
+use crate::schema::repositories::dsl as repositories_dsl;
 
 use crate::db::{
     errors::DBError,
@@ -31,7 +33,30 @@ impl DBProject for DBAccess {
         pagination: PaginationParams,
     ) -> Result<(Vec<Project>, i64), DBError> {
         let conn = &mut self.get_db_conn();
-
+        
+        // filter by labels
+        let project_ids: Option<Vec<i32>> = if let Some(labels) = params.labels.as_ref() {
+            let label_ids = utils::parse_comma_values(labels);
+    
+            issues_dsl::issues
+                .inner_join(
+                    repositories_dsl::repositories
+                        .on(issues_dsl::repository_id.eq(repositories_dsl::id)),
+                )
+                .inner_join(
+                    projects_dsl::projects
+                        .on(repositories_dsl::project_id.eq(projects_dsl::id)),
+                )
+                .select(projects_dsl::id)
+                .filter(issues_dsl::labels.overlaps_with(label_ids))
+                .distinct()
+                .load::<i32>(conn)
+                .optional()?
+    
+        } else {
+            None
+        };
+    
         let build_query = || {
             let mut query = projects_dsl::projects.into_boxed();
             if let Some(slugs) = params.slugs.as_ref() {
@@ -48,6 +73,10 @@ impl DBProject for DBAccess {
             }
             if let Some(rewards) = params.rewards.as_ref() {
                     query = query.filter(projects_dsl::rewards.eq(rewards));
+            }
+
+            if let Some(project_ids) = project_ids.as_ref() {
+                query = query.filter(projects_dsl::id.eq_any(project_ids));
             }
             query
         };
