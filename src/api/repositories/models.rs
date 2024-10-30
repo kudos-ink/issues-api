@@ -14,7 +14,7 @@ pub struct Repository {
     pub slug: String,
     pub name: String,
     pub url: String,
-    pub language_slug: String,
+    pub language_slug: Option<String>,
     pub project_id: i32,
     pub created_at: DateTime<Utc>,
     pub updated_at: Option<DateTime<Utc>>,
@@ -34,7 +34,7 @@ pub struct NewRepository {
     pub slug: String,
     pub name: String,
     pub url: String,
-    pub language_slug: String,
+    pub language_slug: Option<String>,
     pub project_id: i32,
 }
 
@@ -54,7 +54,7 @@ pub struct RepositoryResponse {
     pub slug: String,
     pub name: String,
     pub url: String,
-    pub language_slug: String,
+    pub language_slug: Option<String>,
     pub project: ProjectResponse,
     pub created_at: DateTime<Utc>,
     pub updated_at: Option<DateTime<Utc>>,
