@@ -51,7 +51,7 @@ diesel::table! {
         slug -> Text,
         name -> Text,
         url -> Text,
-        language_slug -> Text,
+        language_slug -> Nullable<Text>,
         project_id -> Int4,
         created_at -> Timestamptz,
         updated_at -> Nullable<Timestamptz>,
