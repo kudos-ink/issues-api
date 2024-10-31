@@ -68,6 +68,7 @@ pub async fn leaderboard(
             issue_closed_at_min: params.start_date,
             issue_closed_at_max: params.close_date,
             rewards: params.rewards,
+            certified_or_labels: Some(false),
         },
         PaginationParams {
             limit: i64::MAX,
