@@ -66,15 +66,24 @@ impl DBIssue for DBAccess {
             if let Some(technologies) = params.technologies.as_ref() {
                     query = query.filter(projects_dsl::technologies.overlaps_with(utils::parse_comma_values(technologies)));
             }
-            if let Some(language_slug) = params.language_slugs.as_ref() {
-                    query = query.filter(repositories_dsl::language_slug.eq_any(utils::parse_comma_values(language_slug)));
+            if let Some(language_slugs) = params.language_slugs.as_ref() {
+                    query = query.filter(repositories_dsl::language_slug.eq_any(utils::parse_comma_values(language_slugs)));
             }
-            if let Some(labels) = params.labels.as_ref() {
+            if let Some(true) = params.certified_or_labels {
+                if let (Some(labels), Some(certified)) = (params.labels.as_ref(), params.certified.as_ref()) {
+                    query = query.filter(issues_dsl::labels.overlaps_with(utils::parse_comma_values(labels)).or(issues_dsl::certified.eq(certified)));
+                } else if let Some(labels) = params.labels.as_ref() {
                     query = query.filter(issues_dsl::labels.overlaps_with(utils::parse_comma_values(labels)));
-            }
-
-            if let Some(certified) = params.certified.as_ref() {
-                query = query.filter(issues_dsl::certified.eq(certified));
+                } else if let Some(certified) = params.certified.as_ref() {
+                    query = query.filter(issues_dsl::certified.eq(certified));
+                }
+            } else {
+                if let Some(labels) = params.labels.as_ref() {
+                        query = query.filter(issues_dsl::labels.overlaps_with(utils::parse_comma_values(labels)));
+                }
+                if let Some(certified) = params.certified.as_ref() {
+                    query = query.filter(issues_dsl::certified.eq(certified));
+                }
             }
 
             if let Some(open) = params.open.as_ref() {

@@ -83,6 +83,7 @@ pub struct QueryParams {
     pub issue_closed_at_min: Option<DateTime<Utc>>,
     pub issue_closed_at_max: Option<DateTime<Utc>>,
     pub rewards: Option<bool>,
+    pub certified_or_labels: Option<bool>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
