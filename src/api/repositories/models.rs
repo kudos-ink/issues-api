@@ -28,6 +28,12 @@ pub struct QueryParams {
     pub project_ids: Option<String>,
 }
 
+#[derive(Deserialize, Debug)]
+pub struct LanguageQueryParams {
+    pub labels: Option<String>,
+    pub with_technologies: Option<bool>,
+}
+
 #[derive(Insertable, Serialize, Deserialize, Debug)]
 #[diesel(table_name = repositories)]
 pub struct NewRepository {
