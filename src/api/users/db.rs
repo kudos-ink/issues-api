@@ -2,21 +2,20 @@ use diesel::dsl::now;
 use diesel::prelude::*;
 
 use super::models::{NewUser, QueryParams, UpdateUser, User};
-use crate::schema::users::dsl as users_dsl;
 use crate::schema::issues::dsl as issues_dsl;
 use crate::schema::repositories::dsl as repositories_dsl;
+use crate::schema::users::dsl as users_dsl;
 
 use crate::db::{
     errors::DBError,
     pool::{DBAccess, DBAccessor},
 };
 use crate::types::PaginationParams;
-use crate::utils;
 
 pub trait DBUser: Send + Sync + Clone + 'static {
     fn by_id(&self, id: i32) -> Result<Option<User>, DBError>;
     fn by_username(&self, username: &str) -> Result<Option<User>, DBError>;
-    fn all(&self, params: QueryParams,pagination: PaginationParams) -> Result<Vec<User>, DBError>;
+    fn all(&self, params: QueryParams, pagination: PaginationParams) -> Result<Vec<User>, DBError>;
     fn create(&self, user: &NewUser) -> Result<User, DBError>;
     fn update(&self, id: i32, user: &UpdateUser) -> Result<User, DBError>;
     fn delete(&self, id: i32) -> Result<(), DBError>;
@@ -53,11 +52,7 @@ impl DBUser for DBAccess {
         }
     }
 
-    fn all(
-        &self,
-        params: QueryParams,
-        pagination: PaginationParams,
-    ) -> Result<Vec<User>, DBError> {
+    fn all(&self, params: QueryParams, pagination: PaginationParams) -> Result<Vec<User>, DBError> {
         let conn = &mut self.get_db_conn();
 
         let user_ids: Option<Vec<i32>> = if let Some(certified) = params.certified.as_ref() {
@@ -66,13 +61,13 @@ impl DBUser for DBAccess {
                     repositories_dsl::repositories
                         .on(issues_dsl::repository_id.eq(repositories_dsl::id)),
                 )
-                .select(issues_dsl::assignee_id) 
+                .select(issues_dsl::assignee_id)
                 .filter(issues_dsl::certified.eq(certified))
                 .distinct()
-                .load::<Option<i32>>(conn) 
-                .optional()? 
-                .unwrap_or_default(); 
-        
+                .load::<Option<i32>>(conn)
+                .optional()?
+                .unwrap_or_default();
+
             let user_ids: Vec<i32> = ids.into_iter().flatten().collect();
             if user_ids.is_empty() {
                 None
@@ -87,7 +82,7 @@ impl DBUser for DBAccess {
         if let Some(ids) = user_ids {
             query = query.filter(users_dsl::id.eq_any(ids));
         } else if params.labels.is_some() {
-            return Ok(vec![])
+            return Ok(vec![]);
         }
         query = query.offset(pagination.offset).limit(pagination.limit);
 

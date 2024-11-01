@@ -30,7 +30,11 @@ pub struct QueryParams {
 
 #[derive(Deserialize, Debug)]
 pub struct LanguageQueryParams {
+    pub slugs: Option<String>,
     pub labels: Option<String>,
+    pub certified: Option<bool>,
+    pub open: Option<bool>,
+    pub certified_or_labels: Option<bool>,
     pub with_technologies: Option<bool>,
 }
 
