@@ -1,8 +1,14 @@
+use std::collections::HashSet;
+
 use diesel::dsl::sql;
 use diesel::sql_types::Text;
 use diesel::{dsl::now, prelude::*};
 
-use super::models::{NewRepository, QueryParams, Repository, UpdateRepository};
+use super::models::{
+    LanguageQueryParams, NewRepository, QueryParams, Repository, UpdateRepository,
+};
+use crate::schema::issues::dsl as issues_dsl;
+use crate::schema::projects::dsl as projects_dsl;
 use crate::schema::repositories::dsl as repositories_dsl;
 use crate::utils;
 use crate::{
@@ -24,7 +30,7 @@ pub trait DBRepository: Send + Sync + Clone + 'static {
     fn update(&self, id: i32, repo: &UpdateRepository) -> Result<Repository, DBError>;
     fn delete(&self, id: i32) -> Result<(), DBError>;
     fn by_slug(&self, slug: &str) -> Result<Option<Repository>, DBError>;
-    fn aggregate_languages(&self) -> Result<Vec<String>, DBError>;
+    fn aggregate_languages(&self, params: LanguageQueryParams) -> Result<Vec<String>, DBError>;
 }
 
 impl DBRepository for DBAccess {
@@ -37,7 +43,9 @@ impl DBRepository for DBAccess {
         let mut query = repositories_dsl::repositories.into_boxed();
 
         if let Some(languages) = params.languages {
-            query = query.filter(repositories_dsl::language_slug.eq_any(utils::parse_comma_values(&languages)));
+            query = query.filter(
+                repositories_dsl::language_slug.eq_any(utils::parse_comma_values(&languages)),
+            );
         }
         if let Some(slugs) = params.slugs {
             query = query.filter(repositories_dsl::slug.eq_any(utils::parse_comma_values(&slugs)));
@@ -115,11 +123,61 @@ impl DBRepository for DBAccess {
         Ok(result)
     }
 
-    fn aggregate_languages(&self) -> Result<Vec<String>, DBError> {
+    fn aggregate_languages(&self, params: LanguageQueryParams) -> Result<Vec<String>, DBError> {
         let conn = &mut self.get_db_conn();
-        let languages = repositories_dsl::repositories
+
+        let mut query = repositories_dsl::repositories
+            .inner_join(issues_dsl::issues.on(issues_dsl::repository_id.eq(repositories_dsl::id)))
             .select(sql::<Text>("DISTINCT language_slug"))
-            .load::<String>(conn)?;
-        Ok(languages)
+            .filter(repositories_dsl::language_slug.is_not_null())
+            .into_boxed();
+
+        if let Some(labels) = params.labels.as_ref() {
+            query =
+                query.filter(issues_dsl::labels.overlaps_with(utils::parse_comma_values(labels)));
+        }
+
+        let languages: HashSet<String> = query.load::<String>(conn)?.into_iter().collect();
+
+        let mut technologies: HashSet<String> = HashSet::new();
+
+        // Query for technologies if with_technologies is true
+        if params.with_technologies.unwrap_or(false) {
+            let mut tech_query = projects_dsl::projects
+                .inner_join(
+                    repositories_dsl::repositories
+                        .on(repositories_dsl::project_id.eq(projects_dsl::id)),
+                )
+                .inner_join(
+                    issues_dsl::issues.on(issues_dsl::repository_id.eq(repositories_dsl::id)),
+                )
+                .select(projects_dsl::technologies)
+                .filter(projects_dsl::technologies.is_not_null())
+                .into_boxed();
+
+            if let Some(labels) = params.labels.as_ref() {
+                tech_query = tech_query
+                    .filter(issues_dsl::labels.overlaps_with(utils::parse_comma_values(labels)));
+            }
+
+            let tech_results: Vec<Option<Vec<Option<String>>>> = tech_query.load(conn)?;
+
+            // Collect technologies while flattening the nested structure
+            for tech_list in tech_results {
+                if let Some(list) = tech_list {
+                    for tech in list {
+                        if let Some(tech_name) = tech {
+                            technologies.insert(tech_name);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Merge languages and technologies into a single HashSet and return as Vec<String>
+        let mut unique_items: HashSet<String> = languages; // Start with languages
+        unique_items.extend(technologies); // Add technologies to the HashSet
+
+        Ok(unique_items.into_iter().collect())
     }
 }

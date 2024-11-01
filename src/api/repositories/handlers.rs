@@ -15,7 +15,7 @@ use crate::{
 use super::{
     db::DBRepository,
     errors::RepositoryError,
-    models::{NewRepository, QueryParams, UpdateRepository},
+    models::{LanguageQueryParams, NewRepository, QueryParams, UpdateRepository},
 };
 
 pub async fn by_id(id: i32, db_access: impl DBRepository) -> Result<impl Reply, Rejection> {
@@ -110,7 +110,10 @@ pub async fn delete_handler(
     }
 }
 
-pub async fn get_languages_handler(db_access: impl DBRepository) -> Result<impl Reply, Rejection> {
-    let languages = db_access.aggregate_languages()?;
+pub async fn get_languages_handler(
+    db_access: impl DBRepository,
+    params: LanguageQueryParams,
+) -> Result<impl Reply, Rejection> {
+    let languages = db_access.aggregate_languages(params)?;
     Ok(json(&languages))
 }

@@ -9,7 +9,7 @@ use crate::types::PaginationParams;
 
 use super::db::DBRepository;
 use super::handlers;
-use super::models::QueryParams;
+use super::models::{LanguageQueryParams, QueryParams};
 // use crate::pagination::GetPagination;
 // use crate::pagination::GetSort;
 
@@ -58,6 +58,7 @@ pub fn routes(db_access: impl DBRepository + DBProject) -> BoxedFilter<(impl Rep
     let languages_route = warp::path!("languages")
         .and(warp::get())
         .and(with_db(db_access.clone()))
+        .and(warp::query::<LanguageQueryParams>())
         .and_then(handlers::get_languages_handler);
 
     all_route
