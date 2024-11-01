@@ -128,13 +128,44 @@ impl DBRepository for DBAccess {
 
         let mut query = repositories_dsl::repositories
             .inner_join(issues_dsl::issues.on(issues_dsl::repository_id.eq(repositories_dsl::id)))
+            .inner_join(
+                projects_dsl::projects.on(repositories_dsl::project_id.eq(projects_dsl::id)),
+            )
             .select(sql::<Text>("DISTINCT language_slug"))
             .filter(repositories_dsl::language_slug.is_not_null())
             .into_boxed();
 
-        if let Some(labels) = params.labels.as_ref() {
-            query =
-                query.filter(issues_dsl::labels.overlaps_with(utils::parse_comma_values(labels)));
+        if let Some(slugs) = params.slugs.as_ref() {
+            query = query.filter(projects_dsl::slug.eq_any(utils::parse_comma_values(slugs)));
+        }
+
+        if let Some(true) = params.certified_or_labels {
+            if let (Some(labels), Some(certified)) =
+                (params.labels.as_ref(), params.certified.as_ref())
+            {
+                query = query.filter(
+                    issues_dsl::labels
+                        .overlaps_with(utils::parse_comma_values(labels))
+                        .or(issues_dsl::certified.eq(certified)),
+                );
+            } else if let Some(labels) = params.labels.as_ref() {
+                query = query
+                    .filter(issues_dsl::labels.overlaps_with(utils::parse_comma_values(labels)));
+            } else if let Some(certified) = params.certified.as_ref() {
+                query = query.filter(issues_dsl::certified.eq(certified));
+            }
+        } else {
+            if let Some(labels) = params.labels.as_ref() {
+                query = query
+                    .filter(issues_dsl::labels.overlaps_with(utils::parse_comma_values(labels)));
+            }
+            if let Some(certified) = params.certified.as_ref() {
+                query = query.filter(issues_dsl::certified.eq(certified));
+            }
+        }
+
+        if let Some(open) = params.open.as_ref() {
+            query = query.filter(issues_dsl::open.eq(open));
         }
 
         let languages: HashSet<String> = query.load::<String>(conn)?.into_iter().collect();
@@ -155,9 +186,40 @@ impl DBRepository for DBAccess {
                 .filter(projects_dsl::technologies.is_not_null())
                 .into_boxed();
 
-            if let Some(labels) = params.labels.as_ref() {
-                tech_query = tech_query
-                    .filter(issues_dsl::labels.overlaps_with(utils::parse_comma_values(labels)));
+            if let Some(slugs) = params.slugs.as_ref() {
+                tech_query =
+                    tech_query.filter(projects_dsl::slug.eq_any(utils::parse_comma_values(slugs)));
+            }
+
+            if let Some(true) = params.certified_or_labels {
+                if let (Some(labels), Some(certified)) =
+                    (params.labels.as_ref(), params.certified.as_ref())
+                {
+                    tech_query = tech_query.filter(
+                        issues_dsl::labels
+                            .overlaps_with(utils::parse_comma_values(labels))
+                            .or(issues_dsl::certified.eq(certified)),
+                    );
+                } else if let Some(labels) = params.labels.as_ref() {
+                    tech_query = tech_query.filter(
+                        issues_dsl::labels.overlaps_with(utils::parse_comma_values(labels)),
+                    );
+                } else if let Some(certified) = params.certified.as_ref() {
+                    tech_query = tech_query.filter(issues_dsl::certified.eq(certified));
+                }
+            } else {
+                if let Some(labels) = params.labels.as_ref() {
+                    tech_query = tech_query.filter(
+                        issues_dsl::labels.overlaps_with(utils::parse_comma_values(labels)),
+                    );
+                }
+                if let Some(certified) = params.certified.as_ref() {
+                    tech_query = tech_query.filter(issues_dsl::certified.eq(certified));
+                }
+            }
+
+            if let Some(open) = params.open.as_ref() {
+                tech_query = tech_query.filter(issues_dsl::open.eq(open));
             }
 
             let tech_results: Vec<Option<Vec<Option<String>>>> = tech_query.load(conn)?;
@@ -174,9 +236,8 @@ impl DBRepository for DBAccess {
             }
         }
 
-        // Merge languages and technologies into a single HashSet and return as Vec<String>
-        let mut unique_items: HashSet<String> = languages; // Start with languages
-        unique_items.extend(technologies); // Add technologies to the HashSet
+        let mut unique_items: HashSet<String> = languages;
+        unique_items.extend(technologies);
 
         Ok(unique_items.into_iter().collect())
     }
