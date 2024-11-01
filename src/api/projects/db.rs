@@ -35,9 +35,7 @@ impl DBProject for DBAccess {
         let conn = &mut self.get_db_conn();
         
         // filter by labels
-        let project_ids: Option<Vec<i32>> = if let Some(labels) = params.labels.as_ref() {
-            let label_ids = utils::parse_comma_values(labels);
-    
+        let project_ids: Option<Vec<i32>> = if let Some(certified) = params.certified.as_ref() {
             issues_dsl::issues
                 .inner_join(
                     repositories_dsl::repositories
@@ -48,7 +46,7 @@ impl DBProject for DBAccess {
                         .on(repositories_dsl::project_id.eq(projects_dsl::id)),
                 )
                 .select(projects_dsl::id)
-                .filter(issues_dsl::labels.overlaps_with(label_ids))
+                .filter(issues_dsl::certified.eq(certified))
                 .distinct()
                 .load::<i32>(conn)
                 .optional()?

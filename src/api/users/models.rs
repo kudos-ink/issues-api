@@ -41,4 +41,5 @@ pub struct UpdateUser {
 #[derive(Deserialize, Debug)]
 pub struct QueryParams {
     pub labels: Option<String>,
+    pub certified: Option<bool>,
 }

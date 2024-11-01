@@ -60,14 +60,14 @@ impl DBUser for DBAccess {
     ) -> Result<Vec<User>, DBError> {
         let conn = &mut self.get_db_conn();
 
-        let user_ids: Option<Vec<i32>> = if let Some(labels) = params.labels.as_ref() {
+        let user_ids: Option<Vec<i32>> = if let Some(certified) = params.certified.as_ref() {
             let ids: Vec<Option<i32>> = issues_dsl::issues
                 .inner_join(
                     repositories_dsl::repositories
                         .on(issues_dsl::repository_id.eq(repositories_dsl::id)),
                 )
                 .select(issues_dsl::assignee_id) 
-                .filter(issues_dsl::labels.overlaps_with(utils::parse_comma_values(labels)))
+                .filter(issues_dsl::certified.eq(certified))
                 .distinct()
                 .load::<Option<i32>>(conn) 
                 .optional()? 
