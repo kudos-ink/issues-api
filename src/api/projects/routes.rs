@@ -17,6 +17,7 @@ fn with_db(
 
 pub fn routes(db_access: impl DBProject) -> BoxedFilter<(impl Reply,)> {
     let project = warp::path!("projects");
+    let project_options = warp::path!("projects" / "options");
     let project_id = warp::path!("projects" / i32);
 
     let all_route = project
@@ -25,6 +26,12 @@ pub fn routes(db_access: impl DBProject) -> BoxedFilter<(impl Reply,)> {
         .and(warp::query::<QueryParams>())
         .and(warp::query::<PaginationParams>())
         .and_then(handlers::all_handler);
+    
+    let options = project_options
+        .and(warp::get())
+        .and(with_db(db_access.clone()))
+        .and(warp::query::<QueryParams>())
+        .and_then(handlers::options);
 
     let get_route = project_id
         .and(warp::get())
@@ -56,5 +63,6 @@ pub fn routes(db_access: impl DBProject) -> BoxedFilter<(impl Reply,)> {
         .or(get_route)
         .or(update_route)
         .or(delete_route)
+        .or(options)
         .boxed()
 }
