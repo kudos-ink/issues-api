@@ -33,6 +33,14 @@ pub async fn all_handler(
     Ok(json(&response))
 }
 
+pub async fn options(
+    db_access: impl DBProject,
+    params: QueryParams,
+) -> Result<impl Reply, Rejection> {
+    let options = db_access.options(params)?;
+    Ok(json(&options))
+}
+
 pub async fn create_handler(
     buf: impl Buf,
     db_access: impl DBProject,

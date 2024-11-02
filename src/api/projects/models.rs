@@ -23,6 +23,15 @@ pub struct Project {
     pub rewards: bool,
 }
 
+#[derive(
+    Debug, PartialEq, Serialize, Deserialize,
+)]
+pub struct ProjectOptions {
+    pub types: Option<Vec<Option<String>>>,
+    pub purposes: Option<Vec<Option<String>>>,
+    pub technologies: Option<Vec<Option<String>>>,
+    pub stack_levels: Option<Vec<Option<String>>>,
+}
 #[derive(Deserialize, Debug)]
 pub struct QueryParams {
     pub slugs: Option<String>,
@@ -31,6 +40,10 @@ pub struct QueryParams {
     pub technologies: Option<String>,
     pub rewards: Option<bool>,
     pub certified: Option<bool>,
+    pub open: Option<bool>,    
+    pub labels: Option<String>,
+    pub certified_or_labels: Option<bool>,
+
 }
 
 #[derive(Insertable, Serialize, Deserialize, Debug)]
