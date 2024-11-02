@@ -29,6 +29,8 @@ pub struct Project {
 pub struct ProjectOptions {
     pub types: Option<Vec<Option<String>>>,
     pub purposes: Option<Vec<Option<String>>>,
+    pub technologies: Option<Vec<Option<String>>>,
+    pub stack_levels: Option<Vec<Option<String>>>,
 }
 #[derive(Deserialize, Debug)]
 pub struct QueryParams {

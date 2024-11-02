@@ -236,6 +236,8 @@ let project_ids: Option<Vec<i32>> = match (
 
         let mut unique_types = HashSet::new();
         let mut unique_purposes = HashSet::new();
+        let mut unique_technologies = HashSet::new();
+        let mut unique_stack_levels = HashSet::new();
         
         for project in &result {
             if let Some(types) = &project.types {
@@ -249,11 +251,23 @@ let project_ids: Option<Vec<i32>> = match (
                     unique_purposes.insert(purpose_option.clone());
                 }
             }
+            if let Some(stack_levels) = &project.stack_levels {
+                for stack_level in stack_levels {
+                    unique_stack_levels.insert(stack_level.clone());
+                }
+            }
+            if let Some(technologies) = &project.technologies {
+                for technology in technologies {
+                    unique_technologies.insert(technology.clone());
+                }
+            }
         }
         
         let project_options = ProjectOptions {
             types: Some(unique_types.into_iter().collect()),
             purposes: Some(unique_purposes.into_iter().collect()),
+            technologies: Some(unique_technologies.into_iter().collect()),
+            stack_levels: Some(unique_stack_levels.into_iter().collect()),
         };
         
         Ok(project_options)
