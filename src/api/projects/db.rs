@@ -226,6 +226,7 @@ impl DBProject for DBAccess {
             if let Some(project_ids) = project_ids.as_ref() {
                 query = query.filter(projects_dsl::id.eq_any(project_ids));
             }
+
             query
         };
 
@@ -323,6 +324,12 @@ impl DBProject for DBAccess {
 
             if let Some(project_ids) = project_ids.as_ref() {
                 query = query.filter(projects_dsl::id.eq_any(project_ids));
+            }
+            if let Some(types) = params.types.as_ref() {
+                query = query.filter(
+                    projects_dsl::types
+                        .overlaps_with(utils::parse_comma_values(types)),
+                );
             }
             query
         };

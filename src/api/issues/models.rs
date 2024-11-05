@@ -84,6 +84,7 @@ pub struct QueryParams {
     pub issue_closed_at_max: Option<DateTime<Utc>>,
     pub rewards: Option<bool>,
     pub certified_or_labels: Option<bool>,
+    pub types: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -131,4 +132,5 @@ pub struct LeaderboardQueryParams {
     pub start_date: Option<DateTime<Utc>>,
     pub close_date: Option<DateTime<Utc>>,
     pub rewards: Option<bool>,
+    pub types: Option<String>,
 }

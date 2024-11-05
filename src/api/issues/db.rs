@@ -66,6 +66,9 @@ impl DBIssue for DBAccess {
             if let Some(technologies) = params.technologies.as_ref() {
                     query = query.filter(projects_dsl::technologies.overlaps_with(utils::parse_comma_values(technologies)));
             }
+            if let Some(types) = params.types.as_ref() {
+                    query = query.filter(projects_dsl::types.overlaps_with(utils::parse_comma_values(types)));
+            }
             if let Some(language_slugs) = params.language_slugs.as_ref() {
                     query = query.filter(repositories_dsl::language_slug.eq_any(utils::parse_comma_values(language_slugs)));
             }
