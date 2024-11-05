@@ -43,6 +43,7 @@ pub struct QueryParams {
     pub open: Option<bool>,    
     pub labels: Option<String>,
     pub certified_or_labels: Option<bool>,
+    pub types: Option<String>,
 
 }
 
