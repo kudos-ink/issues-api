@@ -6,7 +6,6 @@ PASSWORD?=test
 DOCKER_DB_CONTAINER_NAME:=db
 DOCKER_COMPOSE:=docker compose
 DOCKER_API_CONTAINER_NAME:=api
-DOCKER_COMPOSE:=docker-compose
 DOCKER_COMPOSE_FILE:=docker-compose.yaml
 
 # API

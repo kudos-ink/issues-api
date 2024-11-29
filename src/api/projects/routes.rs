@@ -2,7 +2,7 @@ use std::convert::Infallible;
 use warp::filters::BoxedFilter;
 use warp::{Filter, Reply};
 
-use crate::auth::with_auth;
+use crate::middlewares::basic::auth::with_basic_auth;
 use crate::types::PaginationParams;
 
 use super::db::DBProject;
@@ -39,21 +39,21 @@ pub fn routes(db_access: impl DBProject) -> BoxedFilter<(impl Reply,)> {
         .and_then(handlers::by_id);
 
     let create_route = project
-        .and(with_auth())
+        .and(with_basic_auth())
         .and(warp::post())
         .and(warp::body::aggregate())
         .and(with_db(db_access.clone()))
         .and_then(handlers::create_handler);
 
     let update_route = project_id
-        .and(with_auth())
+        .and(with_basic_auth())
         .and(warp::put())
         .and(warp::body::json())
         .and(with_db(db_access.clone()))
         .and_then(handlers::update_handler);
 
     let delete_route = project_id
-        .and(with_auth())
+        .and(with_basic_auth())
         .and(warp::delete())
         .and(with_db(db_access.clone()))
         .and_then(handlers::delete_handler);
