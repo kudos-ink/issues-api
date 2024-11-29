@@ -4,9 +4,7 @@ use std::convert::Infallible;
 use warp::{hyper::StatusCode, Rejection, Reply};
 
 use crate::{
-    api::issues::errors::IssueError, api::projects::errors::ProjectError,
-    api::repositories::errors::RepositoryError, api::users::errors::UserError,
-    auth::errors::AuthenticationError, db::errors::DBError,
+    api::{issues::errors::IssueError, projects::errors::ProjectError, repositories::errors::RepositoryError, users::errors::UserError}, db::errors::DBError, middlewares::errors::AuthenticationError, 
 };
 
 #[derive(Serialize, Deserialize, PartialEq, Debug)]

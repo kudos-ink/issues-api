@@ -14,6 +14,7 @@ use crate::errors::ErrorResponse;
 pub enum UserError {
     AlreadyExists(i32),
     NotFound(i32),
+    GithubNotFound(i64),
     NotFoundByName(String),
     CannotCreate(String),
     CannotUpdate(i32, String),
@@ -25,6 +26,7 @@ impl fmt::Display for UserError {
         match self {
             UserError::AlreadyExists(id) => write!(f, "User #{id} already exists"),
             UserError::NotFound(id) => write!(f, "User #{id} not found"),
+            UserError::GithubNotFound(id) => write!(f, "GitHub #{id} not found"),
             UserError::NotFoundByName(name) => write!(f, "User {name} not found"),
             UserError::CannotCreate(error) => write!(f, "User cannot be created: {error}"),
             UserError::CannotUpdate(id, error) => {
@@ -42,6 +44,7 @@ impl Reply for UserError {
         let code = match self {
             UserError::AlreadyExists(_) => StatusCode::BAD_REQUEST,
             UserError::NotFound(_) => StatusCode::NOT_FOUND,
+            UserError::GithubNotFound(_) => StatusCode::NOT_FOUND,
             UserError::NotFoundByName(_) => StatusCode::NOT_FOUND,
             UserError::CannotCreate(_) => StatusCode::UNPROCESSABLE_ENTITY,
             UserError::CannotUpdate(_, _) => StatusCode::UNPROCESSABLE_ENTITY,

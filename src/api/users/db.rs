@@ -14,6 +14,7 @@ use crate::types::PaginationParams;
 
 pub trait DBUser: Send + Sync + Clone + 'static {
     fn by_id(&self, id: i32) -> Result<Option<User>, DBError>;
+    fn by_github_id(&self, id: i64) -> Result<Option<User>, DBError>;
     fn by_username(&self, username: &str) -> Result<Option<User>, DBError>;
     fn all(&self, params: QueryParams, pagination: PaginationParams) -> Result<Vec<User>, DBError>;
     fn create(&self, user: &NewUser) -> Result<User, DBError>;
@@ -27,6 +28,17 @@ impl DBUser for DBAccess {
 
         let result = users_dsl::users
             .find(id)
+            .first::<User>(conn)
+            .optional()
+            .map_err(DBError::from)?;
+
+        Ok(result)
+    }
+    fn by_github_id(&self, id: i64) -> Result<Option<User>, DBError> {
+        let conn = &mut self.get_db_conn();
+
+        let result = users_dsl::users
+            .filter(users_dsl::github_id.eq(id))
             .first::<User>(conn)
             .optional()
             .map_err(DBError::from)?;
@@ -48,6 +60,7 @@ impl DBUser for DBAccess {
                 avatar: result[0].avatar.clone(),
                 created_at: result[0].created_at,
                 updated_at: result[0].updated_at,
+                github_id: result[0].github_id,
             }))
         }
     }

@@ -65,6 +65,7 @@ diesel::table! {
         avatar -> Nullable<Text>,
         created_at -> Timestamptz,
         updated_at -> Nullable<Timestamptz>,
+        github_id -> Nullable<Int8>,
     }
 }
 
