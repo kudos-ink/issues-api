@@ -59,23 +59,48 @@ diesel::table! {
 }
 
 diesel::table! {
+    team_memberships (id) {
+        id -> Int4,
+        team_id -> Int4,
+        user_id -> Int4,
+        role -> Text,
+        joined_at -> Timestamptz,
+    }
+}
+
+diesel::table! {
+    teams (id) {
+        id -> Int4,
+        name -> Text,
+        description -> Nullable<Text>,
+        created_by_user_id -> Int4,
+        created_at -> Timestamptz,
+        updated_at -> Nullable<Timestamptz>,
+    }
+}
+
+diesel::table! {
     users (id) {
         id -> Int4,
         username -> Text,
-        avatar -> Nullable<Text>,
         created_at -> Timestamptz,
         updated_at -> Nullable<Timestamptz>,
+        avatar -> Nullable<Text>,
     }
 }
 
 diesel::joinable!(issues -> repositories (repository_id));
 diesel::joinable!(issues -> users (assignee_id));
 diesel::joinable!(repositories -> projects (project_id));
+diesel::joinable!(team_memberships -> teams (team_id));
+diesel::joinable!(team_memberships -> users (user_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     issues,
     languages,
     projects,
     repositories,
+    team_memberships,
+    teams,
     users,
 );
