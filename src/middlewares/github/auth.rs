@@ -22,7 +22,6 @@ pub fn with_github_auth() -> impl Filter<Extract = (GitHubUser,), Error = Reject
 async fn authorize(headers: HeaderMap<HeaderValue>) -> Result<GitHubUser, Rejection> {
     match token_from_header(&headers, BEARER) {
         Ok(token) => {
-            info!("{BEARER} {token}"); // TODO: test
             let mut response = surf::get("https://api.github.com/user")
                 .header(AUTHORIZATION, format!("{BEARER} {token}"))
                 .header(USER_AGENT, "MoreKudos")
