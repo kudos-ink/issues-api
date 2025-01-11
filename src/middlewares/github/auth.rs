@@ -28,7 +28,12 @@ async fn authorize(headers: HeaderMap<HeaderValue>) -> Result<GitHubUser, Reject
                 .header("User-Agent", "MoreKudos")
                 .send()
                 .await
-                .map_err(|_| AuthenticationError::GitHub)?;
+                .map_err(|e| {                    
+                    error!(
+                    "Error calling GitHub API: {e}",
+                );
+                    AuthenticationError::GitHub
+                })?;
 
                 if response.status().is_success() {
                     let user_data: serde_json::Value = response
