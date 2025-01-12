@@ -1,2 +1,2 @@
-DROP TABLE IF EXISTS users_milestones_role;
-DROP TABLE IF EXISTS users_tasks_role;
+DROP TABLE IF EXISTS users_projects_roles;
+DROP TABLE IF EXISTS roles;

@@ -1,13 +1,18 @@
--- user can create milestones in a project
-CREATE TABLE IF NOT EXISTS users_milestones_role (
+-- Create roles table
+CREATE TABLE IF NOT EXISTS roles (
     id SERIAL PRIMARY KEY,
-    user_id INT REFERENCES users(id) NULL,
-    project_id INT REFERENCES projects(id) ON DELETE CASCADE NOT NULL
+    name TEXT NOT NULL UNIQUE, -- Ensure each role name is unique
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT (now() AT TIME ZONE 'utc') NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE
 );
 
--- user can create tasks in a milestone
-CREATE TABLE IF NOT EXISTS users_tasks_role (
+-- Create users_projects_roles table
+CREATE TABLE IF NOT EXISTS users_projects_roles (
     id SERIAL PRIMARY KEY,
-    user_id INT REFERENCES users(id) NULL,
-    milestone_id INT REFERENCES milestones(id) ON DELETE CASCADE NOT NULL
+    user_id INT REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+    project_id INT REFERENCES projects(id) ON DELETE CASCADE NOT NULL,
+    role_id INT REFERENCES roles(id) ON DELETE CASCADE NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT (now() AT TIME ZONE 'utc') NOT NULL,
+    -- Ensure a user cannot have duplicate roles within the same project
+    CONSTRAINT unique_user_project_role UNIQUE (user_id, project_id, role_id)
 );
