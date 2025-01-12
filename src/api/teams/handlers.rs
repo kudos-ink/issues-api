@@ -114,7 +114,7 @@ pub async fn add_member_to_team(
     })?;
 
     let new_membership = NewTeamMembership {
-        team_id: team_id,
+        team_id,
         user_id: membership.user_id,
         role: membership.role,
     };
