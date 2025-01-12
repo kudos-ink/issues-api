@@ -29,6 +29,18 @@ diesel::table! {
 }
 
 diesel::table! {
+    milestones (id) {
+        id -> Int4,
+        slug -> Text,
+        name -> Text,
+        url -> Nullable<Text>,
+        project_id -> Int4,
+        created_at -> Timestamptz,
+        updated_at -> Nullable<Timestamptz>,
+    }
+}
+
+diesel::table! {
     projects (id) {
         id -> Int4,
         name -> Text,
@@ -59,6 +71,28 @@ diesel::table! {
 }
 
 diesel::table! {
+    roles (id) {
+        id -> Int4,
+        name -> Text,
+        created_at -> Timestamptz,
+        updated_at -> Nullable<Timestamptz>,
+    }
+}
+
+diesel::table! {
+    tasks (id) {
+        id -> Int4,
+        slug -> Text,
+        name -> Text,
+        labels -> Nullable<Array<Nullable<Text>>>,
+        url -> Nullable<Text>,
+        project_id -> Int4,
+        created_at -> Timestamptz,
+        updated_at -> Nullable<Timestamptz>,
+    }
+}
+
+diesel::table! {
     users (id) {
         id -> Int4,
         username -> Text,
@@ -69,14 +103,33 @@ diesel::table! {
     }
 }
 
+diesel::table! {
+    users_projects_roles (id) {
+        id -> Int4,
+        user_id -> Int4,
+        project_id -> Int4,
+        role_id -> Int4,
+        created_at -> Timestamptz,
+    }
+}
+
 diesel::joinable!(issues -> repositories (repository_id));
 diesel::joinable!(issues -> users (assignee_id));
+diesel::joinable!(milestones -> projects (project_id));
 diesel::joinable!(repositories -> projects (project_id));
+diesel::joinable!(tasks -> projects (project_id));
+diesel::joinable!(users_projects_roles -> projects (project_id));
+diesel::joinable!(users_projects_roles -> roles (role_id));
+diesel::joinable!(users_projects_roles -> users (user_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     issues,
     languages,
+    milestones,
     projects,
     repositories,
+    roles,
+    tasks,
     users,
+    users_projects_roles,
 );

@@ -4,7 +4,7 @@ use std::convert::Infallible;
 use warp::{hyper::StatusCode, Rejection, Reply};
 
 use crate::{
-    api::{issues::errors::IssueError, projects::errors::ProjectError, repositories::errors::RepositoryError, users::errors::UserError}, db::errors::DBError, middlewares::errors::AuthenticationError, 
+    api::{issues::errors::IssueError, projects::errors::ProjectError, repositories::errors::RepositoryError, roles::errors::RoleError, users::errors::UserError}, db::errors::DBError, middlewares::errors::AuthenticationError, 
 };
 
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
@@ -21,7 +21,9 @@ pub async fn error_handler(err: Rejection) -> std::result::Result<impl Reply, In
         return Ok(e.clone().into_response());
     } else if let Some(e) = err.find::<UserError>() {
         return Ok(e.clone().into_response());
-    }
+    } else if let Some(e) = err.find::<RoleError>() {
+    return Ok(e.clone().into_response());
+}
     // TODO: add more errors
 
     let (status, message) = if err.is_not_found() {
