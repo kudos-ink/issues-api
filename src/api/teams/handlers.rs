@@ -7,7 +7,7 @@ use warp::{
     Rejection,
 };
 use super::db::{DBTeam, DBTeamMembership};
-use super::models::{NewTeam, UpdateTeam, NewTeamMembership, UpdateTeamMembershipRole};
+use super::models::{NewTeam, UpdateTeam, NewTeamMembership, NewTeamMembershipPayload, UpdateTeamMembershipRole};
 
 use super::errors::TeamError;
 
@@ -107,14 +107,20 @@ pub async fn add_member_to_team(
     db_access: impl DBTeamMembership,
 ) -> Result<impl Reply, Rejection> {
     let des = &mut serde_json::Deserializer::from_reader(buf.reader());
-    let membership: NewTeamMembership = serde_path_to_error::deserialize(des).map_err(|e| {
+    let membership: NewTeamMembershipPayload = serde_path_to_error::deserialize(des).map_err(|e| {
         let e = e.to_string();
         warn!("Invalid membership payload: '{}'", e);
         reject::custom(TeamError::InvalidPayload(e))
     })?;
+
+    let new_membership = NewTeamMembership {
+        team_id: team_id,
+        user_id: membership.user_id,
+        role: membership.role,
+    };
     
     info!("Adding user '{}' to team '{}'", membership.user_id, team_id);
-    match db_access.add_member(&membership) {
+    match db_access.add_member(&new_membership) {
         Ok(member) => Ok(with_status(json(&member), StatusCode::CREATED)),
         Err(error) => {
             error!("Error adding member to team: {:?}", error);
