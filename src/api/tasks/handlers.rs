@@ -118,7 +118,7 @@ pub async fn update_handler(
     buf: impl Buf,
     db_access: impl DBTask + DBRole,
 ) -> Result<impl Reply, Rejection> {
-    // TODO: check the user
+    // TODO: check if the user has that task?
     let des = &mut serde_json::Deserializer::from_reader(buf.reader());
     let task: UpdateTask = serde_path_to_error::deserialize(des).map_err(|e| {
         let e = e.to_string();
@@ -132,26 +132,11 @@ pub async fn update_handler(
         user_roles.clone(),
         vec![
             KudosRole::Admin,
-            KudosRole::Contributor,
             KudosRole::MaintainerWithProjects(task.project_id.map(|id| vec![id])),
             KudosRole::EcosystemArchitect,
         ],
     )?;
-    if task.assignee_team_id.is_some()
-        || task.assignee_user_id.is_some()
-        || task.is_certified.is_some()
-        || task.featured_by_user_id.is_some()
-        || task.is_featured.is_some()
-    {
-        user_has_at_least_one_role(
-            user_roles,
-            vec![
-                KudosRole::Admin,
-                KudosRole::MaintainerWithProjects(task.project_id.map(|id| vec![id])),
-                KudosRole::EcosystemArchitect,
-            ],
-        )?;
-    }
+    
     task.type_.as_deref().map(validate_task_type).transpose()?;
     match DBTask::by_id(&db_access, id)? {
         Some(p) => match DBTask::update(&db_access, p.id, &task) {
@@ -310,11 +295,10 @@ pub async fn add_downvote_to_task(
 }
 pub async fn delete_task_vote(
     id: i32,
-    user: GitHubUser,
+    _: GitHubUser,
     db_access: impl DBTask,
 ) -> Result<impl Reply, Rejection> {
-    // TODO: check the user
-
+    // TODO: check if the user has that vote
     match db_access.delete_task_vote(id) {
         Ok(role) => {
             info!("task vote '{}' deleted", id);

@@ -120,10 +120,10 @@ pub async fn create_role_to_user_and_project(
             warn!("invalid user role project assignee: '{e}'",);
             reject::custom(RoleError::InvalidPayload(e))
         })?;
-
+        // TODO: improve project_id verification
     match DBUser::by_id(&db_access, user_project_role.user_id)? {
         Some(_) => match DBRole::by_id(&db_access, user_project_role.role_id)? {
-            Some(_) => match DBProject::by_id(&db_access, user_project_role.project_id)? {
+            // Some(_) => match DBProject::by_id(&db_access, user_project_role.project_id)? {
                 Some(_) => {
                     match DBRole::create_role_to_user_and_project(&db_access, &user_project_role) {
                         Ok(user_project_role) => {
@@ -144,10 +144,10 @@ pub async fn create_role_to_user_and_project(
                             }
                         }
                     }
-                }
-                None => Err(warp::reject::custom(RoleError::ProjectNotFound(
-                    user_project_role.project_id,
-                ))),
+                // }
+                // None => Err(warp::reject::custom(RoleError::ProjectNotFound(
+                //     user_project_role.project_id,
+                // ))),
             },
             None => Err(warp::reject::custom(RoleError::RoleNotFound(
                 user_project_role.role_id,

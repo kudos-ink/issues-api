@@ -55,7 +55,7 @@ pub struct UserProjectRole {
 #[diesel(table_name = users_projects_roles)]
 pub struct NewUserProjectRole {
     pub user_id: i32,
-    pub project_id: i32,
+    pub project_id: Option<i32>,
     pub role_id: i32,
 }
 
@@ -63,14 +63,14 @@ pub struct NewUserProjectRole {
 #[diesel(table_name = users_projects_roles)]
 pub struct UpdateUserProjectRole {
     pub user_id: i32,
-    pub project_id: i32,
+    pub project_id: Option<i32>,
     pub role_id: i32,
 }
 
 #[derive(Serialize, Debug)]
 pub struct UserProjectRoleResponse {
     pub user_id: i32,
-    pub project_id: i32,
+    pub project_id: Option<i32>,
     pub role_id: i32,
 }
 
@@ -84,22 +84,6 @@ pub enum KudosRole {
     EcosystemArchitect = 4,
 }
 impl KudosRole {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            KudosRole::Admin => "Admin",
-            KudosRole::Contributor => "Contributor",
-            KudosRole::MaintainerWithProjects(_) => "Maintainer", // For Maintainer role with projects
-            KudosRole::EcosystemArchitect => "Ecosystem Architect",
-        }
-    }
-    pub fn as_int(&self) -> i32 {
-        match self {
-            KudosRole::Admin => 1,
-            KudosRole::Contributor => 2,
-            KudosRole::MaintainerWithProjects(_) => 3, // `MaintainerWithProjects` should map to the same value as `Maintainer`
-            KudosRole::EcosystemArchitect => 4,
-        }
-    }   
      pub fn from_int(value: i32) -> Option<Self> {
         match value {
             1 => Some(KudosRole::Admin),
