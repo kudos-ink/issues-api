@@ -12,5 +12,6 @@ CREATE TABLE team_memberships (
     team_id INT NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
     user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     role TEXT NOT NULL CHECK (role IN ('member', 'lead')),
-    joined_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    joined_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT unique_user_team_role UNIQUE (user_id, team_id, role)
 );
