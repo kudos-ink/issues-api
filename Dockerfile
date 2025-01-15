@@ -19,11 +19,12 @@ FROM debian:bookworm-slim AS final
 ARG SERVER_PORT=8000
 ARG UID=10001
 
-# Install libpq and other necessary libraries
+# Install libpq and other necessary libraries, including ca-certificates
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
        libpq5 \
        curl \
+       ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 RUN adduser \
