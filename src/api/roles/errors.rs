@@ -22,6 +22,7 @@ pub enum RoleError {
     CannotCreate(String),
     CannotUpdate(String),
     CannotDelete(String),
+    MissingRole(String),
 }
 
 impl fmt::Display for RoleError {
@@ -34,9 +35,10 @@ impl fmt::Display for RoleError {
             RoleError::ProjectNotFound(id) => write!(f, "Project #{id} not found"),
             RoleError::RoleNotFound(id) => write!(f, "Role #{id} not found"),
             RoleError::InvalidPayload(error) => write!(f, "Invalid payload: {error}"),
-            RoleError::CannotCreate(error) => write!(f, "error creating the role: {error}"),
-            RoleError::CannotUpdate(error) => write!(f, "error updating the role: {error}"),
-            RoleError::CannotDelete(error) => write!(f, "error deleting the role: {error}"),
+            RoleError::CannotCreate(error) => write!(f, "Error creating the role: {error}"),
+            RoleError::CannotUpdate(error) => write!(f, "Error updating the role: {error}"),
+            RoleError::CannotDelete(error) => write!(f, "Error deleting the role: {error}"),
+            RoleError::MissingRole(error) => write!(f, "Roles needed for the action: {error}"),
         }
     }
 }
@@ -56,6 +58,7 @@ impl Reply for RoleError {
             RoleError::CannotUpdate(_) => StatusCode::INTERNAL_SERVER_ERROR,
             RoleError::CannotDelete(_) => StatusCode::INTERNAL_SERVER_ERROR,
             RoleError::AssignationAlreadyExists() => StatusCode::BAD_REQUEST,
+            RoleError::MissingRole(_) => StatusCode::FORBIDDEN,
         };
         let message = self.to_string();
 

@@ -46,7 +46,7 @@ pub struct RoleResponse {
 pub struct UserProjectRole {
     pub id: i32,
     pub user_id: i32,
-    pub project_id: i32,
+    pub project_id: Option<i32>,
     pub role_id: i32,
     pub created_at: DateTime<Utc>,
 }
@@ -72,4 +72,41 @@ pub struct UserProjectRoleResponse {
     pub user_id: i32,
     pub project_id: i32,
     pub role_id: i32,
+}
+
+// role
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[repr(i32)] // Ensures the enum is represented as an i32 for FFI and database comparisons
+pub enum KudosRole {
+    Admin = 1,
+    Contributor = 2,
+    MaintainerWithProjects(Option<Vec<i32>>), // Store project IDs for Maintainers
+    EcosystemArchitect = 4,
+}
+impl KudosRole {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            KudosRole::Admin => "Admin",
+            KudosRole::Contributor => "Contributor",
+            KudosRole::MaintainerWithProjects(_) => "Maintainer", // For Maintainer role with projects
+            KudosRole::EcosystemArchitect => "Ecosystem Architect",
+        }
+    }
+    pub fn as_int(&self) -> i32 {
+        match self {
+            KudosRole::Admin => 1,
+            KudosRole::Contributor => 2,
+            KudosRole::MaintainerWithProjects(_) => 3, // `MaintainerWithProjects` should map to the same value as `Maintainer`
+            KudosRole::EcosystemArchitect => 4,
+        }
+    }   
+     pub fn from_int(value: i32) -> Option<Self> {
+        match value {
+            1 => Some(KudosRole::Admin),
+            2 => Some(KudosRole::Contributor),
+            3 => Some(KudosRole::MaintainerWithProjects(None)), // Default to no projects for Maintainer
+            4 => Some(KudosRole::EcosystemArchitect),
+            _ => None,
+        }
+    }
 }

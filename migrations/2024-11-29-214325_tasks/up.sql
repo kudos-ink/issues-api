@@ -29,3 +29,47 @@ CREATE TABLE tasks (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT (now() AT TIME ZONE 'utc') NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE
 );
+
+CREATE TABLE tasks_votes (
+    id SERIAL PRIMARY KEY,
+    user_id INT REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+    task_id INT REFERENCES tasks(id) ON DELETE CASCADE NOT NULL,
+    vote INT NOT NULL,
+    CONSTRAINT unique_vote UNIQUE (user_id, task_id)
+);
+
+-- Create a function to handle the vote updates
+CREATE OR REPLACE FUNCTION update_task_votes()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF TG_OP = 'INSERT' THEN
+        IF NEW.vote > 0 THEN
+            UPDATE tasks
+            SET upvotes = upvotes + 1
+            WHERE id = NEW.task_id;
+        ELSIF NEW.vote < 0 THEN
+            UPDATE tasks
+            SET downvotes = downvotes + 1
+            WHERE id = NEW.task_id;
+        END IF;
+    ELSIF TG_OP = 'DELETE' THEN
+        IF OLD.vote > 0 THEN
+            UPDATE tasks
+            SET upvotes = upvotes - 1
+            WHERE id = OLD.task_id;
+        ELSIF OLD.vote < 0 THEN
+            UPDATE tasks
+            SET downvotes = downvotes - 1
+            WHERE id = OLD.task_id;
+        END IF;
+    END IF;
+
+    RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Create the trigger for the tasks_votes table
+CREATE TRIGGER trigger_update_task_votes
+AFTER INSERT OR DELETE ON tasks_votes
+FOR EACH ROW
+EXECUTE FUNCTION update_task_votes();

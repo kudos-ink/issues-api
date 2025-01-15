@@ -27,8 +27,8 @@ impl fmt::Display for IssueError {
             IssueError::NotFound(id) => write!(f, "Issue #{id} not found"),
             IssueError::InvalidPayload(error) => write!(f, "Invalid payload: {error}"),
             IssueError::RepositoryNotFound(id) => write!(f, "Repository #{id} not found"),
-            IssueError::CannotCreate(error) => write!(f, "error creating the issue: {error}"),
-            IssueError::CannotUpdate(error) => write!(f, "error updating the issue: {error}"),
+            IssueError::CannotCreate(error) => write!(f, "Error creating the issue: {error}"),
+            IssueError::CannotUpdate(error) => write!(f, "Error updating the issue: {error}"),
         }
     }
 }
