@@ -254,7 +254,7 @@ pub async fn delete_asignee_handler(
             Ok(with_status(json(&issue), StatusCode::NO_CONTENT))
         }
         Err(error) => {
-            error!("error deleteing the issue '{id}' assignee: {error}");
+            error!("error deleting the issue '{id}' assignee: {error}");
             Err(warp::reject::custom(IssueError::CannotUpdate(
                 "error deleting the issue assignee".to_owned(),
             )))
