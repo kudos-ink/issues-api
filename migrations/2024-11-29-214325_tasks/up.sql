@@ -1,4 +1,4 @@
-CREATE TABLE tasks (
+CREATE TABLE IF NOT EXISTS tasks (
     id SERIAL PRIMARY KEY,
     number INT, -- Github Issue number
     repository_id INT,
@@ -30,7 +30,7 @@ CREATE TABLE tasks (
     updated_at TIMESTAMP WITH TIME ZONE
 );
 
-CREATE TABLE tasks_votes (
+CREATE TABLE IF NOT EXISTS tasks_votes (
     id SERIAL PRIMARY KEY,
     user_id INT REFERENCES users(id) ON DELETE CASCADE NOT NULL,
     task_id INT REFERENCES tasks(id) ON DELETE CASCADE NOT NULL,
