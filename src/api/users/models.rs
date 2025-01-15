@@ -23,6 +23,7 @@ pub struct User {
     pub avatar: Option<String>,
     pub created_at: DateTime<Utc>,
     pub updated_at: Option<DateTime<Utc>>,
+    pub github_id: Option<i64>,
 }
 
 #[derive(Insertable, Serialize, Deserialize, Debug)]
@@ -36,7 +37,8 @@ pub struct NewUser {
 #[diesel(table_name = users)]
 pub struct UpdateUser {
     pub username: Option<String>,
-    pub avatar: Option<String>
+    pub avatar: Option<String>,
+    pub github_id: Option<i64>
 }
 #[derive(Deserialize, Debug)]
 pub struct QueryParams {

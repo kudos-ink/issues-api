@@ -4,3 +4,5 @@ pub mod projects;
 pub mod repositories;
 pub mod users;
 pub mod teams;
+pub mod roles;
+pub mod tasks;

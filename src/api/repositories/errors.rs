@@ -36,7 +36,7 @@ impl fmt::Display for RepositoryError {
                 write!(f, "Invalid payload: {error}")
             }
             RepositoryError::CannotCreate(err) => {
-                write!(f, "error creating the repository: {err}")
+                write!(f, "Error creating the repository: {err}")
             }
             RepositoryError::ProjectNotFound(id) => {
                 write!(f, "Project id '{id}' does not exist")

@@ -11,6 +11,7 @@ pub enum AuthenticationError {
     BasicToken,
     NoAuthHeader,
     InvalidAuthHeader,
+    GitHub
 }
 
 impl fmt::Display for AuthenticationError {
@@ -25,6 +26,9 @@ impl fmt::Display for AuthenticationError {
             AuthenticationError::NoAuthHeader => write!(f, "No Authorization Header"),
             AuthenticationError::InvalidAuthHeader => {
                 write!(f, "Invalid Authorization Header")
+            }
+            AuthenticationError::GitHub => {
+                write!(f, "GitHub Error")
             }
         }
     }

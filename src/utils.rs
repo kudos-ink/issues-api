@@ -1,5 +1,5 @@
 use crate::{
-    api::{health, issues, projects, repositories, users, teams},
+    api::{health, issues, projects, repositories, users, roles, tasks, teams},
     db::{
         self,
         errors::DBError,
@@ -24,6 +24,8 @@ pub fn setup_filters(db: DBAccess) -> BoxedFilter<(impl Reply,)> {
     let issues_route = issues::routes::routes(db.clone());
     let users_route = users::routes::routes(db.clone());
     let teams_route = teams::routes::routes(db.clone());
+    let roles_route = roles::routes::routes(db.clone());
+    let tasks_route = tasks::routes::routes(db.clone());
 
 
     let cors = warp::cors()
@@ -39,6 +41,8 @@ pub fn setup_filters(db: DBAccess) -> BoxedFilter<(impl Reply,)> {
         .or(issues_route)
         .or(users_route)
         .or(teams_route)
+        .or(roles_route)
+        .or(tasks_route)
         .recover(error_handler)
         .with(warp::log("api"))
         .with(cors)

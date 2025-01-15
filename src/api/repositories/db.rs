@@ -5,8 +5,10 @@ use diesel::sql_types::Text;
 use diesel::{dsl::now, prelude::*};
 
 use super::models::{
-    LanguageQueryParams, NewRepository, QueryParams, Repository, UpdateRepository,
+    LanguageQueryParams, NewRepository, QueryParams, Repository, RepositoryWithProject,
+    UpdateRepository,
 };
+use crate::api::projects::models::{Project, ProjectResponse};
 use crate::schema::issues::dsl as issues_dsl;
 use crate::schema::projects::dsl as projects_dsl;
 use crate::schema::repositories::dsl as repositories_dsl;
@@ -25,11 +27,11 @@ pub trait DBRepository: Send + Sync + Clone + 'static {
         &self,
         params: QueryParams,
         pagination: PaginationParams,
-    ) -> Result<Vec<Repository>, DBError>;
+    ) -> Result<Vec<RepositoryWithProject>, DBError>;
     fn create(&self, repo: &NewRepository) -> Result<Repository, DBError>;
     fn update(&self, id: i32, repo: &UpdateRepository) -> Result<Repository, DBError>;
     fn delete(&self, id: i32) -> Result<(), DBError>;
-    fn by_slug(&self, slug: &str) -> Result<Option<Repository>, DBError>;
+    fn by_slug(&self, slug: &str) -> Result<Option<RepositoryWithProject>, DBError>;
     fn aggregate_languages(&self, params: LanguageQueryParams) -> Result<Vec<String>, DBError>;
 }
 
@@ -38,9 +40,13 @@ impl DBRepository for DBAccess {
         &self,
         params: QueryParams,
         pagination: PaginationParams,
-    ) -> Result<Vec<Repository>, DBError> {
+    ) -> Result<Vec<RepositoryWithProject>, DBError> {
         let conn = &mut self.get_db_conn();
-        let mut query = repositories_dsl::repositories.into_boxed();
+        let mut query = repositories_dsl::repositories
+            .inner_join(
+                projects_dsl::projects.on(repositories_dsl::project_id.eq(projects_dsl::id)),
+            )
+            .into_boxed();
 
         if let Some(languages) = params.languages {
             query = query.filter(
@@ -61,10 +67,40 @@ impl DBRepository for DBAccess {
             }
         }
 
-        query = query.offset(pagination.offset).limit(pagination.limit);
+        query = query
+            .offset(pagination.offset)
+            .limit(pagination.limit)
+            .select((
+                repositories_dsl::repositories::all_columns(),
+                projects_dsl::projects::all_columns(),
+            ));
 
-        let result = query.load::<Repository>(conn)?;
-        Ok(result)
+        let result = query.load::<(Repository, Project)>(conn)?;
+        let repos = result
+            .into_iter()
+            .map(|(repo, project)| RepositoryWithProject {
+                id: repo.id,
+                slug: repo.slug,
+                name: repo.name,
+                url: repo.url,
+                language_slug: repo.language_slug,
+                project: ProjectResponse {
+                    id: project.id,
+                    name: project.name,
+                    slug: project.slug,
+                    purposes: project.purposes,
+                    stack_levels: project.stack_levels,
+                    technologies: project.technologies,
+                    avatar: project.avatar,
+                    created_at: project.created_at,
+                    updated_at: project.updated_at,
+                    rewards: project.rewards,
+                },
+                created_at: repo.created_at,
+                updated_at: repo.updated_at,
+            })
+            .collect();
+        Ok(repos)
     }
 
     fn by_id(&self, id: i32) -> Result<Option<Repository>, DBError> {
@@ -111,16 +147,45 @@ impl DBRepository for DBAccess {
         Ok(())
     }
 
-    fn by_slug(&self, slug: &str) -> Result<Option<Repository>, DBError> {
+    fn by_slug(&self, slug: &str) -> Result<Option<RepositoryWithProject>, DBError> {
         let conn = &mut self.get_db_conn();
 
         let result = repositories_dsl::repositories
+            .inner_join(
+                projects_dsl::projects.on(repositories_dsl::project_id.eq(projects_dsl::id)),
+            )
             .filter(repositories_dsl::slug.eq(slug))
-            .first::<Repository>(conn)
+            .select((
+                repositories_dsl::repositories::all_columns(),
+                projects_dsl::projects::all_columns(),
+            ))
+            .first::<(Repository, Project)>(conn)
             .optional()
             .map_err(DBError::from)?;
 
-        Ok(result)
+        let repo = result
+            .map(|(repo, project)| RepositoryWithProject {
+                id: repo.id,
+                slug: repo.slug,
+                name: repo.name,
+                url: repo.url,
+                language_slug: repo.language_slug,
+                project: ProjectResponse {
+                    id: project.id,
+                    name: project.name,
+                    slug: project.slug,
+                    purposes: project.purposes,
+                    stack_levels: project.stack_levels,
+                    technologies: project.technologies,
+                    avatar: project.avatar,
+                    created_at: project.created_at,
+                    updated_at: project.updated_at,
+                    rewards: project.rewards,
+                },
+                created_at: repo.created_at,
+                updated_at: repo.updated_at,
+            });
+        Ok(repo)
     }
 
     fn aggregate_languages(&self, params: LanguageQueryParams) -> Result<Vec<String>, DBError> {

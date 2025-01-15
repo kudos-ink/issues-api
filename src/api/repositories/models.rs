@@ -28,6 +28,18 @@ pub struct QueryParams {
     pub project_ids: Option<String>,
 }
 
+#[derive(Serialize, Debug)]
+pub struct RepositoryWithProject {
+    pub id: i32,
+    pub slug: String,
+    pub name: String,
+    pub url: String,
+    pub language_slug: Option<String>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: Option<DateTime<Utc>>,
+    pub project: ProjectResponse
+}
+
 #[derive(Deserialize, Debug)]
 pub struct LanguageQueryParams {
     pub slugs: Option<String>,

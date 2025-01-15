@@ -4,7 +4,7 @@ use log::{info, warn};
 use crate::types::ApiConfig;
 
 mod api;
-mod auth;
+mod middlewares;
 mod db;
 mod errors;
 pub mod schema;
