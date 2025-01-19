@@ -1,3 +1,5 @@
+-- Migrate issues to tasks
+
 INSERT INTO tasks (
     id,
     number,
@@ -47,3 +49,11 @@ JOIN
     repositories r 
 ON 
     i.repository_id = r.id;
+
+-- add CONTRIBUTOR role
+
+INSERT INTO users_projects_roles (user_id, role_id)
+SELECT DISTINCT assignee_id AS user_id, 2 AS role_id
+FROM issues
+WHERE assignee_id IS NOT NULL
+ON CONFLICT (user_id, project_id, role_id) DO NOTHING;
