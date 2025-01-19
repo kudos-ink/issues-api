@@ -45,7 +45,6 @@ pub struct Task {
 #[derive(Insertable, Serialize, Deserialize, Debug)]
 #[diesel(table_name = tasks)]
 pub struct NewTask {
-    pub number: Option<i32>,
     pub repository_id: Option<i32>,
     pub title: String,
     pub description: Option<String>,
@@ -63,8 +62,6 @@ pub struct NewTask {
     pub bounty: Option<i32>,
     pub approved_by: Option<Vec<Option<i32>>>,
     pub status: Option<String>,
-    pub upvotes: Option<i32>,
-    pub downvotes: Option<i32>,
     pub is_featured: Option<bool>,
     pub is_certified: Option<bool>,
     pub featured_by_user_id: Option<i32>,
@@ -74,7 +71,6 @@ pub struct NewTask {
 #[derive(AsChangeset, Serialize, Deserialize, Debug, Default)]
 #[diesel(table_name = tasks)]
 pub struct UpdateTask {
-    pub number: Option<i32>,
     pub repository_id: Option<i32>,
     pub title: Option<String>,
     pub description: Option<String>,
@@ -97,8 +93,7 @@ pub struct UpdateTask {
 }
 impl UpdateTask {
     pub fn has_any_field(&self) -> bool {
-        self.number.is_some()
-            || self.repository_id.is_some()
+        self.repository_id.is_some()
             || self.title.is_some() // Title is a String and can't be `None`, so check if it's not empty
             || self.description.is_some()
             || self.url.is_some()
