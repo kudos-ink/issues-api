@@ -34,8 +34,9 @@ SELECT
     i.updated_at,
     'dev' AS type,
     CASE 
-        WHEN i.open THEN 'open'
-        ELSE 'completed'
+        WHEN i.open = TRUE AND i.assignee_id IS NULL THEN 'open'
+        WHEN i.open = TRUE AND i.assignee_id IS NOT NULL THEN 'in-progress'
+        WHEN i.open = FALSE THEN 'completed'
     END AS status,
     CONCAT(
         'https://github.com/',
