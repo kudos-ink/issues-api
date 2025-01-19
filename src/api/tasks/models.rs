@@ -9,7 +9,6 @@ use serde_derive::{Deserialize, Serialize};
 )]
 #[diesel(table_name = tasks)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
-
 pub struct Task {
     pub id: i32,
     pub number: Option<i32>,
