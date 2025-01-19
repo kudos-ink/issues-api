@@ -3,7 +3,7 @@ use std::convert::Infallible;
 use warp::filters::BoxedFilter;
 use warp::{Filter, Reply};
 
-use crate::middlewares::basic::auth::with_basic_auth;
+use crate::api::roles::db::DBRole;
 use crate::middlewares::github::auth::with_github_auth;
 use crate::types::PaginationParams;
 
@@ -12,12 +12,12 @@ use super::handlers;
 use super::models::QueryParams;
 
 fn with_db(
-    db_pool: impl DBUser,
-) -> impl Filter<Extract = (impl DBUser,), Error = Infallible> + Clone {
+    db_pool: impl DBUser + DBRole,
+) -> impl Filter<Extract = (impl DBUser + DBRole,), Error = Infallible> + Clone {
     warp::any().map(move || db_pool.clone())
 }
 
-pub fn routes(db_access: impl DBUser) -> BoxedFilter<(impl Reply,)> {
+pub fn routes(db_access: impl DBUser + DBRole) -> BoxedFilter<(impl Reply,)> {
     let user = warp::path!("users");
     let user_me = warp::path!("users" / "me");
     let user_id = warp::path!("users" / i32);
@@ -53,14 +53,14 @@ pub fn routes(db_access: impl DBUser) -> BoxedFilter<(impl Reply,)> {
         .and_then(handlers::by_username);
 
     let create_user = user
-        .and(with_basic_auth())
+        .and(with_github_auth())
         .and(warp::post())
         .and(warp::body::aggregate())
         .and(with_db(db_access.clone()))
         .and_then(handlers::create_handler);
 
     let update_user = user_id
-        .and(with_basic_auth())
+        .and(with_github_auth())
         .and(warp::put())
         .and(warp::body::aggregate())
         .and(with_db(db_access.clone()))
@@ -73,7 +73,7 @@ pub fn routes(db_access: impl DBUser) -> BoxedFilter<(impl Reply,)> {
         .and_then(handlers::update_user_github);
 
     let delete_user = user_id
-        .and(with_basic_auth())
+        .and(with_github_auth())
         .and(warp::delete())
         .and(with_db(db_access.clone()))
         .and_then(handlers::delete_handler);

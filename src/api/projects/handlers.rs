@@ -1,4 +1,4 @@
-use crate::types::{PaginatedResponse, PaginationParams};
+use crate::{api::roles::{db::DBRole, models::KudosRole, utils::user_has_at_least_one_role}, middlewares::github::model::GitHubUser, types::{PaginatedResponse, PaginationParams}};
 
 use super::{
     db::DBProject,
@@ -42,9 +42,17 @@ pub async fn options(
 }
 
 pub async fn create_handler(
+    user: GitHubUser,
     buf: impl Buf,
-    db_access: impl DBProject,
+    db_access: impl DBProject + DBRole,
 ) -> Result<impl Reply, Rejection> {
+    let user_roles = DBRole::user_roles(&db_access, &user.username)?;
+    user_has_at_least_one_role(
+        user_roles.clone(),
+        vec![
+            KudosRole::Admin,
+        ],
+    )?;
     let des = &mut serde_json::Deserializer::from_reader(buf.reader());
     let project: NewProject = serde_path_to_error::deserialize(des).map_err(|e| {
         let e = e.to_string();
@@ -53,7 +61,7 @@ pub async fn create_handler(
     })?;
     match db_access.by_slug(&project.slug)? {
         Some(p) => Err(warp::reject::custom(ProjectError::AlreadyExists(p.id))),
-        None => match db_access.create(&project) {
+        None => match DBProject::create(&db_access, &project) {
             Ok(project) => {
                 info!("project slug '{}' created", project.slug);
                 Ok(with_status(json(&project), StatusCode::CREATED))
@@ -70,28 +78,50 @@ pub async fn create_handler(
 
 pub async fn update_handler(
     id: i32,
+    user: GitHubUser,
     form: UpdateProject,
-    db_access: impl DBProject,
+    db_access: impl DBProject + DBRole,
 ) -> Result<impl Reply, Rejection> {
-    match db_access.by_id(id)? {
+    let user_roles = DBRole::user_roles(&db_access, &user.username)?;
+    user_has_at_least_one_role(
+        user_roles.clone(),
+        vec![
+            KudosRole::Admin,
+        ],
+    )?;
+    match DBProject::by_id(&db_access,id)? {
         Some(p) => Ok(with_status(
-            json(&db_access.update(p.id, &form)?),
+            json(&DBProject::update(&db_access, p.id, &form)?),
             StatusCode::OK,
         )),
         None => Err(warp::reject::custom(ProjectError::NotFound(id))),
     }
 }
 
-pub async fn delete_handler(id: i32, db_access: impl DBProject) -> Result<impl Reply, Rejection> {
-    match db_access.by_id(id)? {
+pub async fn delete_handler(
+    id: i32, 
+    user: GitHubUser,
+    db_access: impl DBProject + DBRole,
+) -> Result<impl Reply, Rejection> {
+    let user_roles = DBRole::user_roles(&db_access, &user.username)?;
+    user_has_at_least_one_role(
+        user_roles.clone(),
+        vec![
+            KudosRole::Admin,
+        ],
+    )?;
+    match DBProject::by_id(&db_access, id)? {
         Some(p) => Ok(with_status(
-            json(&db_access.delete(p.id)?),
+            json(&DBProject::delete(&db_access, p.id)?),
             StatusCode::NO_CONTENT,
         )),
         None => Err(warp::reject::custom(ProjectError::NotFound(id))),
     }
 }
-pub async fn by_id(id: i32, db_access: impl DBProject) -> Result<impl Reply, Rejection> {
+pub async fn by_id(
+    id: i32, 
+    db_access: impl DBProject,
+) -> Result<impl Reply, Rejection> {
     match db_access.by_id(id)? {
         None => Err(warp::reject::custom(ProjectError::NotFound(id)))?,
         Some(project) => Ok(json(&project)),

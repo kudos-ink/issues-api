@@ -10,8 +10,7 @@ use warp::{
 };
 
 use crate::{
-    api::{issues::models::LeaderboardEntry, repositories::db::DBRepository, users::db::DBUser},
-    types::{PaginatedResponse, PaginationParams},
+    api::{issues::models::LeaderboardEntry, repositories::db::DBRepository, roles::{db::DBRole, models::KudosRole, utils::user_has_at_least_one_role}, users::db::DBUser}, middlewares::github::model::GitHubUser, types::{PaginatedResponse, PaginationParams}
 };
 
 use super::{
@@ -109,9 +108,18 @@ pub async fn leaderboard(
 }
 
 pub async fn create_handler(
+    user: GitHubUser,
     buf: impl Buf,
-    db_access: impl DBIssue + DBRepository,
+    db_access: impl DBIssue + DBRepository + DBRole,
 ) -> Result<impl Reply, Rejection> {
+
+    let user_roles = DBRole::user_roles(&db_access, &user.username)?;
+    user_has_at_least_one_role(
+        user_roles.clone(),
+        vec![
+            KudosRole::Admin,
+        ],
+    )?;
     let des = &mut serde_json::Deserializer::from_reader(buf.reader());
     let issue: NewIssue = serde_path_to_error::deserialize(des).map_err(|e| {
         let e = e.to_string();
@@ -157,9 +165,18 @@ pub async fn create_handler(
 }
 pub async fn update_handler(
     id: i32,
+    user: GitHubUser,
     buf: impl Buf,
-    db_access: impl DBIssue,
+    db_access: impl DBIssue + DBRole,
 ) -> Result<impl Reply, Rejection> {
+
+    let user_roles = DBRole::user_roles(&db_access, &user.username)?;
+    user_has_at_least_one_role(
+        user_roles.clone(),
+        vec![
+            KudosRole::Admin,
+        ],
+    )?;
     let des = &mut serde_json::Deserializer::from_reader(buf.reader());
     let issue: UpdateIssue = serde_path_to_error::deserialize(des).map_err(|e| {
         let e = e.to_string();
@@ -177,7 +194,7 @@ pub async fn update_handler(
     }
     
     match DBIssue::by_id(&db_access, id)? {
-        Some(p) => match db_access.update(p.id, &issue) {
+        Some(p) => match DBIssue::update(&db_access,p.id, &issue) {
             Ok(issue) => {
                 info!("issue '{}' updated", issue.id);
                 Ok(with_status(json(&issue), StatusCode::OK))
@@ -198,10 +215,20 @@ pub async fn update_handler(
         None => Err(warp::reject::custom(IssueError::NotFound(id))),
     }
 }
-pub async fn delete_handler(id: i32, db_access: impl DBIssue) -> Result<impl Reply, Rejection> {
+pub async fn delete_handler(
+    id: i32, 
+    user: GitHubUser,
+    db_access: impl DBIssue + DBRole) -> Result<impl Reply, Rejection> {
+    let user_roles = DBRole::user_roles(&db_access, &user.username)?;
+    user_has_at_least_one_role(
+        user_roles.clone(),
+        vec![
+            KudosRole::Admin,
+        ],
+    )?;
     match DBIssue::by_id(&db_access, id)? {
         Some(_) => {
-            let _ = &db_access.delete(id)?;
+            let _ = &DBIssue::delete(&db_access, id)?;
             Ok(StatusCode::NO_CONTENT)
         }
         None => Err(warp::reject::custom(IssueError::NotFound(id)))?,
@@ -210,9 +237,17 @@ pub async fn delete_handler(id: i32, db_access: impl DBIssue) -> Result<impl Rep
 
 pub async fn update_asignee_handler(
     id: i32,
+    user: GitHubUser,
     buf: impl Buf,
-    db_access: impl DBIssue + DBUser,
+    db_access: impl DBIssue + DBUser + DBRole,
 ) -> Result<impl Reply, Rejection> {
+    let user_roles = DBRole::user_roles(&db_access, &user.username)?;
+    user_has_at_least_one_role(
+        user_roles.clone(),
+        vec![
+            KudosRole::Admin,
+        ],
+    )?;
     let des = &mut serde_json::Deserializer::from_reader(buf.reader());
     let assignee: IssueAssignee = serde_path_to_error::deserialize(des).map_err(|e| {
         let e = e.to_string();
@@ -246,8 +281,16 @@ pub async fn update_asignee_handler(
 }
 pub async fn delete_asignee_handler(
     id: i32,
-    db_access: impl DBIssue + DBUser,
+    user: GitHubUser,
+    db_access: impl DBIssue + DBUser + DBRole,
 ) -> Result<impl Reply, Rejection> {
+    let user_roles = DBRole::user_roles(&db_access, &user.username)?;
+    user_has_at_least_one_role(
+        user_roles.clone(),
+        vec![
+            KudosRole::Admin,
+        ],
+    )?;
     match db_access.delete_issue_assignee(id) {
         Ok(issue) => {
             info!("issue '{}' assignee deleted", id);

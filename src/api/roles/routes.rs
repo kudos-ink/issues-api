@@ -5,7 +5,7 @@ use warp::{Filter, Reply};
 
 use crate::api::projects::db::DBProject;
 use crate::api::users::db::DBUser;
-use crate::middlewares::basic::auth::with_basic_auth;
+use crate::middlewares::github::auth::with_github_auth;
 use crate::types::PaginationParams;
 
 use super::db::DBRole;
@@ -35,34 +35,34 @@ pub fn routes(db_access: impl DBRole + DBUser + DBProject) -> BoxedFilter<(impl 
         .and_then(handlers::by_id);
 
     let create_role = role
-        .and(with_basic_auth())
+        .and(with_github_auth())
         .and(warp::post())
         .and(warp::body::aggregate())
         .and(with_db(db_access.clone()))
         .and_then(handlers::create_handler);
 
     let delete_role = role_id
-        .and(with_basic_auth())
+        .and(with_github_auth())
         .and(warp::delete())
         .and(with_db(db_access.clone()))
         .and_then(handlers::delete_handler);
 
     let update_role = role_id
-        .and(with_basic_auth())
+        .and(with_github_auth())
         .and(warp::put())
         .and(warp::body::aggregate())
         .and(with_db(db_access.clone()))
         .and_then(handlers::update_handler);
 
     let create_role_assignation = role_assignation
-        .and(with_basic_auth())
+        .and(with_github_auth())
         .and(warp::post())
         .and(warp::body::aggregate())
         .and(with_db(db_access.clone()))
         .and_then(handlers::create_role_to_user_and_project);
 
     let delete_role_assignation = role_assignation_id
-        .and(with_basic_auth())
+        .and(with_github_auth())
         .and(warp::delete())
         .and(with_db(db_access.clone()))
         .and_then(handlers::delete_role_to_user_and_project);

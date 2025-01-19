@@ -8,8 +8,7 @@ use warp::{
 };
 
 use crate::{
-    api::{projects::db::DBProject, roles::models::NewRole, users::db::DBUser},
-    types::{PaginatedResponse, PaginationParams},
+    api::{projects::db::DBProject, roles::{models::{KudosRole, NewRole}, utils::user_has_at_least_one_role}, users::db::DBUser}, middlewares::github::model::GitHubUser, types::{PaginatedResponse, PaginationParams}
 };
 
 use super::{
@@ -46,9 +45,17 @@ pub async fn all_handler(
 }
 
 pub async fn create_handler(
+    user: GitHubUser,
     buf: impl Buf,
     db_access: impl DBRole,
 ) -> Result<impl Reply, Rejection> {
+    let user_roles = DBRole::user_roles(&db_access, &user.username)?;
+    user_has_at_least_one_role(
+        user_roles.clone(),
+        vec![
+            KudosRole::Admin,
+        ],
+    )?;
     let des = &mut serde_json::Deserializer::from_reader(buf.reader());
     let role: NewRole = serde_path_to_error::deserialize(des).map_err(|e| {
         let e = e.to_string();
@@ -72,9 +79,17 @@ pub async fn create_handler(
 }
 pub async fn update_handler(
     id: i32,
+    user: GitHubUser,
     buf: impl Buf,
     db_access: impl DBRole,
 ) -> Result<impl Reply, Rejection> {
+    let user_roles = DBRole::user_roles(&db_access, &user.username)?;
+    user_has_at_least_one_role(
+        user_roles.clone(),
+        vec![
+            KudosRole::Admin,
+        ],
+    )?;
     let des = &mut serde_json::Deserializer::from_reader(buf.reader());
     let role: UpdateRole = serde_path_to_error::deserialize(des).map_err(|e| {
         let e = e.to_string();
@@ -99,7 +114,18 @@ pub async fn update_handler(
         None => Err(warp::reject::custom(RoleError::NotFound(id))),
     }
 }
-pub async fn delete_handler(id: i32, db_access: impl DBRole) -> Result<impl Reply, Rejection> {
+pub async fn delete_handler(
+    id: i32,
+    user: GitHubUser,
+    db_access: impl DBRole,
+    ) -> Result<impl Reply, Rejection> {
+        let user_roles = DBRole::user_roles(&db_access, &user.username)?;
+        user_has_at_least_one_role(
+            user_roles.clone(),
+            vec![
+                KudosRole::Admin,
+            ],
+        )?;
     match DBRole::by_id(&db_access, id)? {
         Some(_) => {
             let _ = &db_access.delete(id)?;
@@ -110,9 +136,17 @@ pub async fn delete_handler(id: i32, db_access: impl DBRole) -> Result<impl Repl
 }
 
 pub async fn create_role_to_user_and_project(
+    user: GitHubUser,
     buf: impl Buf,
     db_access: impl DBRole + DBUser + DBProject,
 ) -> Result<impl Reply, Rejection> {
+    let user_roles = DBRole::user_roles(&db_access, &user.username)?;
+    user_has_at_least_one_role(
+        user_roles.clone(),
+        vec![
+            KudosRole::Admin,
+        ],
+    )?;
     let des = &mut serde_json::Deserializer::from_reader(buf.reader());
     let user_project_role: NewUserProjectRole =
         serde_path_to_error::deserialize(des).map_err(|e| {
@@ -160,8 +194,16 @@ pub async fn create_role_to_user_and_project(
 }
 pub async fn delete_role_to_user_and_project(
     id: i32,
+    user: GitHubUser,
     db_access: impl DBRole,
 ) -> Result<impl Reply, Rejection> {
+    let user_roles = DBRole::user_roles(&db_access, &user.username)?;
+    user_has_at_least_one_role(
+        user_roles.clone(),
+        vec![
+            KudosRole::Admin,
+        ],
+    )?;
     match db_access.delete_role_to_user_and_project(id) {
         Ok(role) => {
             info!("assignation '{}' deleted", id);

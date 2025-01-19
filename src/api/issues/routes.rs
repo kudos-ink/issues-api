@@ -4,8 +4,9 @@ use warp::filters::BoxedFilter;
 use warp::{Filter, Reply};
 
 use crate::api::repositories::db::DBRepository;
+use crate::api::roles::db::DBRole;
 use crate::api::users::db::DBUser;
-use crate::middlewares::basic::auth::with_basic_auth;
+use crate::middlewares::github::auth::with_github_auth;
 use crate::types::PaginationParams;
 
 use super::db::DBIssue;
@@ -13,12 +14,12 @@ use super::handlers;
 use super::models::{LeaderboardQueryParams, QueryParams};
 
 fn with_db(
-    db_pool: impl DBIssue + DBRepository + DBUser,
-) -> impl Filter<Extract = (impl DBIssue + DBRepository + DBUser,), Error = Infallible> + Clone {
+    db_pool: impl DBIssue + DBRepository + DBUser + DBRole,
+) -> impl Filter<Extract = (impl DBIssue + DBRepository + DBUser + DBRole,), Error = Infallible> + Clone {
     warp::any().map(move || db_pool.clone())
 }
 
-pub fn routes(db_access: impl DBIssue + DBRepository + DBUser) -> BoxedFilter<(impl Reply,)> {
+pub fn routes(db_access: impl DBIssue + DBRepository + DBUser+ DBRole) -> BoxedFilter<(impl Reply,)> {
     let issue = warp::path!("issues");
     let issue_id = warp::path!("issues" / i32);
     let issue_id_assignee = warp::path!("issues" / i32 / "assignee");
@@ -43,34 +44,34 @@ pub fn routes(db_access: impl DBIssue + DBRepository + DBUser) -> BoxedFilter<(i
         .and_then(handlers::by_id);
 
     let create_issue = issue
-        .and(with_basic_auth())
+        .and(with_github_auth())
         .and(warp::post())
         .and(warp::body::aggregate())
         .and(with_db(db_access.clone()))
         .and_then(handlers::create_handler);
 
     let delete_issue = issue_id
-        .and(with_basic_auth())
+        .and(with_github_auth())
         .and(warp::delete())
         .and(with_db(db_access.clone()))
         .and_then(handlers::delete_handler);
 
     let update_issue = issue_id
-        .and(with_basic_auth())
+        .and(with_github_auth())
         .and(warp::put())
         .and(warp::body::aggregate())
         .and(with_db(db_access.clone()))
         .and_then(handlers::update_handler);
 
     let update_issue_assignee = issue_id_assignee
-        .and(with_basic_auth())
+        .and(with_github_auth())
         .and(warp::patch())
         .and(warp::body::aggregate())
         .and(with_db(db_access.clone()))
         .and_then(handlers::update_asignee_handler);
 
     let delete_issue_assignee = issue_id_assignee
-        .and(with_basic_auth())
+        .and(with_github_auth())
         .and(warp::delete())
         .and(with_db(db_access.clone()))
         .and_then(handlers::delete_asignee_handler);

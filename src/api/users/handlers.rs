@@ -6,7 +6,7 @@ use warp::{
     reply::{json, with_status, Reply},
 };
 
-use crate::{middlewares::github::model::GitHubUser, types::PaginationParams};
+use crate::{api::roles::{db::DBRole, models::KudosRole, utils::user_has_at_least_one_role}, middlewares::github::model::GitHubUser, types::PaginationParams};
 use log::{error, info, warn};
 
 use super::{
@@ -48,15 +48,24 @@ pub async fn all_handler(
 }
 
 pub async fn create_handler(
+    user: GitHubUser,
     buf: impl Buf,
-    db_access: impl DBUser,
+    db_access: impl DBUser + DBRole,
 ) -> Result<impl Reply, Rejection> {
+    let user_roles = DBRole::user_roles(&db_access, &user.username)?;
+    user_has_at_least_one_role(
+        user_roles.clone(),
+        vec![
+            KudosRole::Admin,
+        ],
+    )?;
     let des = &mut serde_json::Deserializer::from_reader(buf.reader());
     let user: NewUser = serde_path_to_error::deserialize(des).map_err(|e| {
         let e = e.to_string();
         warn!("invalid user '{e}'",);
         reject::custom(UserError::InvalidPayload(e))
     })?;
+
     create_user(db_access, user)
 }
 
@@ -80,11 +89,20 @@ fn create_user(db_access: impl DBUser, user: NewUser) -> Result<warp::reply::Wit
         },
     }
 }
+
 pub async fn update_handler(
     id: i32,
+    user: GitHubUser,
     buf: impl Buf,
-    db_access: impl DBUser,
+    db_access: impl DBUser + DBRole,
 ) -> Result<impl Reply, Rejection> {
+    let user_roles = DBRole::user_roles(&db_access, &user.username)?;
+    user_has_at_least_one_role(
+        user_roles.clone(),
+        vec![
+            KudosRole::Admin,
+        ],
+    )?;
     let des = &mut serde_json::Deserializer::from_reader(buf.reader());
     let user: UpdateUser = serde_path_to_error::deserialize(des).map_err(|e| {
         let e = e.to_string();
@@ -112,10 +130,21 @@ pub async fn update_user_github(user: GitHubUser, db_access: impl DBUser) -> Res
         None => Err(warp::reject::custom(UserError::GithubNotFound(user.id))),
     }
 }
-pub async fn delete_handler(id: i32, db_access: impl DBUser) -> Result<impl Reply, Rejection> {
-    match db_access.by_id(id)? {
+pub async fn delete_handler(
+    id: i32, 
+    user: GitHubUser,
+    db_access: impl DBUser + DBRole,
+) -> Result<impl Reply, Rejection> {
+    let user_roles = DBRole::user_roles(&db_access, &user.username)?;
+    user_has_at_least_one_role(
+        user_roles.clone(),
+        vec![
+            KudosRole::Admin,
+        ],
+    )?;
+    match DBUser::by_id(&db_access, id)? {
         Some(p) => Ok(with_status(
-            json(&db_access.delete(p.id)?),
+            json(&DBUser::delete(&db_access, p.id)?),
             StatusCode::NO_CONTENT,
         )),
         None => Err(warp::reject::custom(UserError::NotFound(id))),
