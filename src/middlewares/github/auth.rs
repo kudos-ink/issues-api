@@ -9,7 +9,7 @@ use warp::{
     http::header::{HeaderMap, HeaderValue},
     reject, Filter, Rejection,
 };
-use log::{error, info};
+use log::error;
 
 use super::model::GitHubUser;
 

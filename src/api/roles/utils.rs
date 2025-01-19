@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 use warp::reject::{self, Rejection};
 
-use super::{db::DBRole, errors::RoleError, models::KudosRole};
+use super::{errors::RoleError, models::KudosRole};
 
 pub fn user_has_at_least_one_role(
     user_roles: Vec<KudosRole>,

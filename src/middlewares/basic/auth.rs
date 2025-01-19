@@ -9,7 +9,7 @@ use crate::middlewares::errors::AuthenticationError;
 use crate::middlewares::utils::{BASIC,token_from_header};
 
 
-
+#[allow(dead_code)]
 pub fn with_basic_auth() -> impl Filter<Extract = (), Error = Rejection> + Clone {
     warp::filters::header::headers_cloned()
         .and_then(authorize)

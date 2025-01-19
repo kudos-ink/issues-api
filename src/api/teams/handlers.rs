@@ -6,6 +6,8 @@ use warp::{
     reply::{json, with_status, Reply},
     Rejection,
 };
+use crate::{api::roles::{db::DBRole, models::KudosRole, utils::user_has_at_least_one_role}, middlewares::github::model::GitHubUser};
+
 use super::db::{DBTeam, DBTeamMembership};
 use super::models::{NewTeam, UpdateTeam, NewTeamMembership, NewTeamMembershipPayload, UpdateTeamMembershipRole};
 
@@ -42,9 +44,17 @@ pub async fn get_team_by_id(id: i32, db_access: impl DBTeam) -> Result<impl Repl
 }
 
 pub async fn create_team(
+    user: GitHubUser,
     buf: impl Buf,
-    db_access: impl DBTeam,
+    db_access: impl DBTeam + DBRole,
 ) -> Result<impl Reply, Rejection> {
+    let user_roles = DBRole::user_roles(&db_access, &user.username)?;
+    user_has_at_least_one_role(
+        user_roles.clone(),
+        vec![
+            KudosRole::Admin,
+        ],
+    )?;
     let des = &mut serde_json::Deserializer::from_reader(buf.reader());
     let team: NewTeam = serde_path_to_error::deserialize(des).map_err(|e| {
         let e = e.to_string();
@@ -53,7 +63,7 @@ pub async fn create_team(
     })?;
 
     info!("Creating team '{}'", team.name);
-    match db_access.create(&team) {
+    match DBTeam::create(&db_access, &team) {
         Ok(team) => Ok(with_status(json(&team), StatusCode::CREATED)),
         Err(error) => {
             error!("Error creating team: {:?}", error);
@@ -66,9 +76,17 @@ pub async fn create_team(
 
 pub async fn update_team(
     id: i32,
+    user: GitHubUser,
     buf: impl Buf,
-    db_access: impl DBTeam,
+    db_access: impl DBTeam + DBRole,
 ) -> Result<impl Reply, Rejection> {
+    let user_roles = DBRole::user_roles(&db_access, &user.username)?;
+    user_has_at_least_one_role(
+        user_roles.clone(),
+        vec![
+            KudosRole::Admin,
+        ],
+    )?;
     let des = &mut serde_json::Deserializer::from_reader(buf.reader());
     let updates: UpdateTeam = serde_path_to_error::deserialize(des).map_err(|e| {
         let e = e.to_string();
@@ -77,7 +95,7 @@ pub async fn update_team(
     })?;
 
     info!("Updating team with id '{}'", id);
-    match db_access.update(id, &updates) {
+    match DBTeam::update(&db_access, id, &updates) {
         Ok(team) => Ok(json(&team)),
         Err(error) => {
             error!("Error updating team: {:?}", error);
@@ -88,9 +106,20 @@ pub async fn update_team(
     }
 }
 
-pub async fn delete_team(id: i32, db_access: impl DBTeam) -> Result<impl Reply, Rejection> {
+pub async fn delete_team(
+    id: i32,
+    user: GitHubUser,
+    db_access: impl DBTeam + DBRole
+) -> Result<impl Reply, Rejection> {
+    let user_roles = DBRole::user_roles(&db_access, &user.username)?;
+    user_has_at_least_one_role(
+        user_roles.clone(),
+        vec![
+            KudosRole::Admin,
+        ],
+    )?;
     info!("Deleting team with id '{}'", id);
-    match db_access.delete(id) {
+    match DBTeam::delete(&db_access,id) {
         Ok(_) => Ok(StatusCode::NO_CONTENT),
         Err(error) => {
             error!("Error deleting team: {:?}", error);
@@ -103,9 +132,17 @@ pub async fn delete_team(id: i32, db_access: impl DBTeam) -> Result<impl Reply, 
 
 pub async fn add_member_to_team(
     team_id: i32,
+    user: GitHubUser,
     buf: impl Buf,
-    db_access: impl DBTeamMembership,
+    db_access: impl DBTeamMembership + DBRole,
 ) -> Result<impl Reply, Rejection> {
+    let user_roles = DBRole::user_roles(&db_access, &user.username)?;
+    user_has_at_least_one_role(
+        user_roles.clone(),
+        vec![
+            KudosRole::Admin,
+        ],
+    )?;
     let des = &mut serde_json::Deserializer::from_reader(buf.reader());
     let membership: NewTeamMembershipPayload = serde_path_to_error::deserialize(des).map_err(|e| {
         let e = e.to_string();
@@ -148,9 +185,24 @@ pub async fn list_team_members(
 pub async fn update_member_role(
     team_id: i32,
     membership_id: i32,
+    user: GitHubUser,
     buf: impl Buf,
-    db_access: impl DBTeamMembership,
+    db_access: impl DBTeamMembership + DBRole,
 ) -> Result<impl Reply, Rejection> {
+    let user_roles = DBRole::user_roles(&db_access, &user.username)?;
+    user_has_at_least_one_role(
+        user_roles.clone(),
+        vec![
+            KudosRole::Admin,
+        ],
+    )?;
+    let user_roles = DBRole::user_roles(&db_access, &user.username)?;
+    user_has_at_least_one_role(
+        user_roles.clone(),
+        vec![
+            KudosRole::Admin,
+        ],
+    )?;
     let des = &mut serde_json::Deserializer::from_reader(buf.reader());
     let updates: UpdateTeamMembershipRole = serde_path_to_error::deserialize(des).map_err(|e| {
         let e = e.to_string();
@@ -173,8 +225,16 @@ pub async fn update_member_role(
 pub async fn remove_member_from_team(
     team_id: i32,
     membership_id: i32,
-    db_access: impl DBTeamMembership,
+    user: GitHubUser,
+    db_access: impl DBTeamMembership + DBRole,
 ) -> Result<impl Reply, Rejection> {
+    let user_roles = DBRole::user_roles(&db_access, &user.username)?;
+    user_has_at_least_one_role(
+        user_roles.clone(),
+        vec![
+            KudosRole::Admin,
+        ],
+    )?;
     info!("Removing membership '{}' from team '{}'", membership_id, team_id);
     match db_access.remove_member(membership_id) {
         Ok(_) => Ok(StatusCode::NO_CONTENT),

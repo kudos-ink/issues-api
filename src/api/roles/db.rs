@@ -11,7 +11,6 @@ use super::models::UpdateRole;
 use super::models::UserProjectRole;
 use crate::schema::roles::dsl as roles_dsl;
 use crate::schema::users::dsl as users_dsl;
-use crate::schema::users_projects_roles;
 use crate::schema::users_projects_roles::dsl as users_projects_roles_dsl;
 
 use crate::db::{
@@ -151,7 +150,7 @@ impl DBRole for DBAccess {
                 if let Some(project_id) = project_id_opt {
                     maintainer_projects
                         .entry(role_id)
-                        .or_insert_with(Vec::new)
+                        .or_default()
                         .push(project_id);
                 }
             }
@@ -161,7 +160,7 @@ impl DBRole for DBAccess {
                     if let Some(project_id) = project_id_opt {
                         maintainer_projects
                             .entry(role_id)
-                            .or_insert_with(Vec::new)
+                            .or_default()
                             .push(project_id);
                     } else {
                         kudos_roles.push(role); // Just add the role if no project ID

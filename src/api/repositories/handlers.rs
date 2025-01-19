@@ -8,8 +8,7 @@ use warp::{
 };
 
 use crate::{
-    api::projects::db::DBProject,
-    types::{PaginatedResponse, PaginationParams},
+    api::{projects::db::DBProject, roles::{db::DBRole, models::KudosRole, utils::user_has_at_least_one_role}}, middlewares::github::model::GitHubUser, types::{PaginatedResponse, PaginationParams}
 };
 
 use super::{
@@ -46,8 +45,9 @@ pub async fn all_handler(
 }
 
 pub async fn create_handler(
+    user: GitHubUser,
     buf: impl Buf,
-    db_access: impl DBRepository + DBProject,
+    db_access: impl DBRepository + DBProject + DBRole,
 ) -> Result<impl Reply, Rejection> {
     let des = &mut serde_json::Deserializer::from_reader(buf.reader());
     let repository: NewRepository = serde_path_to_error::deserialize(des).map_err(|e| {
@@ -55,6 +55,13 @@ pub async fn create_handler(
         warn!("invalid repository '{e}'",);
         reject::custom(RepositoryError::InvalidPayload(e))
     })?;
+    let user_roles = DBRole::user_roles(&db_access, &user.username)?;
+    user_has_at_least_one_role(
+        user_roles.clone(),
+        vec![
+            KudosRole::Admin,
+        ],
+    )?;
     match DBRepository::by_slug(&db_access, &repository.slug)? {
         Some(r) => Err(warp::reject::custom(RepositoryError::AlreadyExists(r.id))),
         None => match DBProject::by_id(&db_access, repository.project_id) {
@@ -86,12 +93,20 @@ pub async fn create_handler(
 }
 pub async fn update_handler(
     id: i32,
+    user: GitHubUser,
     repo: UpdateRepository,
-    db_access: impl DBRepository,
+    db_access: impl DBRepository + DBRole,
 ) -> Result<impl Reply, Rejection> {
-    match db_access.by_id(id)? {
+    let user_roles = DBRole::user_roles(&db_access, &user.username)?;
+    user_has_at_least_one_role(
+        user_roles.clone(),
+        vec![
+            KudosRole::Admin,
+        ],
+    )?;
+    match DBRepository::by_id(&db_access,id)? {
         Some(p) => Ok(with_status(
-            json(&db_access.update(p.id, &repo)?),
+            json(&DBRepository::update(&db_access, p.id, &repo)?),
             StatusCode::OK,
         )),
         None => Err(warp::reject::custom(RepositoryError::NotFound(id))),
@@ -99,11 +114,19 @@ pub async fn update_handler(
 }
 pub async fn delete_handler(
     id: i32,
-    db_access: impl DBRepository,
+    user: GitHubUser,
+    db_access: impl DBRepository + DBRole,
 ) -> Result<impl Reply, Rejection> {
-    match db_access.by_id(id)? {
+    let user_roles = DBRole::user_roles(&db_access, &user.username)?;
+    user_has_at_least_one_role(
+        user_roles.clone(),
+        vec![
+            KudosRole::Admin,
+        ],
+    )?;
+    match DBRepository::by_id(&db_access, id)? {
         Some(p) => Ok(with_status(
-            json(&db_access.delete(p.id)?),
+            json(&DBRepository::delete(&db_access, p.id)?),
             StatusCode::NO_CONTENT,
         )),
         None => Err(warp::reject::custom(RepositoryError::NotFound(id))),

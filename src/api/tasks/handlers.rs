@@ -11,7 +11,7 @@ use crate::{
     api::{
         roles::{db::DBRole, models::KudosRole, utils::user_has_at_least_one_role},
         tasks::{models::NewTask, utils::validate_task_type},
-        users::db::DBUser,
+        users::{db::DBUser, errors::UserError},
     },
     middlewares::github::model::GitHubUser,
     types::{PaginatedResponse, PaginationParams},
@@ -54,10 +54,10 @@ pub async fn all_handler(
 pub async fn create_handler(
     user: GitHubUser,
     buf: impl Buf,
-    db_access: impl DBTask + DBRole,
+    db_access: impl DBTask + DBRole + DBUser,
 ) -> Result<impl Reply, Rejection> {
     let des = &mut serde_json::Deserializer::from_reader(buf.reader());
-    let task: NewTask = serde_path_to_error::deserialize(des).map_err(|e| {
+    let mut task: NewTask = serde_path_to_error::deserialize(des).map_err(|e| {
         let e = e.to_string();
         warn!("invalid task '{e}'",);
         reject::custom(TaskError::InvalidPayload(e))
@@ -65,21 +65,16 @@ pub async fn create_handler(
 
     // Fetch the user roles from the database
     let user_roles = DBRole::user_roles(&db_access, &user.username)?;
-    user_has_at_least_one_role(
-        user_roles.clone(),
-        vec![
-            KudosRole::Admin,
-            KudosRole::Contributor,
-            KudosRole::MaintainerWithProjects(task.project_id.map(|id| vec![id])),
-            KudosRole::EcosystemArchitect,
-        ],
-    )?;
 
     if task.assignee_team_id.is_some()
         || task.assignee_user_id.is_some()
         || task.is_certified.is_some()
         || task.featured_by_user_id.is_some()
         || task.is_featured.is_some()
+        || task.repository_id.is_some()
+        || task.project_id.is_some()
+        || task.approved_by.is_some()
+        || task.featured_by_user_id.is_some()
     {
         user_has_at_least_one_role(
             user_roles,
@@ -89,7 +84,21 @@ pub async fn create_handler(
                 KudosRole::EcosystemArchitect,
             ],
         )?;
+    } else {
+        user_has_at_least_one_role(
+            user_roles.clone(),
+            vec![
+                KudosRole::Admin,
+                KudosRole::Contributor,
+                KudosRole::MaintainerWithProjects(task.project_id.map(|id| vec![id])),
+                KudosRole::EcosystemArchitect,
+            ],
+        )?;
     }
+    let user = DBUser::by_username(&db_access, &user.username)?
+        .ok_or_else(|| UserError::NotFoundByName(user.username.to_owned()))?;
+    task.created_by_user_id = Some(user.id);
+
     validate_task_type(&task.type_)?;
     info!("creating task '{}'", task.title);
     // TODO: validate
@@ -116,9 +125,8 @@ pub async fn update_handler(
     id: i32,
     user: GitHubUser,
     buf: impl Buf,
-    db_access: impl DBTask + DBRole,
+    db_access: impl DBTask + DBRole + DBUser,
 ) -> Result<impl Reply, Rejection> {
-    // TODO: check if the user has that task?
     let des = &mut serde_json::Deserializer::from_reader(buf.reader());
     let task: UpdateTask = serde_path_to_error::deserialize(des).map_err(|e| {
         let e = e.to_string();
@@ -126,8 +134,8 @@ pub async fn update_handler(
         reject::custom(TaskError::InvalidPayload(e))
     })?;
 
-    // Fetch the user roles from the database
     let user_roles = DBRole::user_roles(&db_access, &user.username)?;
+
     user_has_at_least_one_role(
         user_roles.clone(),
         vec![
@@ -136,7 +144,7 @@ pub async fn update_handler(
             KudosRole::EcosystemArchitect,
         ],
     )?;
-    
+
     task.type_.as_deref().map(validate_task_type).transpose()?;
     match DBTask::by_id(&db_access, id)? {
         Some(p) => match DBTask::update(&db_access, p.id, &task) {
@@ -165,7 +173,6 @@ pub async fn delete_handler(
         user_roles,
         vec![
             KudosRole::Admin,
-            KudosRole::MaintainerWithProjects(Some(vec![id])),
             KudosRole::EcosystemArchitect,
         ],
     )?;
