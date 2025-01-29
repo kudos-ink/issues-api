@@ -5,17 +5,17 @@ use warp::{Filter, Reply};
 
 use super::db::{DBTeam, DBTeamMembership};
 use super::handlers;
-use crate::middlewares::basic::auth::with_basic_auth;
+use crate::api::roles::db::DBRole;
 use crate::middlewares::github::auth::with_github_auth;
 
 
 fn with_db(
-    db_pool: impl DBTeam + DBTeamMembership,
-) -> impl Filter<Extract = (impl DBTeam + DBTeamMembership,), Error = Infallible> + Clone {
+    db_pool: impl DBTeam + DBTeamMembership + DBRole,
+) -> impl Filter<Extract = (impl DBTeam + DBTeamMembership + DBRole,), Error = Infallible> + Clone {
     warp::any().map(move || db_pool.clone())
 }
 
-pub fn routes(db_access: impl DBTeam + DBTeamMembership) -> BoxedFilter<(impl Reply,)> {
+pub fn routes(db_access: impl DBTeam + DBTeamMembership + DBRole) -> BoxedFilter<(impl Reply,)> {
     let teams = warp::path!("teams");
     let team_id = warp::path!("teams" / i32);
     let team_members = warp::path!("teams" / i32 / "members");
@@ -32,27 +32,27 @@ pub fn routes(db_access: impl DBTeam + DBTeamMembership) -> BoxedFilter<(impl Re
         .and_then(handlers::get_team_by_id);
 
     let create_team = teams
-        .and(with_basic_auth())
+        .and(with_github_auth())
         .and(warp::post())
         .and(warp::body::aggregate())
         .and(with_db(db_access.clone()))
         .and_then(handlers::create_team);
 
     let update_team = team_id
-        .and(with_basic_auth())
+        .and(with_github_auth())
         .and(warp::put())
         .and(warp::body::aggregate())
         .and(with_db(db_access.clone()))
         .and_then(handlers::update_team);
 
     let delete_team = team_id
-        .and(with_basic_auth())
+        .and(with_github_auth())
         .and(warp::delete())
         .and(with_db(db_access.clone()))
         .and_then(handlers::delete_team);
 
     let add_member = team_members
-        .and(with_basic_auth())
+        .and(with_github_auth())
         .and(warp::post())
         .and(warp::body::aggregate())
         .and(with_db(db_access.clone()))
@@ -64,14 +64,14 @@ pub fn routes(db_access: impl DBTeam + DBTeamMembership) -> BoxedFilter<(impl Re
         .and_then(handlers::list_team_members);
 
     let update_member_role = member_id
-        .and(with_basic_auth())
+        .and(with_github_auth())
         .and(warp::patch())
         .and(warp::body::aggregate())
         .and(with_db(db_access.clone()))
         .and_then(handlers::update_member_role);
 
     let remove_member = member_id
-        .and(with_basic_auth())
+        .and(with_github_auth())
         .and(warp::delete())
         .and(with_db(db_access.clone()))
         .and_then(handlers::remove_member_from_team);
