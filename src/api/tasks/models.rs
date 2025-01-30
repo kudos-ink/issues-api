@@ -1,6 +1,7 @@
 use crate::schema::{tasks, tasks_votes};
 use chrono::{DateTime, Utc};
 use diesel::prelude::*;
+use crate::api::users::models::User;
 
 use serde_derive::{Deserialize, Serialize};
 // tasks
@@ -128,6 +129,7 @@ pub struct TaskResponse {
     pub project_id: Option<i32>,
     pub created_by_user_id: Option<i32>,
     pub assignee_user_id: Option<i32>,
+    pub user: Option<User>, // return the user if there is one already assigned
     pub assignee_team_id: Option<i32>,
     pub funding_options: Option<Vec<Option<String>>>,
     pub contact: Option<String>,
