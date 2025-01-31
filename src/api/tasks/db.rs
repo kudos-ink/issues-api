@@ -1,6 +1,9 @@
 use diesel::prelude::*;
 
 use crate::schema::tasks::dsl as tasks_dsl;
+use crate::schema::users::dsl as users_dsl;
+use crate::schema::repositories::dsl as repositories_dsl;
+use crate::schema::projects::dsl as projects_dsl;
 use crate::schema::tasks_votes::dsl as tasks_votes_dsl;
 
 use crate::db::{
@@ -9,15 +12,19 @@ use crate::db::{
 };
 use crate::types::PaginationParams;
 use crate::utils;
+use crate::api::users::models::User;
+use crate::api::projects::models::{ProjectResponse, Project};
+use crate::api::repositories::models::{RepositoryResponse, Repository};
 
-use super::models::{NewTask, QueryParams, Task, TaskVote, TaskVoteDB, UpdateTask};
+
+use super::models::{NewTask, QueryParams, Task, TaskVote, TaskVoteDB, UpdateTask, TaskResponse};
 pub trait DBTask: Send + Sync + Clone + 'static {
     fn all(
         &self,
         params: QueryParams,
         pagination: PaginationParams,
-    ) -> Result<(Vec<Task>, i64), DBError>;
-    fn by_id(&self, id: i32) -> Result<Option<Task>, DBError>;
+    ) -> Result<(Vec<TaskResponse>, i64), DBError>;
+    fn by_id(&self, id: i32) -> Result<Option<TaskResponse>, DBError>;
     fn create(&self, role: &NewTask) -> Result<Task, DBError>;
     fn update(&self, id: i32, role: &UpdateTask) -> Result<Task, DBError>;
     fn delete(&self, id: i32) -> Result<(), DBError>;
@@ -30,11 +37,25 @@ impl DBTask for DBAccess {
         &self,
         params: QueryParams,
         pagination: PaginationParams,
-    ) -> Result<(Vec<Task>, i64), DBError> {
+    ) -> Result<(Vec<TaskResponse>, i64), DBError> {
         let conn = &mut self.get_db_conn();
 
         let build_query = || {
-            let mut query = tasks_dsl::tasks.into_boxed();
+            let mut query = tasks_dsl::tasks
+                .left_join(
+                    repositories_dsl::repositories
+                        .on(tasks_dsl::repository_id.eq(repositories_dsl::id.nullable()))
+                )
+                .inner_join(
+                    projects_dsl::projects
+                        .on(repositories_dsl::project_id.eq(projects_dsl::id))
+                )
+                .left_join(
+                    users_dsl::users
+                        .on(tasks_dsl::assignee_user_id.eq(users_dsl::id.nullable()))
+                )
+                .into_boxed();
+            
 
             if let Some(repository_id) = params.repository_id {
                 query = query.filter(tasks_dsl::repository_id.eq(repository_id));
@@ -106,24 +127,164 @@ impl DBTask for DBAccess {
 
         let total_count = build_query().count().get_result::<i64>(conn)?;
 
-        let result = build_query()
+        let query = build_query()
+            .select((
+                (tasks_dsl::tasks::all_columns()),
+                (repositories_dsl::repositories::all_columns().nullable()),
+                (projects_dsl::projects::all_columns()),
+                (users_dsl::users::all_columns().nullable()),
+            ))
             .order(tasks_dsl::created_at.desc())
             .offset(pagination.offset)
-            .limit(pagination.limit)
-            .load::<Task>(conn)?;
+            .limit(pagination.limit);
 
-        Ok((result, total_count))
+        let rows = query.load::<(Task, Option<Repository>, Project, Option<User>)>(conn)?;
+
+        let tasks_with_assignee = rows
+        .into_iter()
+        .map(|(task, repo, project, user)| TaskResponse { 
+            id: task.id,
+            number: task.number,
+            repository_id: task.repository_id,
+            title: task.title,
+            description: task.description,
+            url: task.url,
+            labels: task.labels,
+            open: task.open,
+            type_: task.type_,
+            project_id: task.project_id,
+            created_by_user_id: task.created_by_user_id,
+            assignee_user_id: task.assignee_user_id,
+            user,
+            repository: repo.map(|r| RepositoryResponse {
+                id: r.id,
+                slug: r.slug,
+                name: r.name,
+                url: r.url,
+                language_slug: r.language_slug,
+                project: ProjectResponse {
+                    id: project.id,
+                    name: project.name,
+                    slug: project.slug,
+                    purposes: project.purposes,
+                    stack_levels: project.stack_levels,
+                    technologies: project.technologies,
+                    avatar: project.avatar,
+                    created_at: project.created_at,
+                    updated_at: project.updated_at,
+                    rewards: project.rewards,
+                },
+                created_at: r.created_at,
+                updated_at: r.updated_at,
+            }),
+            assignee_team_id: task.assignee_team_id,
+            funding_options: task.funding_options,
+            contact: task.contact,
+            skills: task.skills,
+            bounty: task.bounty,
+            approved_by: task.approved_by,
+            approved_at: task.approved_at,
+            status: task.status,
+            upvotes: task.upvotes,
+            downvotes: task.downvotes,
+            is_featured: task.is_featured,
+            is_certified: task.is_certified,
+            featured_by_user_id: task.featured_by_user_id,
+            issue_created_at: task.issue_created_at,
+            issue_closed_at: task.issue_closed_at,
+            created_at: task.created_at,
+            updated_at: task.updated_at,
+        })
+        .collect();
+
+        Ok((tasks_with_assignee, total_count))
     }
 
-    fn by_id(&self, id: i32) -> Result<Option<Task>, DBError> {
+    fn by_id(&self, id: i32) -> Result<Option<TaskResponse>, DBError> {
         let conn = &mut self.get_db_conn();
-        let result = tasks_dsl::tasks
-            .find(id)
-            .first::<Task>(conn)
-            .optional()
-            .map_err(DBError::from)?;
-        Ok(result)
+    
+        let row = tasks_dsl::tasks
+
+            .left_join(
+                repositories_dsl::repositories
+                    .on(tasks_dsl::repository_id.eq(repositories_dsl::id.nullable()))
+            )
+
+            .inner_join(
+                projects_dsl::projects
+                    .on(repositories_dsl::project_id.eq(projects_dsl::id))
+            )
+
+            .left_join(
+                users_dsl::users
+                    .on(tasks_dsl::assignee_user_id.eq(users_dsl::id.nullable()))
+            )
+            .filter(tasks_dsl::id.eq(id))
+            .select((
+                (tasks_dsl::tasks::all_columns()),
+                (repositories_dsl::repositories::all_columns().nullable()),
+                (projects_dsl::projects::all_columns()),
+                (users_dsl::users::all_columns().nullable()),
+            ))
+            .first::<(Task, Option<Repository>, Project, Option<User>)>(conn)
+            .optional()?;
+    
+        Ok(row.map(|(task, repo, project, user)| TaskResponse {
+            id: task.id,
+            number: task.number,
+            repository_id: task.repository_id,
+            title: task.title,
+            description: task.description,
+            url: task.url,
+            labels: task.labels,
+            open: task.open,
+            type_: task.type_,
+            project_id: task.project_id,
+            created_by_user_id: task.created_by_user_id,
+            assignee_user_id: task.assignee_user_id,
+            user,
+            assignee_team_id: task.assignee_team_id,
+            funding_options: task.funding_options,
+            contact: task.contact,
+            skills: task.skills,
+            bounty: task.bounty,
+            approved_by: task.approved_by,
+            approved_at: task.approved_at,
+            status: task.status,
+            upvotes: task.upvotes,
+            downvotes: task.downvotes,
+            is_featured: task.is_featured,
+            is_certified: task.is_certified,
+            featured_by_user_id: task.featured_by_user_id,
+            issue_created_at: task.issue_created_at,
+            issue_closed_at: task.issue_closed_at,
+            created_at: task.created_at,
+            updated_at: task.updated_at,
+            repository: repo.map(|r| RepositoryResponse {
+                id: r.id,
+                slug: r.slug,
+                name: r.name,
+                url: r.url,
+                language_slug: r.language_slug,
+                project: ProjectResponse {
+                    id: project.id,
+                    name: project.name,
+                    slug: project.slug,
+                    purposes: project.purposes,
+                    stack_levels: project.stack_levels,
+                    technologies: project.technologies,
+                    avatar: project.avatar,
+                    created_at: project.created_at,
+                    updated_at: project.updated_at,
+                    rewards: project.rewards,
+                },
+                created_at: r.created_at,
+                updated_at: r.updated_at,
+            }),
+        }))
     }
+    
+    
 
     fn create(&self, task: &NewTask) -> Result<Task, DBError> {
         let conn = &mut self.get_db_conn();
