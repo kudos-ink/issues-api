@@ -97,6 +97,11 @@ impl DBUser for DBAccess {
         } else if params.labels.is_some() {
             return Ok(vec![]);
         }
+
+        if let Some(ref search) = params.search {
+            query = query.filter(users_dsl::username.ilike(format!("%{}%", search)));
+        }
+
         query = query.offset(pagination.offset).limit(pagination.limit);
 
         let result = query.load::<User>(conn)?;

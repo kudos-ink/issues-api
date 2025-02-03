@@ -44,4 +44,5 @@ pub struct UpdateUser {
 pub struct QueryParams {
     pub labels: Option<String>,
     pub certified: Option<bool>,
+    pub search: Option<String>
 }
