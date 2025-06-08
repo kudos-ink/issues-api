@@ -28,7 +28,7 @@ pub async fn by_github(user: GitHubUser, db_access: impl DBUser) -> Result<impl 
 }
 pub async fn create_by_github(user: GitHubUser, db_access: impl DBUser) -> Result<impl Reply, Rejection> {
     info!("create github user {:?}", user);
-    create_user( db_access, NewUser { username: user.username, avatar: Some(user.avatar_url) })
+    create_user( db_access, NewUser { username: user.username, avatar: Some(user.avatar_url), email: user.email })
 }
 
 pub async fn by_username(username: String, db_access: impl DBUser) -> Result<impl Reply, Rejection> {
@@ -124,7 +124,7 @@ fn update_user(db_access: impl DBUser, id: i32, user: UpdateUser) -> Result<warp
 pub async fn update_user_github(user: GitHubUser, db_access: impl DBUser) -> Result<warp::reply::WithStatus<warp::reply::Json>, Rejection> {
     match db_access.by_github_id(user.id)? {
         Some(u) => Ok(with_status(
-            json(&db_access.update(u.id, &UpdateUser{ username: Some(user.username), avatar: Some(user.avatar_url), github_id: Some(user.id) })?),
+            json(&db_access.update(u.id, &UpdateUser{ username: Some(user.username), avatar: Some(user.avatar_url), github_id: Some(user.id), email_notifications_enabled: Some(u.email_notifications_enabled) })?),
             StatusCode::OK,
         )),
         None => Err(warp::reject::custom(UserError::GithubNotFound(user.id))),

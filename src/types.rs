@@ -50,3 +50,52 @@ pub struct PaginatedResponse<T> {
     pub has_previous_page: bool,
     pub data: Vec<T>,
 }
+
+#[derive(Deserialize, Debug, Clone)]
+pub struct NotificationsConfig {
+    pub days: i64,
+    pub smtp_host: String,
+    pub smtp_port: u16,
+    pub smtp_username: String,
+    pub smtp_password: String,
+    pub from_email: String,
+    pub enabled: bool,
+    pub dry_run: bool,
+}
+
+impl NotificationsConfig {
+    pub fn new() -> Self {
+        dotenv().ok();
+        Self {
+            days: env::var("NOTIFICATIONS_DAYS").unwrap_or_else(|_| "30".to_owned()).parse().expect("NOTIFICATIONS_DAYS must be a number"),
+            smtp_host: env::var("NOTIFICATIONS_SMTP_HOST").unwrap_or_else(|_| "".to_owned()),
+            smtp_port: env::var("NOTIFICATIONS_SMTP_PORT").unwrap_or_else(|_| "0".to_owned()).parse().expect("NOTIFICATIONS_SMTP_PORT must be a number"),
+            smtp_username: env::var("NOTIFICATIONS_SMTP_USERNAME").unwrap_or_else(|_| "".to_owned()),
+            smtp_password: env::var("NOTIFICATIONS_SMTP_PASSWORD").unwrap_or_else(|_| "".to_owned()),
+            from_email: env::var("NOTIFICATIONS_FROM_EMAIL").unwrap_or_else(|_| "".to_owned()),
+            enabled: env::var("NOTIFICATIONS_ENABLED").unwrap_or_else(|_| "false".to_owned()).parse().expect("NOTIFICATIONS_ENABLED must be a boolean"),
+            dry_run: env::var("NOTIFICATIONS_DRY_RUN").unwrap_or_else(|_| "true".to_owned()).parse().expect("NOTIFICATIONS_DRY_RUN must be a boolean"),
+        }
+    }
+    pub fn validate(&self) -> Result<(), String> {
+        if !self.enabled || self.dry_run {
+            return Ok(());
+        }
+        if self.smtp_host.is_empty() {
+            return Err("NOTIFICATIONS_SMTP_HOST must be set".to_owned());
+        }
+        if self.smtp_port == 0 {
+            return Err("NOTIFICATIONS_SMTP_PORT must be set".to_owned());
+        }
+        if self.smtp_username.is_empty() {
+            return Err("NOTIFICATIONS_SMTP_USERNAME must be set".to_owned());
+        }
+        if self.smtp_password.is_empty() {
+            return Err("NOTIFICATIONS_SMTP_PASSWORD must be set".to_owned());
+        }
+        if self.from_email.is_empty() {
+            return Err("NOTIFICATIONS_FROM_EMAIL must be set".to_owned());
+        }
+        Ok(())
+    }
+}

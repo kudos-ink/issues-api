@@ -61,6 +61,8 @@ impl DBUser for DBAccess {
                 created_at: result[0].created_at,
                 updated_at: result[0].updated_at,
                 github_id: result[0].github_id,
+                email: result[0].email.clone(),
+                email_notifications_enabled: result[0].email_notifications_enabled,
             }))
         }
     }
