@@ -36,7 +36,7 @@ async fn authorize(headers: HeaderMap<HeaderValue>) -> Result<GitHubUser, Reject
                     .body_json()
                     .await
                     .map_err(|_| reject::custom(AuthenticationError::GitHub))?;
-    
+
                 // Extract user ID and username
                 let id = user_data
                     .get("id")
@@ -49,9 +49,7 @@ async fn authorize(headers: HeaderMap<HeaderValue>) -> Result<GitHubUser, Reject
                     .to_string();
                 let email = user_data
                     .get("email")
-                    .and_then(|v| v.as_str())
-                    .ok_or_else(|| reject::custom(AuthenticationError::GitHub))?
-                    .to_string();
+                    .and_then(|v| v.as_str().map(|s| s.to_string()));
     
                 let avatar_url = user_data
                     .get("avatar_url")

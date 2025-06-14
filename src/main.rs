@@ -3,7 +3,6 @@ use log::{info, error};
 
 use crate::types::{ApiConfig, NotificationsConfig};
 
-
 mod api;
 mod middlewares;
 mod db;
@@ -39,17 +38,24 @@ async fn run() {
     let app_filters = utils::setup_filters(db.clone());
 
     if notifications_config.enabled {
+        info!("Starting notification job");
         // Start the weekly notification job
-        let sender_config = email::model::SenderConfig {
+        let sender_config = email::model::SMTPConfig {
             smtp_host: notifications_config.smtp_host,
             smtp_port: notifications_config.smtp_port,
             smtp_username: notifications_config.smtp_username,
             smtp_password: notifications_config.smtp_password,
-        from_email: notifications_config.from_email,
-    };
+            from_email: notifications_config.from_email,
+        };
 
-    // Spawn the notification job in a separate task
-    tokio::spawn(email::notifications::start_notification_job(sender_config, db, notifications_config.days, notifications_config.dry_run));
+        // Spawn the notification job in a separate task
+        tokio::spawn(email::notifications::start_notification_job(
+            sender_config,
+            db,
+            notifications_config.days,
+            notifications_config.subject,
+            notifications_config.dry_run,
+        ));
     }
 
     let addr = format!("{}:{}", host, port)

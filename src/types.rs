@@ -59,6 +59,7 @@ pub struct NotificationsConfig {
     pub smtp_username: String,
     pub smtp_password: String,
     pub from_email: String,
+    pub subject: String,
     pub enabled: bool,
     pub dry_run: bool,
 }
@@ -75,6 +76,7 @@ impl NotificationsConfig {
             from_email: env::var("NOTIFICATIONS_FROM_EMAIL").unwrap_or_else(|_| "".to_owned()),
             enabled: env::var("NOTIFICATIONS_ENABLED").unwrap_or_else(|_| "false".to_owned()).parse().expect("NOTIFICATIONS_ENABLED must be a boolean"),
             dry_run: env::var("NOTIFICATIONS_DRY_RUN").unwrap_or_else(|_| "true".to_owned()).parse().expect("NOTIFICATIONS_DRY_RUN must be a boolean"),
+            subject: env::var("NOTIFICATIONS_SUBJECT").unwrap_or_else(|_| "Kudos Notifications Summary".to_owned()),
         }
     }
     pub fn validate(&self) -> Result<(), String> {

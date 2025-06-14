@@ -33,7 +33,7 @@ pub struct User {
 pub struct NewUser {
     pub username: String,
     pub avatar: Option<String>,
-    pub email: String,
+    pub email: Option<String>,
 }
 
 #[derive(AsChangeset, Serialize, Deserialize, Debug)]
