@@ -29,6 +29,38 @@ diesel::table! {
 }
 
 diesel::table! {
+    milestones (id) {
+        id -> Int4,
+        slug -> Text,
+        name -> Text,
+        url -> Nullable<Text>,
+        project_id -> Int4,
+        created_at -> Timestamptz,
+        updated_at -> Nullable<Timestamptz>,
+    }
+}
+
+diesel::table! {
+    notification_schedule (id) {
+        id -> Int4,
+        next_run -> Timestamptz,
+        last_run -> Nullable<Timestamptz>,
+        created_at -> Timestamptz,
+        updated_at -> Timestamptz,
+    }
+}
+
+diesel::table! {
+    notifications (id) {
+        id -> Int4,
+        github_id -> Int8,
+        task_id -> Int4,
+        seen -> Nullable<Bool>,
+        created_at -> Timestamptz,
+    }
+}
+
+diesel::table! {
     projects (id) {
         id -> Int4,
         name -> Text,
@@ -133,6 +165,17 @@ diesel::table! {
 }
 
 diesel::table! {
+    user_subscriptions (id) {
+        id -> Int4,
+        github_id -> Int8,
+        purpose -> Nullable<Text>,
+        stack_level -> Nullable<Text>,
+        technology -> Nullable<Text>,
+        created_at -> Timestamptz,
+    }
+}
+
+diesel::table! {
     users (id) {
         id -> Int4,
         username -> Text,
@@ -140,6 +183,8 @@ diesel::table! {
         created_at -> Timestamptz,
         updated_at -> Nullable<Timestamptz>,
         github_id -> Nullable<Int8>,
+        email_notifications_enabled -> Bool,
+        email -> Nullable<Text>,
     }
 }
 
@@ -155,8 +200,11 @@ diesel::table! {
 
 diesel::joinable!(issues -> repositories (repository_id));
 diesel::joinable!(issues -> users (assignee_id));
+diesel::joinable!(milestones -> projects (project_id));
+diesel::joinable!(notifications -> tasks (task_id));
 diesel::joinable!(repositories -> projects (project_id));
 diesel::joinable!(tasks -> projects (project_id));
+diesel::joinable!(tasks -> repositories (repository_id));
 diesel::joinable!(tasks_votes -> tasks (task_id));
 diesel::joinable!(tasks_votes -> users (user_id));
 diesel::joinable!(team_memberships -> teams (team_id));
@@ -168,6 +216,9 @@ diesel::joinable!(users_projects_roles -> users (user_id));
 diesel::allow_tables_to_appear_in_same_query!(
     issues,
     languages,
+    milestones,
+    notification_schedule,
+    notifications,
     projects,
     repositories,
     roles,
@@ -175,6 +226,7 @@ diesel::allow_tables_to_appear_in_same_query!(
     tasks_votes,
     team_memberships,
     teams,
+    user_subscriptions,
     users,
     users_projects_roles,
 );

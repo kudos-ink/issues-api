@@ -1,4 +1,3 @@
-version: "3.8"
 services:
   api:
     # image: dontelmo/kudos_api/
@@ -13,6 +12,15 @@ services:
       - DATABASE_URL=postgres://postgres:password@db:5432/database
       - HOST=0.0.0.0
       - PORT=8000
+      - NOTIFICATIONS_SMTP_HOST=smtp.gmail.com
+      - NOTIFICATIONS_SMTP_PORT=587
+      - NOTIFICATIONS_SMTP_USERNAME=test
+      - NOTIFICATIONS_SMTP_PASSWORD=test
+      - NOTIFICATIONS_FROM_EMAIL=test@test.com
+      - NOTIFICATIONS_SUBJECT=Test
+      - NOTIFICATIONS_DAYS=30
+      - NOTIFICATIONS_ENABLED=false
+      - NOTIFICATIONS_DRY_RUN=false
     depends_on:
       - db
 

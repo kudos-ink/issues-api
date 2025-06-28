@@ -5,7 +5,14 @@ use warp::{hyper::StatusCode, Rejection, Reply};
 
 use crate::{
     api::{
-        issues::errors::IssueError, projects::errors::ProjectError, repositories::errors::RepositoryError, roles::errors::RoleError, tasks::errors::TaskError, users::errors::UserError
+        issues::errors::IssueError, 
+        projects::errors::ProjectError, 
+        repositories::errors::RepositoryError, 
+        roles::errors::RoleError, 
+        tasks::errors::TaskError, 
+        users::errors::UserError,
+        subscriptions::errors::UserSubscriptionError,
+        notifications::errors::NotificationError,
     },
     db::errors::DBError,
     middlewares::errors::AuthenticationError,
@@ -28,6 +35,10 @@ pub async fn error_handler(err: Rejection) -> std::result::Result<impl Reply, In
     } else if let Some(e) = err.find::<RoleError>() {
         return Ok(e.clone().into_response());
     } else if let Some(e) = err.find::<TaskError>() {
+        return Ok(e.clone().into_response());
+    } else if let Some(e) = err.find::<UserSubscriptionError>() {
+        return Ok(e.clone().into_response());
+    } else if let Some(e) = err.find::<NotificationError>() {
         return Ok(e.clone().into_response());
     }
     // TODO: add more errors
