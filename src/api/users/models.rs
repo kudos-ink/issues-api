@@ -34,6 +34,8 @@ pub struct NewUser {
     pub username: String,
     pub avatar: Option<String>,
     pub email: Option<String>,
+    pub github_id: Option<i64>,
+
 }
 
 #[derive(AsChangeset, Serialize, Deserialize, Debug)]
