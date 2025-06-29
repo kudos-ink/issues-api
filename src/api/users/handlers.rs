@@ -28,7 +28,7 @@ pub async fn by_github(user: GitHubUser, db_access: impl DBUser) -> Result<impl 
 }
 pub async fn create_by_github(user: GitHubUser, db_access: impl DBUser) -> Result<impl Reply, Rejection> {
     info!("create github user {:?}", user);
-    create_user( db_access, NewUser { username: user.username, avatar: Some(user.avatar_url), email: user.email })
+    create_user( db_access, NewUser { username: user.username, avatar: Some(user.avatar_url), email: user.email, github_id: Some(user.id) })
 }
 
 pub async fn by_username(username: String, db_access: impl DBUser) -> Result<impl Reply, Rejection> {
