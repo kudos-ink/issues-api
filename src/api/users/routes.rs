@@ -69,6 +69,7 @@ pub fn routes(db_access: impl DBUser + DBRole) -> BoxedFilter<(impl Reply,)> {
     let update_user_github = user_me
         .and(warp::put())
         .and(with_github_auth())
+        .and(warp::body::aggregate())
         .and(with_db(db_access.clone()))
         .and_then(handlers::update_user_github);
 

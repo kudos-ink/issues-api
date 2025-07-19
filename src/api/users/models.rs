@@ -47,6 +47,12 @@ pub struct UpdateUser {
     pub email_notifications_enabled: Option<bool>,
 
 }
+#[derive(AsChangeset, Serialize, Deserialize, Debug)]
+#[diesel(table_name = users)]
+pub struct UpdateEmailNotificationsUser {
+    pub email_notifications_enabled: Option<bool>,
+
+}
 #[derive(Deserialize, Debug)]
 pub struct QueryParams {
     pub labels: Option<String>,

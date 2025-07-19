@@ -6,7 +6,7 @@ use warp::{
     reply::{json, with_status, Reply},
 };
 
-use crate::{api::roles::{db::DBRole, models::KudosRole, utils::user_has_at_least_one_role}, middlewares::github::model::GitHubUser, types::PaginationParams};
+use crate::{api::{roles::{db::DBRole, models::KudosRole, utils::user_has_at_least_one_role}, users::models::UpdateEmailNotificationsUser}, middlewares::github::model::GitHubUser, types::PaginationParams};
 use log::{error, info, warn};
 
 use super::{
@@ -121,10 +121,22 @@ fn update_user(db_access: impl DBUser, id: i32, user: UpdateUser) -> Result<warp
         None => Err(warp::reject::custom(UserError::NotFound(id))),
     }
 }
-pub async fn update_user_github(user: GitHubUser, db_access: impl DBUser) -> Result<warp::reply::WithStatus<warp::reply::Json>, Rejection> {
+pub async fn update_user_github(user: GitHubUser, buf: impl Buf, db_access: impl DBUser) -> Result<warp::reply::WithStatus<warp::reply::Json>, Rejection> {
+    let des = &mut serde_json::Deserializer::from_reader(buf.reader());
+    let new_values: UpdateEmailNotificationsUser = serde_path_to_error::deserialize(des).map_err(|e| {
+        let e = e.to_string();
+        warn!("invalid user '{e}'",);
+        reject::custom(UserError::InvalidPayload(e))
+    })?;
     match db_access.by_github_id(user.id)? {
-        Some(u) => Ok(with_status(
-            json(&db_access.update(u.id, &UpdateUser{ username: Some(user.username), avatar: Some(user.avatar_url), github_id: Some(user.id), email_notifications_enabled: Some(u.email_notifications_enabled) })?),
+        Some(db_user) => Ok(with_status(
+            json(&db_access.update(db_user.id, 
+                &UpdateUser{ 
+                    username: Some(db_user.username), 
+                    avatar: db_user.avatar, 
+                    github_id: Some(user.id), 
+                    email_notifications_enabled: new_values.email_notifications_enabled 
+                })?),
             StatusCode::OK,
         )),
         None => Err(warp::reject::custom(UserError::GithubNotFound(user.id))),
