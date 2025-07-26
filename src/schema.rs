@@ -29,18 +29,6 @@ diesel::table! {
 }
 
 diesel::table! {
-    milestones (id) {
-        id -> Int4,
-        slug -> Text,
-        name -> Text,
-        url -> Nullable<Text>,
-        project_id -> Int4,
-        created_at -> Timestamptz,
-        updated_at -> Nullable<Timestamptz>,
-    }
-}
-
-diesel::table! {
     notification_schedule (id) {
         id -> Int4,
         next_run -> Timestamptz,
@@ -200,7 +188,6 @@ diesel::table! {
 
 diesel::joinable!(issues -> repositories (repository_id));
 diesel::joinable!(issues -> users (assignee_id));
-diesel::joinable!(milestones -> projects (project_id));
 diesel::joinable!(notifications -> tasks (task_id));
 diesel::joinable!(repositories -> projects (project_id));
 diesel::joinable!(tasks -> projects (project_id));
@@ -216,7 +203,6 @@ diesel::joinable!(users_projects_roles -> users (user_id));
 diesel::allow_tables_to_appear_in_same_query!(
     issues,
     languages,
-    milestones,
     notification_schedule,
     notifications,
     projects,
