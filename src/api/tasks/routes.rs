@@ -63,7 +63,7 @@ pub fn routes(db_access: impl DBTask + DBUser + DBRole) -> BoxedFilter<(impl Rep
         .and(with_db(db_access.clone()))
         .and_then(handlers::add_upvote_to_task);
 
-        let create_task_downvote = task_downvote
+    let create_task_downvote = task_downvote
         .and(with_github_auth())
         .and(warp::post())
         .and(warp::body::aggregate())

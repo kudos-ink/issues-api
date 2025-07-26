@@ -46,9 +46,9 @@ impl DBTask for DBAccess {
                     repositories_dsl::repositories
                         .on(tasks_dsl::repository_id.eq(repositories_dsl::id.nullable()))
                 )
-                .inner_join(
+                .left_join(
                     projects_dsl::projects
-                        .on(repositories_dsl::project_id.eq(projects_dsl::id))
+                        .on(tasks_dsl::project_id.eq(projects_dsl::id.nullable()))
                 )
                 .left_join(
                     users_dsl::users
@@ -131,14 +131,14 @@ impl DBTask for DBAccess {
             .select((
                 (tasks_dsl::tasks::all_columns()),
                 (repositories_dsl::repositories::all_columns().nullable()),
-                (projects_dsl::projects::all_columns()),
+                (projects_dsl::projects::all_columns().nullable()),
                 (users_dsl::users::all_columns().nullable()),
             ))
             .order(tasks_dsl::created_at.desc())
             .offset(pagination.offset)
             .limit(pagination.limit);
 
-        let rows = query.load::<(Task, Option<Repository>, Project, Option<User>)>(conn)?;
+        let rows = query.load::<(Task, Option<Repository>, Option<Project>, Option<User>)>(conn)?;
 
         let tasks_with_assignee = rows
         .into_iter()
@@ -156,27 +156,30 @@ impl DBTask for DBAccess {
             created_by_user_id: task.created_by_user_id,
             assignee_user_id: task.assignee_user_id,
             user,
-            repository: repo.map(|r| RepositoryResponse {
-                id: r.id,
-                slug: r.slug,
-                name: r.name,
-                url: r.url,
-                language_slug: r.language_slug,
-                project: ProjectResponse {
-                    id: project.id,
-                    name: project.name,
-                    slug: project.slug,
-                    purposes: project.purposes,
-                    stack_levels: project.stack_levels,
-                    technologies: project.technologies,
-                    avatar: project.avatar,
-                    created_at: project.created_at,
-                    updated_at: project.updated_at,
-                    rewards: project.rewards,
-                },
-                created_at: r.created_at,
-                updated_at: r.updated_at,
-            }),
+            repository: match (repo, project) {
+                (Some(r), Some(p)) => Some(RepositoryResponse {
+                    id: r.id,
+                    slug: r.slug,
+                    name: r.name,
+                    url: r.url,
+                    language_slug: r.language_slug,
+                    project: ProjectResponse {
+                        id: p.id,
+                        name: p.name,
+                        slug: p.slug,
+                        purposes: p.purposes,
+                        stack_levels: p.stack_levels,
+                        technologies: p.technologies,
+                        avatar: p.avatar,
+                        created_at: p.created_at,
+                        updated_at: p.updated_at,
+                        rewards: p.rewards,
+                    },
+                    created_at: r.created_at,
+                    updated_at: r.updated_at,
+                }),
+                _ => None,
+            },
             assignee_team_id: task.assignee_team_id,
             funding_options: task.funding_options,
             contact: task.contact,
@@ -210,10 +213,10 @@ impl DBTask for DBAccess {
                     .on(tasks_dsl::repository_id.eq(repositories_dsl::id.nullable()))
             )
 
-            .inner_join(
-                projects_dsl::projects
-                    .on(repositories_dsl::project_id.eq(projects_dsl::id))
-            )
+            .left_join(
+                    projects_dsl::projects
+                        .on(tasks_dsl::project_id.eq(projects_dsl::id.nullable()))
+                )
 
             .left_join(
                 users_dsl::users
@@ -223,10 +226,10 @@ impl DBTask for DBAccess {
             .select((
                 (tasks_dsl::tasks::all_columns()),
                 (repositories_dsl::repositories::all_columns().nullable()),
-                (projects_dsl::projects::all_columns()),
+                (projects_dsl::projects::all_columns().nullable()),
                 (users_dsl::users::all_columns().nullable()),
             ))
-            .first::<(Task, Option<Repository>, Project, Option<User>)>(conn)
+            .first::<(Task, Option<Repository>, Option<Project>, Option<User>)>(conn)
             .optional()?;
     
         Ok(row.map(|(task, repo, project, user)| TaskResponse {
@@ -260,27 +263,30 @@ impl DBTask for DBAccess {
             issue_closed_at: task.issue_closed_at,
             created_at: task.created_at,
             updated_at: task.updated_at,
-            repository: repo.map(|r| RepositoryResponse {
-                id: r.id,
-                slug: r.slug,
-                name: r.name,
-                url: r.url,
-                language_slug: r.language_slug,
-                project: ProjectResponse {
-                    id: project.id,
-                    name: project.name,
-                    slug: project.slug,
-                    purposes: project.purposes,
-                    stack_levels: project.stack_levels,
-                    technologies: project.technologies,
-                    avatar: project.avatar,
-                    created_at: project.created_at,
-                    updated_at: project.updated_at,
-                    rewards: project.rewards,
-                },
-                created_at: r.created_at,
-                updated_at: r.updated_at,
-            }),
+            repository: match (repo, project) {
+                (Some(r), Some(p)) => Some(RepositoryResponse {
+                    id: r.id,
+                    slug: r.slug,
+                    name: r.name,
+                    url: r.url,
+                    language_slug: r.language_slug,
+                    project: ProjectResponse {
+                        id: p.id,
+                        name: p.name,
+                        slug: p.slug,
+                        purposes: p.purposes,
+                        stack_levels: p.stack_levels,
+                        technologies: p.technologies,
+                        avatar: p.avatar,
+                        created_at: p.created_at,
+                        updated_at: p.updated_at,
+                        rewards: p.rewards,
+                    },
+                    created_at: r.created_at,
+                    updated_at: r.updated_at,
+                }),
+                _ => None,
+            },
         }))
     }
     
