@@ -88,6 +88,18 @@ diesel::table! {
 }
 
 diesel::table! {
+    task_comments (id) {
+        id -> Int4,
+        content -> Text,
+        task_id -> Int4,
+        user_id -> Int4,
+        parent_comment_id -> Nullable<Int4>,
+        created_at -> Timestamptz,
+        updated_at -> Nullable<Timestamptz>,
+    }
+}
+
+diesel::table! {
     tasks (id) {
         id -> Int4,
         number -> Nullable<Int4>,
@@ -190,6 +202,8 @@ diesel::joinable!(issues -> repositories (repository_id));
 diesel::joinable!(issues -> users (assignee_id));
 diesel::joinable!(notifications -> tasks (task_id));
 diesel::joinable!(repositories -> projects (project_id));
+diesel::joinable!(task_comments -> tasks (task_id));
+diesel::joinable!(task_comments -> users (user_id));
 diesel::joinable!(tasks -> projects (project_id));
 diesel::joinable!(tasks -> repositories (repository_id));
 diesel::joinable!(tasks_votes -> tasks (task_id));
@@ -208,6 +222,7 @@ diesel::allow_tables_to_appear_in_same_query!(
     projects,
     repositories,
     roles,
+    task_comments,
     tasks,
     tasks_votes,
     team_memberships,
