@@ -314,22 +314,56 @@ pub async fn add_downvote_to_task(
         None => Err(reject::custom(TaskError::NotFound(task_vote.task_id))),
     }
 }
-pub async fn delete_task_vote(
-    id: i32,
-    _: GitHubUser,
-    db_access: impl DBTask,
+// pub async fn delete_task_vote(
+//     id: i32,
+//     _: GitHubUser,
+//     db_access: impl DBTask,
+// ) -> Result<impl Reply, Rejection> {
+//     // TODO: check if the user has that vote
+//     match db_access.delete_task_vote(id) {
+//         Ok(role) => {
+//             info!("task vote '{}' deleted", id);
+//             Ok(with_status(json(&role), StatusCode::NO_CONTENT))
+//         }
+//         Err(error) => {
+//             error!("error deleting the task vote '{id}': {error}");
+//             Err(warp::reject::custom(TaskError::CannotDelete(
+//                 "error deleting the task vote".to_owned(),
+//             )))
+//         }
+//     }
+// }
+
+pub async fn delete_vote_handler(
+    user: GitHubUser,
+    buf: impl Buf,
+    db_access: impl DBTask + DBUser,
 ) -> Result<impl Reply, Rejection> {
-    // TODO: check if the user has that vote
-    match db_access.delete_task_vote(id) {
-        Ok(role) => {
-            info!("task vote '{}' deleted", id);
-            Ok(with_status(json(&role), StatusCode::NO_CONTENT))
+
+    let db_user = db_access.by_github_id(user.id)?
+        .ok_or_else(|| reject::custom(UserError::GithubNotFound(user.id)))?;
+
+
+    let des = &mut serde_json::Deserializer::from_reader(buf.reader());
+    let vote_payload: VotePayload = serde_path_to_error::deserialize(des).map_err(|e| {
+        let e = e.to_string();
+        warn!("invalid task vote delete payload: '{e}'");
+        reject::custom(TaskError::InvalidPayload(e))
+    })?;
+
+
+    match db_access.delete_vote_by_user_and_task(db_user.id, vote_payload.task_id) {
+        Ok(0) => {
+            warn!("No vote found to delete for user #{} on task #{}", db_user.id, vote_payload.task_id);
+            Ok(StatusCode::NO_CONTENT)
         }
-        Err(error) => {
-            error!("error deleting the task vote '{id}': {error}");
-            Err(warp::reject::custom(TaskError::CannotDelete(
-                "error deleting the task vote".to_owned(),
-            )))
+        Ok(_) => {
+            info!("Vote deleted for user #{} on task #{}", db_user.id, vote_payload.task_id);
+            Ok(StatusCode::NO_CONTENT)
+        }
+        Err(e) => {
+            error!("Failed to delete vote: {}", e);
+            Err(reject::custom(TaskError::CannotDelete("Failed to delete vote".into())))
         }
     }
 }

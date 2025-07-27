@@ -22,7 +22,7 @@ pub fn routes(db_access: impl DBTask + DBUser + DBRole) -> BoxedFilter<(impl Rep
     let task_id = warp::path!("tasks" / i32);
     let task_upvote = warp::path!("tasks" / "upvotes");
     let task_downvote = warp::path!("tasks" / "downvotes");
-    let task_vote_id = warp::path!("tasks" / "votes" / i32); // TODO:
+    let task_vote = warp::path!("tasks" / "vote");
 
     let get_tasks = task
         .and(warp::get())
@@ -72,11 +72,12 @@ pub fn routes(db_access: impl DBTask + DBUser + DBRole) -> BoxedFilter<(impl Rep
         .and(with_db(db_access.clone()))
         .and_then(handlers::add_downvote_to_task);
     
-    let delete_task_vote = task_vote_id
+    let delete_vote = task_vote
         .and(with_github_auth())
         .and(warp::delete())
+        .and(warp::body::aggregate())
         .and(with_db(db_access.clone()))
-        .and_then(handlers::delete_task_vote);
+        .and_then(handlers::delete_vote_handler);
 
     let route = get_tasks
         .or(get_task)
@@ -85,7 +86,7 @@ pub fn routes(db_access: impl DBTask + DBUser + DBRole) -> BoxedFilter<(impl Rep
         .or(update_task)
         .or(create_task_upvote)
         .or(create_task_downvote)
-        .or(delete_task_vote);
+        .or(delete_vote);
 
     route.boxed()
 }

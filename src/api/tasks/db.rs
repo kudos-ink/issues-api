@@ -31,7 +31,8 @@ pub trait DBTask: Send + Sync + Clone + 'static {
     fn update(&self, id: i32, role: &UpdateTask) -> Result<Task, DBError>;
     fn delete(&self, id: i32) -> Result<(), DBError>;
     fn add_vote_to_task(&self, task_user: &TaskVoteDB) -> Result<TaskVote, DBError>;
-    fn delete_task_vote(&self, id: i32) -> Result<(), DBError>;
+    // fn delete_task_vote(&self, id: i32) -> Result<(), DBError>;
+    fn delete_vote_by_user_and_task(&self, user_id: i32, task_id: i32) -> Result<usize, DBError>;
 }
 
 impl DBTask for DBAccess {
@@ -350,13 +351,24 @@ impl DBTask for DBAccess {
         Ok(vote)
     }
     
-    fn delete_task_vote(&self, id: i32) -> Result<(), DBError> {
-        let conn = &mut self.get_db_conn();
-        diesel::delete(tasks_votes_dsl::tasks_votes.filter(tasks_votes_dsl::id.eq(id)))
-            .execute(conn)
-            .map_err(DBError::from)?;
+    // fn delete_task_vote(&self, id: i32) -> Result<(), DBError> {
+    //     let conn = &mut self.get_db_conn();
+    //     diesel::delete(tasks_votes_dsl::tasks_votes.filter(tasks_votes_dsl::id.eq(id)))
+    //         .execute(conn)
+    //         .map_err(DBError::from)?;
 
-        Ok(())
+    //     Ok(())
+    // }
+
+    fn delete_vote_by_user_and_task(&self, user_id_param: i32, task_id_param: i32) -> Result<usize, DBError> {
+        let conn = &mut self.get_db_conn();
+        diesel::delete(
+            tasks_votes_dsl::tasks_votes
+                .filter(tasks_votes_dsl::user_id.eq(user_id_param))
+                .filter(tasks_votes_dsl::task_id.eq(task_id_param))
+        )
+        .execute(conn)
+        .map_err(DBError::from)
     }
 
 
