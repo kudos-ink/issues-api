@@ -96,6 +96,7 @@ diesel::table! {
         parent_comment_id -> Nullable<Int4>,
         created_at -> Timestamptz,
         updated_at -> Nullable<Timestamptz>,
+        status -> Text,
     }
 }
 

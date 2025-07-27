@@ -7,6 +7,7 @@ use crate::middlewares::github::model::GitHubUser;
 use super::db::DBComment;
 use super::models::{NewComment, CreateCommentPayload};
 use super::errors::CommentError;
+use crate::api::roles::{db::DBRole, models::KudosRole, utils::user_has_at_least_one_role};
 
 pub async fn get_comments_handler(id: i32, db_access: impl DBComment) -> Result<impl Reply, Rejection> {
     let comments = db_access.by_task_id(id)?;
@@ -40,4 +41,41 @@ pub async fn create_comment_handler(
 
     let saved = DBComment::create(&db_access, &new_comment)?;
     Ok(with_status(json(&saved), StatusCode::CREATED))
+}
+
+pub async fn by_comment_id_handler(
+    comment_id: i32,
+    db_access: impl DBComment,
+) -> Result<impl Reply, Rejection> {
+    match db_access.by_comment_id(comment_id)? {
+        Some(comment) => Ok(json(&comment)),
+        None => Err(reject::custom(CommentError::NotFound(comment_id))),
+    }
+}
+
+pub async fn delete_comment_handler(
+    comment_id: i32,
+    user: GitHubUser,
+    db_access: impl DBComment + DBUser + DBRole,
+) -> Result<impl Reply, Rejection> {
+    let db_user = db_access.by_github_id(user.id)?
+        .ok_or_else(|| reject::custom(UserError::GithubNotFound(user.id)))?;
+
+    let comment = db_access.by_comment_id(comment_id)?
+        .ok_or_else(|| reject::custom(CommentError::NotFound(comment_id)))?;
+
+    let user_roles = db_access.user_roles(&user.username)?;
+    let is_admin = user_has_at_least_one_role(user_roles, vec![KudosRole::Admin]).is_ok();
+    
+    if comment.user.id != db_user.id && !is_admin {
+        return Err(reject::custom(CommentError::UnauthorizedAction));
+    }
+
+    if db_access.has_replies(comment_id)? {
+        db_access.soft_delete(comment_id)?;
+    } else {
+        db_access.hard_delete(comment_id)?;
+    }
+
+    Ok(StatusCode::NO_CONTENT)
 }

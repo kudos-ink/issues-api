@@ -16,6 +16,7 @@ pub struct Comment {
     pub parent_comment_id: Option<i32>,
     pub created_at: DateTime<Utc>,
     pub updated_at: Option<DateTime<Utc>>,
+    pub status: String,
 }
 
 #[derive(Serialize, Debug)]
@@ -23,9 +24,9 @@ pub struct CommentResponse {
     pub id: i32,
     pub content: String,
     pub created_at: DateTime<Utc>,
-    pub user: User, // Embed user details directly
+    pub user: User,
     pub parent_comment_id: Option<i32>,
-    // Add replies field here later for threading
+    pub status: String,
 }
 
 #[derive(Insertable, Deserialize, Debug)]
