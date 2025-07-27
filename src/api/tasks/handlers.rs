@@ -20,24 +20,42 @@ use crate::{
 use super::{
     db::DBTask,
     errors::TaskError,
-    models::{NewTaskVote, QueryParams, TaskVoteDB, UpdateTask},
+    models::{VotePayload, QueryParams, TaskVoteDB, UpdateTask},
 };
 
-pub async fn by_id(id: i32, db_access: impl DBTask) -> Result<impl Reply, Rejection> {
+async fn get_user_id_from_auth(
+    github_user: Option<GitHubUser>, 
+    db_access: &impl DBUser
+) -> Result<Option<i32>, Rejection> {
+    if let Some(user) = github_user {
+        match db_access.by_github_id(user.id)? {
+            Some(db_user) => Ok(Some(db_user.id)),
+            None => Ok(None),
+        }
+    } else {
+        Ok(None)
+    }
+}
+
+
+pub async fn by_id(id: i32, github_user: Option<GitHubUser>, db_access: impl DBTask + DBUser) -> Result<impl Reply, Rejection> {
     info!("getting task '{id}'");
-    match db_access.by_id(id)? {
+    let current_user_id = get_user_id_from_auth(github_user, &db_access).await?;
+    match DBTask::by_id(&db_access, id, current_user_id)? {
         None => Err(warp::reject::custom(TaskError::NotFound(id)))?,
-        Some(repository) => Ok(json(&repository)),
+        Some(task) => Ok(json(&task)),
     }
 }
 
 pub async fn all_handler(
-    db_access: impl DBTask,
+    github_user: Option<GitHubUser>,
+    db_access: impl DBTask + DBUser,
     params: QueryParams,
     pagination: PaginationParams,
 ) -> Result<impl Reply, Rejection> {
     info!("getting all the roles");
-    let (roles, total_count) = db_access.all(params, pagination.clone())?;
+    let current_user_id = get_user_id_from_auth(github_user, &db_access).await?;
+    let (tasks, total_count) = DBTask::all(&db_access, params, pagination.clone(), current_user_id)?;
     let has_next_page = pagination.offset + pagination.limit < total_count;
     let has_previous_page = pagination.offset > 0;
 
@@ -45,7 +63,7 @@ pub async fn all_handler(
         total_count: Some(total_count),
         has_next_page,
         has_previous_page,
-        data: roles,
+        data: tasks,
     };
 
     Ok(json(&response))
@@ -145,8 +163,11 @@ pub async fn update_handler(
         ],
     )?;
 
+    let db_user = db_access.by_github_id(user.id)?
+        .ok_or_else(|| reject::custom(UserError::GithubNotFound(user.id)))?;
+
     task.type_.as_deref().map(validate_task_type).transpose()?;
-    match DBTask::by_id(&db_access, id)? {
+    match DBTask::by_id(&db_access, id, Some(db_user.id))? {
         Some(p) => match DBTask::update(&db_access, p.id, &task) {
             Ok(task) => {
                 info!("task '{}' updated", task.id);
@@ -166,7 +187,7 @@ pub async fn update_handler(
 pub async fn delete_handler(
     id: i32,
     user: GitHubUser,
-    db_access: impl DBTask + DBRole,
+    db_access: impl DBTask + DBRole + DBUser,
 ) -> Result<impl Reply, Rejection> {
     let user_roles = DBRole::user_roles(&db_access, &user.username)?;
     user_has_at_least_one_role(
@@ -177,7 +198,10 @@ pub async fn delete_handler(
         ],
     )?;
 
-    match DBTask::by_id(&db_access, id)? {
+    let db_user = db_access.by_github_id(user.id)?
+        .ok_or_else(|| reject::custom(UserError::GithubNotFound(user.id)))?;
+
+    match DBTask::by_id(&db_access, id, Some(db_user.id))? {
         Some(_) => {
             let _ = &DBTask::delete(&db_access, id)?;
             Ok(StatusCode::NO_CONTENT)
@@ -202,45 +226,40 @@ pub async fn add_upvote_to_task(
         ],
     )?;
 
+    let db_user = db_access.by_github_id(user.id)?
+        .ok_or_else(|| reject::custom(UserError::GithubNotFound(user.id)))?;
+
     let des = &mut serde_json::Deserializer::from_reader(buf.reader());
-    let task_vote: NewTaskVote = serde_path_to_error::deserialize(des).map_err(|e| {
+    let task_vote: VotePayload = serde_path_to_error::deserialize(des).map_err(|e| {
         let e = e.to_string();
         warn!("invalid task vote: '{e}'",);
         reject::custom(TaskError::InvalidPayload(e))
     })?;
 
-    match DBUser::by_id(&db_access, task_vote.user_id)? {
-        Some(_) => match DBTask::by_id(&db_access, task_vote.task_id)? {
-            Some(_) => {
-                match DBTask::add_vote_to_task(
-                    &db_access,
-                    &TaskVoteDB {
-                        user_id: task_vote.user_id,
-                        task_id: task_vote.task_id,
-                        vote: 1,
-                    },
-                ) {
-                    Ok(task_vote) => {
-                        info!("vote '{}' created", task_vote.id);
-                        Ok(with_status(json(&task_vote), StatusCode::CREATED))
-                    }
-                    Err(error) => {
-                        error!("error creating the vote '{:?}': {}", task_vote, error);
-                        if error.to_string().contains("unique_vote") {
-                            Err(warp::reject::custom(TaskError::UserAlreadyVoted()))
-                        } else {
-                            Err(warp::reject::custom(TaskError::CannotCreate(
-                                "error creating vote".to_owned(),
-                            )))
-                        }
-                    }
+    match DBTask::by_id(&db_access, task_vote.task_id, Some(db_user.id))? {
+        Some(_) => {
+            // 4. Create the vote using the SECURE user ID from the backend.
+            match DBTask::add_vote_to_task(
+                &db_access,
+                &TaskVoteDB {
+                    user_id: db_user.id, // <-- Use the secure ID
+                    task_id: task_vote.task_id,
+                    vote: 1, // 1 for upvote
+                },
+            ) {
+                Ok(task_vote) => {
+                    info!("vote '{}' created/updated", task_vote.id);
+                    Ok(with_status(json(&task_vote), StatusCode::OK)) // Use OK for upsert
+                }
+                Err(error) => {
+                    error!("error creating the vote: {}", error);
+                    Err(reject::custom(TaskError::CannotCreate(
+                        "error creating vote".to_owned(),
+                    )))
                 }
             }
-            None => Err(warp::reject::custom(TaskError::NotFound(task_vote.task_id))),
-        },
-        None => Err(warp::reject::custom(TaskError::UserNotFound(
-            task_vote.user_id,
-        ))),
+        }
+        None => Err(reject::custom(TaskError::NotFound(task_vote.task_id))),
     }
 }
 pub async fn add_downvote_to_task(
@@ -259,45 +278,40 @@ pub async fn add_downvote_to_task(
         ],
     )?;
 
+    let db_user = db_access.by_github_id(user.id)?
+        .ok_or_else(|| reject::custom(UserError::GithubNotFound(user.id)))?;
+
     let des = &mut serde_json::Deserializer::from_reader(buf.reader());
-    let task_vote: NewTaskVote = serde_path_to_error::deserialize(des).map_err(|e| {
+    let task_vote: VotePayload = serde_path_to_error::deserialize(des).map_err(|e| {
         let e = e.to_string();
         warn!("invalid task vote: '{e}'",);
         reject::custom(TaskError::InvalidPayload(e))
     })?;
 
-    match DBUser::by_id(&db_access, task_vote.user_id)? {
-        Some(_) => match DBTask::by_id(&db_access, task_vote.task_id)? {
-            Some(_) => {
-                match DBTask::add_vote_to_task(
-                    &db_access,
-                    &TaskVoteDB {
-                        user_id: task_vote.user_id,
-                        task_id: task_vote.task_id,
-                        vote: -1,
-                    },
-                ) {
-                    Ok(task_vote) => {
-                        info!("vote '{}' created", task_vote.id);
-                        Ok(with_status(json(&task_vote), StatusCode::CREATED))
-                    }
-                    Err(error) => {
-                        error!("error creating the vote '{:?}': {}", task_vote, error);
-                        if error.to_string().contains("unique_vote") {
-                            Err(warp::reject::custom(TaskError::UserAlreadyVoted()))
-                        } else {
-                            Err(warp::reject::custom(TaskError::CannotCreate(
-                                "error creating vote".to_owned(),
-                            )))
-                        }
-                    }
+    match DBTask::by_id(&db_access, task_vote.task_id, Some(db_user.id))? {
+        Some(_) => {
+            // 4. Create the vote using the SECURE user ID from the backend.
+            match DBTask::add_vote_to_task(
+                &db_access,
+                &TaskVoteDB {
+                    user_id: db_user.id, // <-- Use the secure ID
+                    task_id: task_vote.task_id,
+                    vote: -1,
+                },
+            ) {
+                Ok(task_vote) => {
+                    info!("vote '{}' created/updated", task_vote.id);
+                    Ok(with_status(json(&task_vote), StatusCode::OK)) // Use OK for upsert
+                }
+                Err(error) => {
+                    error!("error creating the vote: {}", error);
+                    Err(reject::custom(TaskError::CannotCreate(
+                        "error creating vote".to_owned(),
+                    )))
                 }
             }
-            None => Err(warp::reject::custom(TaskError::NotFound(task_vote.task_id))),
-        },
-        None => Err(warp::reject::custom(TaskError::UserNotFound(
-            task_vote.user_id,
-        ))),
+        }
+        None => Err(reject::custom(TaskError::NotFound(task_vote.task_id))),
     }
 }
 pub async fn delete_task_vote(
@@ -319,3 +333,4 @@ pub async fn delete_task_vote(
         }
     }
 }
+

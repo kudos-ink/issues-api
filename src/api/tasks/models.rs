@@ -142,6 +142,7 @@ pub struct TaskResponse {
     pub status: String,
     pub upvotes: Option<i32>,
     pub downvotes: Option<i32>,
+    pub user_vote: Option<i32>,
     pub is_featured: Option<bool>,
     pub is_certified: Option<bool>,
     pub featured_by_user_id: Option<i32>,
@@ -190,10 +191,15 @@ pub struct TaskVote {
     pub vote: i32
 }
 
-#[derive(Insertable, Serialize, Deserialize, Debug)]
-#[diesel(table_name = tasks_votes)]
-pub struct NewTaskVote {
-    pub user_id: i32,
+// #[derive(Insertable, Serialize, Deserialize, Debug)]
+// #[diesel(table_name = tasks_votes)]
+// pub struct NewTaskVote {
+//     pub user_id: i32,
+//     pub task_id: i32,
+// }
+
+#[derive(Deserialize, Debug)]
+pub struct VotePayload {
     pub task_id: i32,
 }
 

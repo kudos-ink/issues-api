@@ -5,6 +5,7 @@ use crate::schema::users::dsl as users_dsl;
 use crate::schema::repositories::dsl as repositories_dsl;
 use crate::schema::projects::dsl as projects_dsl;
 use crate::schema::tasks_votes::dsl as tasks_votes_dsl;
+use diesel::pg::upsert::excluded;
 
 use crate::db::{
     errors::DBError,
@@ -23,8 +24,9 @@ pub trait DBTask: Send + Sync + Clone + 'static {
         &self,
         params: QueryParams,
         pagination: PaginationParams,
+        current_user_id: Option<i32>
     ) -> Result<(Vec<TaskResponse>, i64), DBError>;
-    fn by_id(&self, id: i32) -> Result<Option<TaskResponse>, DBError>;
+    fn by_id(&self, id: i32, current_user_id: Option<i32>) -> Result<Option<TaskResponse>, DBError>;
     fn create(&self, role: &NewTask) -> Result<Task, DBError>;
     fn update(&self, id: i32, role: &UpdateTask) -> Result<Task, DBError>;
     fn delete(&self, id: i32) -> Result<(), DBError>;
@@ -37,6 +39,7 @@ impl DBTask for DBAccess {
         &self,
         params: QueryParams,
         pagination: PaginationParams,
+        current_user_id: Option<i32>,
     ) -> Result<(Vec<TaskResponse>, i64), DBError> {
         let conn = &mut self.get_db_conn();
 
@@ -54,6 +57,10 @@ impl DBTask for DBAccess {
                     users_dsl::users
                         .on(tasks_dsl::assignee_user_id.eq(users_dsl::id.nullable()))
                 )
+                .left_join(tasks_votes_dsl::tasks_votes.on(
+                    tasks_votes_dsl::task_id.eq(tasks_dsl::id)
+                    .and(tasks_votes_dsl::user_id.eq(current_user_id.unwrap_or(-1)))
+                ))
                 .into_boxed();
             
 
@@ -133,16 +140,17 @@ impl DBTask for DBAccess {
                 (repositories_dsl::repositories::all_columns().nullable()),
                 (projects_dsl::projects::all_columns().nullable()),
                 (users_dsl::users::all_columns().nullable()),
+                (tasks_votes_dsl::vote.nullable())
             ))
             .order(tasks_dsl::created_at.desc())
             .offset(pagination.offset)
             .limit(pagination.limit);
 
-        let rows = query.load::<(Task, Option<Repository>, Option<Project>, Option<User>)>(conn)?;
+        let rows = query.load::<(Task, Option<Repository>, Option<Project>, Option<User>, Option<i32>)>(conn)?;
 
         let tasks_with_assignee = rows
         .into_iter()
-        .map(|(task, repo, project, user)| TaskResponse { 
+        .map(|(task, repo, project, user, user_vote)| TaskResponse { 
             id: task.id,
             number: task.number,
             repository_id: task.repository_id,
@@ -190,6 +198,7 @@ impl DBTask for DBAccess {
             status: task.status,
             upvotes: task.upvotes,
             downvotes: task.downvotes,
+            user_vote,
             is_featured: task.is_featured,
             is_certified: task.is_certified,
             featured_by_user_id: task.featured_by_user_id,
@@ -203,7 +212,7 @@ impl DBTask for DBAccess {
         Ok((tasks_with_assignee, total_count))
     }
 
-    fn by_id(&self, id: i32) -> Result<Option<TaskResponse>, DBError> {
+    fn by_id(&self, id: i32,  current_user_id: Option<i32>) -> Result<Option<TaskResponse>, DBError> {
         let conn = &mut self.get_db_conn();
     
         let row = tasks_dsl::tasks
@@ -222,17 +231,22 @@ impl DBTask for DBAccess {
                 users_dsl::users
                     .on(tasks_dsl::assignee_user_id.eq(users_dsl::id.nullable()))
             )
+            .left_join(tasks_votes_dsl::tasks_votes.on(
+                tasks_votes_dsl::task_id.eq(tasks_dsl::id)
+                .and(tasks_votes_dsl::user_id.eq(current_user_id.unwrap_or(-1)))
+            ))
             .filter(tasks_dsl::id.eq(id))
             .select((
                 (tasks_dsl::tasks::all_columns()),
                 (repositories_dsl::repositories::all_columns().nullable()),
                 (projects_dsl::projects::all_columns().nullable()),
                 (users_dsl::users::all_columns().nullable()),
+                (tasks_votes_dsl::vote.nullable())
             ))
-            .first::<(Task, Option<Repository>, Option<Project>, Option<User>)>(conn)
+            .first::<(Task, Option<Repository>, Option<Project>, Option<User>, Option<i32>)>(conn)
             .optional()?;
     
-        Ok(row.map(|(task, repo, project, user)| TaskResponse {
+        Ok(row.map(|(task, repo, project, user, user_vote)| TaskResponse {
             id: task.id,
             number: task.number,
             repository_id: task.repository_id,
@@ -256,6 +270,7 @@ impl DBTask for DBAccess {
             status: task.status,
             upvotes: task.upvotes,
             downvotes: task.downvotes,
+            user_vote,
             is_featured: task.is_featured,
             is_certified: task.is_certified,
             featured_by_user_id: task.featured_by_user_id,
@@ -323,13 +338,18 @@ impl DBTask for DBAccess {
 
     fn add_vote_to_task(&self, task_vote: &TaskVoteDB) -> Result<TaskVote, DBError> {
         let conn = &mut self.get_db_conn();
-        let vote= diesel::insert_into(tasks_votes_dsl::tasks_votes)
+
+        let vote = diesel::insert_into(tasks_votes_dsl::tasks_votes)
             .values(task_vote)
+            .on_conflict((tasks_votes_dsl::user_id, tasks_votes_dsl::task_id))
+            .do_update()
+            .set(tasks_votes_dsl::vote.eq(excluded(tasks_votes_dsl::vote)))
             .get_result(conn)
             .map_err(DBError::from)?;
 
         Ok(vote)
     }
+    
     fn delete_task_vote(&self, id: i32) -> Result<(), DBError> {
         let conn = &mut self.get_db_conn();
         diesel::delete(tasks_votes_dsl::tasks_votes.filter(tasks_votes_dsl::id.eq(id)))

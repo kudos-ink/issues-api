@@ -4,7 +4,7 @@ use crate::api::roles::db::DBRole;
 use crate::api::users::db::DBUser;
 use warp::filters::BoxedFilter;
 use warp::{Filter, Reply};
-use crate::middlewares::github::auth::with_github_auth;
+use crate::middlewares::github::auth::{with_github_auth, with_optional_github_auth};
 use crate::types::PaginationParams;
 
 use super::db::DBTask;
@@ -26,6 +26,7 @@ pub fn routes(db_access: impl DBTask + DBUser + DBRole) -> BoxedFilter<(impl Rep
 
     let get_tasks = task
         .and(warp::get())
+        .and(with_optional_github_auth())
         .and(with_db(db_access.clone()))
         .and(warp::query::<QueryParams>())
         .and(warp::query::<PaginationParams>())
@@ -33,6 +34,7 @@ pub fn routes(db_access: impl DBTask + DBUser + DBRole) -> BoxedFilter<(impl Rep
 
     let get_task = task_id
         .and(warp::get())
+        .and(with_optional_github_auth())
         .and(with_db(db_access.clone()))
         .and_then(handlers::by_id);
 

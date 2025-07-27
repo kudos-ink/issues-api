@@ -68,6 +68,7 @@ impl DBNotification for DBAccess {
                     approved_at: task.approved_at,
                     status: task.status,
                     upvotes: task.upvotes,
+                    user_vote: None, // TODO: return user votes if they exist
                     downvotes: task.downvotes,
                     is_featured: task.is_featured,
                     is_certified: task.is_certified,
