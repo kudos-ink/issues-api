@@ -24,6 +24,7 @@ pub struct CommentResponse {
     pub content: String,
     pub created_at: DateTime<Utc>,
     pub user: User, // Embed user details directly
+    pub parent_comment_id: Option<i32>,
     // Add replies field here later for threading
 }
 

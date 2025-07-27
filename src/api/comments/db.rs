@@ -25,6 +25,7 @@ impl DBComment for DBAccess {
                 content: comment.content,
                 created_at: comment.created_at,
                 user,
+                parent_comment_id: comment.parent_comment_id
             }
         }).collect();
 
@@ -47,6 +48,7 @@ impl DBComment for DBAccess {
             content: new_comment.content,
             created_at: new_comment.created_at,
             user,
+            parent_comment_id: new_comment.parent_comment_id
         })
     }
 }

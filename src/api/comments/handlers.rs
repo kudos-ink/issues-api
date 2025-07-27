@@ -1,5 +1,5 @@
 use bytes::Buf;
-use log::{error, info, warn};
+use log::warn;
 use warp::{http::StatusCode, reject, reply::{json, with_status}, Rejection, Reply};
 use crate::api::users::db::DBUser;
 use crate::api::users::errors::UserError;
@@ -20,7 +20,7 @@ pub async fn create_comment_handler(
     db_access: impl DBComment + DBUser,
 ) -> Result<impl Reply, Rejection> {
     let des = &mut serde_json::Deserializer::from_reader(buf.reader());
-    let mut comment_payload: CreateCommentPayload = serde_path_to_error::deserialize(des).map_err(|e| {
+    let comment_payload: CreateCommentPayload = serde_path_to_error::deserialize(des).map_err(|e| {
         let e = e.to_string();
         warn!("invalid comment '{e}'",);
         reject::custom(CommentError::InvalidPayload(e))
