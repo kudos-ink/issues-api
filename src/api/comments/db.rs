@@ -6,6 +6,24 @@ use super::models::{Comment, NewComment, CommentResponse};
 use crate::schema::task_comments::dsl as comments_dsl;
 use chrono::Utc;
 
+fn deleted_user_placeholder() -> User {
+    User {
+        id: -1,
+        username: "[deleted]".to_string(),
+        avatar: None,
+        github_id: None,
+        created_at: Utc::now(),
+        updated_at: None,
+        email: None,
+        email_notifications_enabled: false,
+        bio: None,
+        skills: None,
+        interests: None,
+        telegram: None,
+        twitter: None,
+    }
+}
+
 pub trait DBComment: Send + Sync + Clone + 'static {
     fn by_task_id(&self, task_id_param: i32) -> Result<Vec<CommentResponse>, DBError>;
     fn by_comment_id(&self, id: i32) -> Result<Option<CommentResponse>, DBError>;
@@ -33,16 +51,7 @@ impl DBComment for DBAccess {
                     content: "[deleted]".to_string(),
                     created_at: comment.created_at,
                     parent_comment_id: comment.parent_comment_id,
-                    user: User {
-                        id: -1,
-                        username: "[deleted]".to_string(),
-                        avatar: None,
-                        github_id: None,
-                        created_at: Utc::now(),
-                        updated_at: None,
-                        email: None,
-                        email_notifications_enabled: false,
-                    },
+                    user: deleted_user_placeholder()
                 }
             } else {
                 CommentResponse {
@@ -75,16 +84,7 @@ impl DBComment for DBAccess {
                     content: "[deleted]".to_string(),
                     created_at: comment.created_at,
                     parent_comment_id: comment.parent_comment_id,
-                    user: User {
-                        id: -1,
-                        username: "[deleted]".to_string(),
-                        avatar: None,
-                        github_id: None,
-                        created_at: Utc::now(),
-                        updated_at: None,
-                        email: None,
-                        email_notifications_enabled: false,
-                    },
+                    user: deleted_user_placeholder()
                 }
             } else {
                 CommentResponse {

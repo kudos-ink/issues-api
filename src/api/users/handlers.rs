@@ -12,7 +12,7 @@ use log::{error, info, warn};
 use super::{
     db::DBUser,
     errors::UserError,
-    models::{NewUser, QueryParams, UpdateUser},
+    models::{NewUser, QueryParams, UpdateUser, UpdateUserProfile},
 };
 
 pub async fn by_id(id: i32, db_access: impl DBUser) -> Result<impl Reply, Rejection> {
@@ -161,4 +161,45 @@ pub async fn delete_handler(
         )),
         None => Err(warp::reject::custom(UserError::NotFound(id))),
     }
+}
+
+pub async fn update_profile_me(
+    user: GitHubUser,
+    buf: impl Buf,
+    db_access: impl DBUser,
+) -> Result<warp::reply::WithStatus<warp::reply::Json>, Rejection> {
+    let des = &mut serde_json::Deserializer::from_reader(buf.reader());
+    let payload: UpdateUserProfile = serde_path_to_error::deserialize(des)
+        .map_err(|e| reject::custom(UserError::InvalidPayload(e.to_string())))?;
+
+    let db_user = db_access
+        .by_github_id(user.id)?
+        .ok_or_else(|| warp::reject::custom(UserError::GithubNotFound(user.id)))?;
+
+    Ok(with_status(
+        json(&db_access.update_profile(db_user.id, &payload)?),
+        StatusCode::OK,
+    ))
+}
+
+pub async fn update_email_notifications_me(
+    user: GitHubUser,
+    buf: impl Buf,
+    db_access: impl DBUser,
+) -> Result<warp::reply::WithStatus<warp::reply::Json>, Rejection> {
+    let des = &mut serde_json::Deserializer::from_reader(buf.reader());
+    let payload: UpdateEmailNotificationsUser = serde_path_to_error::deserialize(des)
+        .map_err(|e| reject::custom(UserError::InvalidPayload(e.to_string())))?;
+
+    let db_user = db_access
+        .by_github_id(user.id)?
+        .ok_or_else(|| warp::reject::custom(UserError::GithubNotFound(user.id)))?;
+
+    // If you make this field required, drop unwrap_or.
+    let enabled = payload.email_notifications_enabled.unwrap_or(false);
+
+    Ok(with_status(
+        json(&db_access.update_email_notifications(db_user.id, enabled)?),
+        StatusCode::OK,
+    ))
 }

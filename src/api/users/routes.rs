@@ -19,7 +19,7 @@ fn with_db(
 
 pub fn routes(db_access: impl DBUser + DBRole) -> BoxedFilter<(impl Reply,)> {
     let user = warp::path!("users");
-    let user_me = warp::path!("users" / "me");
+    let user_me_base = warp::path("users").and(warp::path("me"));
     let user_id = warp::path!("users" / i32);
     let user_username = warp::path!("users" / "username" / String);
 
@@ -35,13 +35,14 @@ pub fn routes(db_access: impl DBUser + DBRole) -> BoxedFilter<(impl Reply,)> {
         .and(with_db(db_access.clone()))
         .and_then(handlers::by_id);
     
-    let get_user_github = user_me
+    let get_user_github = user_me_base
+        .and(warp::path::end())
         .and(warp::get())
         .and(with_github_auth())
         .and(with_db(db_access.clone()))
         .and_then(handlers::by_github);
 
-    let create_user_github = user_me
+    let create_user_github = user_me_base
         .and(warp::post())
         .and(with_github_auth())
         .and(with_db(db_access.clone()))
@@ -66,12 +67,31 @@ pub fn routes(db_access: impl DBUser + DBRole) -> BoxedFilter<(impl Reply,)> {
         .and(with_db(db_access.clone()))
         .and_then(handlers::update_handler);
 
-    let update_user_github = user_me
+    let update_user_github = user_me_base
+        .and(warp::path::end())
         .and(warp::put())
         .and(with_github_auth())
         .and(warp::body::aggregate())
         .and(with_db(db_access.clone()))
         .and_then(handlers::update_user_github);
+
+    let update_email_notifications = user_me_base
+        .and(warp::path!("notifications"))
+        .and(warp::path::end())
+        .and(warp::put())
+        .and(with_github_auth())
+        .and(warp::body::aggregate())
+        .and(with_db(db_access.clone()))
+        .and_then(handlers::update_email_notifications_me);
+
+    let update_profile = user_me_base
+        .and(warp::path!("profile"))
+        .and(warp::path::end())
+        .and(warp::put())
+        .and(with_github_auth())
+        .and(warp::body::aggregate())
+        .and(with_db(db_access.clone()))
+        .and_then(handlers::update_profile_me);
 
     let delete_user = user_id
         .and(with_github_auth())
@@ -87,7 +107,14 @@ pub fn routes(db_access: impl DBUser + DBRole) -> BoxedFilter<(impl Reply,)> {
         .or(update_user)
         .or(get_user_github)
         .or(create_user_github)
-        .or(update_user_github);
+        .or(update_user_github)
+        .or(update_email_notifications)
+        .or(update_profile);
 
-    route.boxed()
+    let cors = warp::cors()
+        .allow_any_origin()
+        .allow_headers(vec!["content-type", "authorization"])
+        .allow_methods(vec!["GET", "POST", "PUT", "DELETE", "OPTIONS"]);
+
+    route.with(cors).boxed()
 }

@@ -26,6 +26,12 @@ pub struct User {
     pub github_id: Option<i64>,
     pub email_notifications_enabled: bool,
     pub email: Option<String>,
+
+    pub bio: Option<String>,
+    pub skills: Option<Vec<Option<String>>>,
+    pub interests: Option<Vec<Option<String>>>,
+    pub telegram: Option<String>,
+    pub twitter: Option<String>,
 }
 
 #[derive(Insertable, Serialize, Deserialize, Debug)]
@@ -57,4 +63,14 @@ pub struct UpdateEmailNotificationsUser {
 pub struct QueryParams {
     pub labels: Option<String>,
     pub certified: Option<bool>,
+}
+
+#[derive(AsChangeset, Serialize, Deserialize, Debug)]
+#[diesel(table_name = users)]
+pub struct UpdateUserProfile {
+    pub bio: Option<String>,
+    pub skills: Option<Vec<Option<String>>>,
+    pub interests: Option<Vec<Option<String>>>,
+    pub telegram: Option<String>,
+    pub twitter: Option<String>,
 }

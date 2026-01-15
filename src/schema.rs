@@ -186,6 +186,11 @@ diesel::table! {
         github_id -> Nullable<Int8>,
         email_notifications_enabled -> Bool,
         email -> Nullable<Text>,
+        bio -> Nullable<Text>,
+        skills -> Nullable<Array<Nullable<Text>>>,
+        interests -> Nullable<Array<Nullable<Text>>>,
+        telegram -> Nullable<Text>,
+        twitter -> Nullable<Text>,
     }
 }
 
