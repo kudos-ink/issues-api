@@ -13,6 +13,7 @@ use crate::{
         users::errors::UserError,
         subscriptions::errors::UserSubscriptionError,
         notifications::errors::NotificationError,
+        comments::errors::CommentError
     },
     db::errors::DBError,
     middlewares::errors::AuthenticationError,
@@ -39,6 +40,8 @@ pub async fn error_handler(err: Rejection) -> std::result::Result<impl Reply, In
     } else if let Some(e) = err.find::<UserSubscriptionError>() {
         return Ok(e.clone().into_response());
     } else if let Some(e) = err.find::<NotificationError>() {
+        return Ok(e.clone().into_response());
+    } else if let Some(e) = err.find::<CommentError>() {
         return Ok(e.clone().into_response());
     }
     // TODO: add more errors

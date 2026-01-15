@@ -1,7 +1,7 @@
 use diesel::dsl::now;
 use diesel::prelude::*;
 
-use super::models::{NewUser, QueryParams, UpdateUser, User};
+use super::models::{NewUser, QueryParams, UpdateUser, User, UpdateUserProfile};
 use crate::schema::issues::dsl as issues_dsl;
 use crate::schema::repositories::dsl as repositories_dsl;
 use crate::schema::users::dsl as users_dsl;
@@ -20,6 +20,8 @@ pub trait DBUser: Send + Sync + Clone + 'static {
     fn create(&self, user: &NewUser) -> Result<User, DBError>;
     fn update(&self, id: i32, user: &UpdateUser) -> Result<User, DBError>;
     fn delete(&self, id: i32) -> Result<(), DBError>;
+    fn update_profile(&self, id: i32, form: &UpdateUserProfile) -> Result<User, DBError>;
+    fn update_email_notifications(&self, id: i32, enabled: bool) -> Result<User, DBError>;
 }
 
 impl DBUser for DBAccess {
@@ -47,24 +49,14 @@ impl DBUser for DBAccess {
     }
     fn by_username(&self, username: &str) -> Result<Option<User>, DBError> {
         let conn = &mut self.get_db_conn();
-        let mut query = users_dsl::users.into_boxed();
-        query = query.filter(users_dsl::username.eq(username));
-        query = query.limit(1);
-        let result: Vec<User> = query.load::<User>(conn)?;
-        if result.is_empty() {
-            Ok(None)
-        } else {
-            Ok(Some(User {
-                id: result[0].id,
-                username: result[0].username.clone(),
-                avatar: result[0].avatar.clone(),
-                created_at: result[0].created_at,
-                updated_at: result[0].updated_at,
-                github_id: result[0].github_id,
-                email: result[0].email.clone(),
-                email_notifications_enabled: result[0].email_notifications_enabled,
-            }))
-        }
+
+        let result = users_dsl::users
+            .filter(users_dsl::username.eq(username))
+            .first::<User>(conn)
+            .optional()
+            .map_err(DBError::from)?;
+
+        Ok(result)
     }
 
     fn all(&self, params: QueryParams, pagination: PaginationParams) -> Result<Vec<User>, DBError> {
@@ -117,6 +109,31 @@ impl DBUser for DBAccess {
     }
 
     fn update(&self, id: i32, form: &UpdateUser) -> Result<User, DBError> {
+        let conn = &mut self.get_db_conn();
+
+        let user = diesel::update(users_dsl::users.filter(users_dsl::id.eq(id)))
+            .set((form, users_dsl::updated_at.eq(now)))
+            .get_result::<User>(conn)
+            .map_err(DBError::from)?;
+
+        Ok(user)
+    }
+
+    fn update_email_notifications(&self, id: i32, enabled: bool) -> Result<User, DBError> {
+        let conn = &mut self.get_db_conn();
+
+        let user = diesel::update(users_dsl::users.filter(users_dsl::id.eq(id)))
+            .set((
+                users_dsl::email_notifications_enabled.eq(enabled),
+                users_dsl::updated_at.eq(now),
+            ))
+            .get_result::<User>(conn)
+            .map_err(DBError::from)?;
+
+        Ok(user)
+    }
+
+    fn update_profile(&self, id: i32, form: &UpdateUserProfile) -> Result<User, DBError> {
         let conn = &mut self.get_db_conn();
 
         let user = diesel::update(users_dsl::users.filter(users_dsl::id.eq(id)))

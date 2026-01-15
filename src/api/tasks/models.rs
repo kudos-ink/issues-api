@@ -1,6 +1,9 @@
 use crate::schema::{tasks, tasks_votes};
 use chrono::{DateTime, Utc};
 use diesel::prelude::*;
+use crate::api::users::models::User;
+use crate::api::repositories::models::RepositoryResponse;
+use crate::api::projects::models::ProjectResponse;
 
 use serde_derive::{Deserialize, Serialize};
 // tasks
@@ -128,6 +131,9 @@ pub struct TaskResponse {
     pub project_id: Option<i32>,
     pub created_by_user_id: Option<i32>,
     pub assignee_user_id: Option<i32>,
+    pub user: Option<User>, // return the user if there is one already assigned
+    pub repository: Option<RepositoryResponse>,
+    pub project: Option<ProjectResponse>,
     pub assignee_team_id: Option<i32>,
     pub funding_options: Option<Vec<Option<String>>>,
     pub contact: Option<String>,
@@ -138,6 +144,7 @@ pub struct TaskResponse {
     pub status: String,
     pub upvotes: Option<i32>,
     pub downvotes: Option<i32>,
+    pub user_vote: Option<i32>,
     pub is_featured: Option<bool>,
     pub is_certified: Option<bool>,
     pub featured_by_user_id: Option<i32>,
@@ -186,10 +193,15 @@ pub struct TaskVote {
     pub vote: i32
 }
 
-#[derive(Insertable, Serialize, Deserialize, Debug)]
-#[diesel(table_name = tasks_votes)]
-pub struct NewTaskVote {
-    pub user_id: i32,
+// #[derive(Insertable, Serialize, Deserialize, Debug)]
+// #[diesel(table_name = tasks_votes)]
+// pub struct NewTaskVote {
+//     pub user_id: i32,
+//     pub task_id: i32,
+// }
+
+#[derive(Deserialize, Debug)]
+pub struct VotePayload {
     pub task_id: i32,
 }
 
@@ -205,39 +217,4 @@ pub struct TaskVoteDB {
 #[diesel(table_name = tasks_votes)]
 pub struct UserVote {
     pub user_id: i32,
-}
-impl From<Task> for TaskResponse {
-    fn from(task: Task) -> Self {
-        TaskResponse {
-            id: task.id,
-            number: task.number,
-            repository_id: task.repository_id,
-            title: task.title,
-            description: task.description,
-            url: task.url,
-            labels: task.labels,
-            open: task.open,
-            type_: task.type_,
-            project_id: task.project_id,
-            created_by_user_id: task.created_by_user_id,
-            assignee_user_id: task.assignee_user_id,
-            assignee_team_id: task.assignee_team_id,
-            funding_options: task.funding_options,
-            contact: task.contact,
-            skills: task.skills,
-            bounty: task.bounty,
-            approved_by: task.approved_by,
-            approved_at: task.approved_at,
-            status: task.status,
-            upvotes: task.upvotes,
-            downvotes: task.downvotes,
-            is_featured: task.is_featured,
-            is_certified: task.is_certified,
-            featured_by_user_id: task.featured_by_user_id,
-            issue_created_at: task.issue_created_at,
-            issue_closed_at: task.issue_closed_at,
-            created_at: task.created_at,
-            updated_at: task.updated_at,
-        }
-    }
 }

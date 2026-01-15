@@ -77,7 +77,7 @@ pub struct RepositoryResponse {
     pub name: String,
     pub url: String,
     pub language_slug: Option<String>,
-    pub project: ProjectResponse,
+    // pub project: ProjectResponse,
     pub created_at: DateTime<Utc>,
     pub updated_at: Option<DateTime<Utc>>,
 }

@@ -47,9 +47,17 @@ db-down:
 db-migrate-up:
 	DATABASE_URL="$(DATABASE_URL)" diesel migration run
 
+.PHONY: db-secondary-migrate-up
+db-secondary-migrate-up:
+	DATABASE_URL="$(DATABASE_URL)" diesel migration --migration-dir secondary_migrations run
+
 .PHONY: db-migrate-down
 db-migrate-down:
 	DATABASE_URL="$(DATABASE_URL)" diesel migration revert
+
+.PHONY: db-secondary-migrate-down
+db-secondary-migrate-down:
+	DATABASE_URL="$(DATABASE_URL)" diesel migration --migration-dir secondary_migrations revert
 
 .PHONY: db-migrate-redo
 db-migrate-redo:

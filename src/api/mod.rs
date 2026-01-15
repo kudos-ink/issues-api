@@ -8,3 +8,4 @@ pub mod tasks;
 pub mod teams;
 pub mod users;
 pub mod notifications;
+pub mod comments;
